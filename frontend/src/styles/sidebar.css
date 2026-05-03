@@ -1,0 +1,195 @@
+/* =========================================================
+   SIDEBAR PRO SGA
+   Estilo institucional azul
+   ========================================================= */
+
+.sga-sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f2363 0%, #07183f 100%);
+  color: white;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sga-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 42px;
+}
+
+.sga-logo {
+  width: 48px;
+  height: 48px;
+  background: white;
+  color: #2563eb;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+}
+
+.sga-brand h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sga-brand p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #b9c7ff;
+}
+
+.sga-menu-title {
+  font-size: 11px;
+  color: #8fa6e8;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.sga-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.sga-menu-item {
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  color: #dbe7ff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sga-menu-item:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateX(3px);
+}
+
+.sga-menu-item.active {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+}
+
+.sga-user-card {
+  margin-top: auto;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sga-user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.sga-user-card strong {
+  display: block;
+  font-size: 13px;
+}
+
+.sga-user-card span {
+  font-size: 12px;
+  color: #67e8f9;
+  font-weight: 700;
+}
+
+.sga-logout {
+  margin-top: 18px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  color: #dbe7ff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 12px;
+  border-radius: 12px;
+}
+
+.sga-logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* =========================================================
+   CARDS DASHBOARD TÉCNICO
+   ========================================================= */
+
+.metric-card {
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 15px 35px rgba(15, 35, 99, 0.08);
+}
+
+.metric-card span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 32px;
+  color: #1d4ed8;
+}
+
+.maintenance-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 12px 30px rgba(15, 35, 99, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.maintenance-card h3 {
+  margin: 0;
+  color: #172554;
+}
+
+.maintenance-card p {
+  color: #64748b;
+  margin: 6px 0;
+}
+
+.maintenance-card small {
+  color: #94a3b8;
+}
+
+.status-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
