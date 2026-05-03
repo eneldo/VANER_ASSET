@@ -1,0 +1,42 @@
+# =========================================================
+# MAIN BACKEND SGA PRO
+# Punto principal de entrada de FastAPI
+# =========================================================
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
+from app.routers import auth
+
+
+# Crear instancia FastAPI
+app = FastAPI(
+    title=settings.APP_NAME,
+    version="1.0.0"
+)
+
+
+# Configuración CORS para permitir conexión con React
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En producción se debe restringir al dominio real
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Registrar rutas del sistema
+app.include_router(auth.router)
+
+
+@app.get("/")
+def root():
+    """
+    Ruta inicial para comprobar que el backend está activo.
+    """
+    return {
+        "message": "Backend SGA PRO funcionando correctamente",
+        "version": "1.0.0"
+    }
