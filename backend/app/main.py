@@ -7,8 +7,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+
+# Routers del sistema
 from app.routers import auth
 from app.routers import usuarios
+from app.routers import empresas
+from app.routers import sedes
 
 
 # Crear instancia FastAPI
@@ -31,6 +35,8 @@ app.add_middleware(
 # Registrar rutas del sistema
 app.include_router(auth.router)
 app.include_router(usuarios.router)
+app.include_router(empresas.router)
+app.include_router(sedes.router)
 
 
 @app.get("/")
@@ -40,5 +46,6 @@ def root():
     """
     return {
         "message": "Backend SGA PRO funcionando correctamente",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "fase": "Fase 2 - Empresas y Sedes"
     }
