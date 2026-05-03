@@ -21,6 +21,7 @@ from app.routers import hoja_vida
 from app.routers import tecnicos
 from app.routers import mantenimientos
 from app.routers import evidencias
+from app.routers import dashboard_tecnico
 
 
 app = FastAPI(
@@ -44,7 +45,6 @@ app.add_middleware(
 
 # =========================================================
 # ARCHIVOS ESTÁTICOS
-# Permite acceder a /uploads/evidencias/archivo.jpg
 # =========================================================
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -70,6 +70,7 @@ app.include_router(hoja_vida.router)
 app.include_router(tecnicos.router)
 app.include_router(mantenimientos.router)
 app.include_router(evidencias.router)
+app.include_router(dashboard_tecnico.router)
 
 
 @app.get("/")
@@ -80,5 +81,5 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "Fase 6 - Evidencias antes durante despues"
+        "fase": "Fase 7 - Dashboard Técnico PRO"
     }
