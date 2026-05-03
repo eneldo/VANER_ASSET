@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import auth
+from app.routers import usuarios
 
 
 # Crear instancia FastAPI
@@ -20,7 +21,7 @@ app = FastAPI(
 # Configuración CORS para permitir conexión con React
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción se debe restringir al dominio real
+    allow_origins=["*"],  # En producción limitar al dominio real
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,6 +30,7 @@ app.add_middleware(
 
 # Registrar rutas del sistema
 app.include_router(auth.router)
+app.include_router(usuarios.router)
 
 
 @app.get("/")
