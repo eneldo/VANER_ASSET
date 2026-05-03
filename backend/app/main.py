@@ -13,6 +13,8 @@ from app.routers import auth
 from app.routers import usuarios
 from app.routers import empresas
 from app.routers import sedes
+from app.routers import categorias
+from app.routers import equipos
 
 
 # Crear instancia FastAPI
@@ -37,6 +39,8 @@ app.include_router(auth.router)
 app.include_router(usuarios.router)
 app.include_router(empresas.router)
 app.include_router(sedes.router)
+app.include_router(categorias.router)
+app.include_router(equipos.router)
 
 
 @app.get("/")
@@ -47,5 +51,5 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "Fase 2 - Empresas y Sedes"
+        "fase": "Fase 3 - Categorías y Equipos básicos"
     }
