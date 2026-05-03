@@ -1,6 +1,5 @@
 # =========================================================
-# SEGURIDAD SGA PRO
-# Manejo de contraseñas y token JWT
+# SEGURIDAD SGA PRO (VERSIÓN ESTABLE SIN BCRYPT)
 # =========================================================
 
 from datetime import datetime, timedelta
@@ -9,30 +8,30 @@ from passlib.context import CryptContext
 from app.config import settings
 
 
-# Configuración para encriptar contraseñas
+# 🔥 CAMBIO IMPORTANTE: usamos pbkdf2_sha256
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["pbkdf2_sha256"],
     deprecated="auto"
 )
 
 
 def hash_password(password: str) -> str:
     """
-    Encripta una contraseña antes de guardarla en BD.
+    Encripta contraseña de forma segura.
     """
     return pwd_context.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
     """
-    Verifica si la contraseña ingresada coincide con el hash guardado.
+    Verifica contraseña.
     """
     return pwd_context.verify(password, password_hash)
 
 
 def create_access_token(data: dict) -> str:
     """
-    Crea un token JWT con tiempo de expiración.
+    Crea token JWT.
     """
     payload = data.copy()
 
@@ -42,10 +41,8 @@ def create_access_token(data: dict) -> str:
 
     payload.update({"exp": expire})
 
-    token = jwt.encode(
+    return jwt.encode(
         payload,
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM
     )
-
-    return token
