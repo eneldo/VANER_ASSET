@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+
+# Node
+node_modules/
+dist/
+
+# Variables de entorno
+.env
+.env.*
+
+# Sistema
+.DS_Store
+Thumbs.db
