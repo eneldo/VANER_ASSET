@@ -1,6 +1,6 @@
 // =========================================================
 // PÁGINA ADMIN - EQUIPOS FULL PRO
-// CRUD de datos básicos del equipo + acceso a hoja de vida
+// CRUD de datos básicos + hoja de vida + importar inventario
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,6 +17,10 @@ import {
   X,
   RefreshCcw,
   FileText,
+  UploadCloud,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 
 import "../../styles/sidebar.css";
@@ -32,6 +36,12 @@ export default function EquiposPage() {
   const [editandoId, setEditandoId] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [pagina, setPagina] = useState(1);
+
+  // Estados del importador Excel/CSV
+  const [mostrarImportador, setMostrarImportador] = useState(false);
+  const [archivoImportar, setArchivoImportar] = useState(null);
+  const [importando, setImportando] = useState(false);
+  const [resultadoImportacion, setResultadoImportacion] = useState(null);
 
   const porPagina = 6;
 
@@ -66,10 +76,10 @@ export default function EquiposPage() {
           API.get("/categorias/"),
         ]);
 
-      setEquipos(resEquipos.data);
-      setEmpresas(resEmpresas.data);
-      setSedes(resSedes.data);
-      setCategorias(resCategorias.data);
+      setEquipos(resEquipos.data || []);
+      setEmpresas(resEmpresas.data || []);
+      setSedes(resSedes.data || []);
+      setCategorias(resCategorias.data || []);
     } catch (error) {
       console.error(error);
       alert("Error cargando datos de equipos");
@@ -89,22 +99,25 @@ export default function EquiposPage() {
   };
 
   const nombreCategoria = (categoriaId) => {
-    return categorias.find((c) => c.id === categoriaId)?.nombre || "Sin categoría";
+    return (
+      categorias.find((c) => c.id === categoriaId)?.nombre || "Sin categoría"
+    );
   };
 
   const equiposFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
 
-    return equipos.filter((equipo) =>
-      equipo.nombre?.toLowerCase().includes(texto) ||
-      equipo.marca?.toLowerCase().includes(texto) ||
-      equipo.modelo?.toLowerCase().includes(texto) ||
-      equipo.serie?.toLowerCase().includes(texto) ||
-      equipo.codigo_id?.toLowerCase().includes(texto) ||
-      equipo.inventario?.toLowerCase().includes(texto) ||
-      equipo.ubicacion?.toLowerCase().includes(texto) ||
-      equipo.estado?.toLowerCase().includes(texto) ||
-      equipo.criticidad?.toLowerCase().includes(texto)
+    return equipos.filter(
+      (equipo) =>
+        equipo.nombre?.toLowerCase().includes(texto) ||
+        equipo.marca?.toLowerCase().includes(texto) ||
+        equipo.modelo?.toLowerCase().includes(texto) ||
+        equipo.serie?.toLowerCase().includes(texto) ||
+        equipo.codigo_id?.toLowerCase().includes(texto) ||
+        equipo.inventario?.toLowerCase().includes(texto) ||
+        equipo.ubicacion?.toLowerCase().includes(texto) ||
+        equipo.estado?.toLowerCase().includes(texto) ||
+        equipo.criticidad?.toLowerCase().includes(texto)
     );
   }, [equipos, busqueda]);
 
@@ -243,6 +256,54 @@ export default function EquiposPage() {
     navigate(`/admin/equipos/${equipo.id}/hoja-vida`);
   };
 
+  const abrirImportador = () => {
+    setMostrarImportador(true);
+    setArchivoImportar(null);
+    setResultadoImportacion(null);
+  };
+
+  const cerrarImportador = () => {
+    setMostrarImportador(false);
+    setArchivoImportar(null);
+    setResultadoImportacion(null);
+  };
+
+  const importarInventario = async () => {
+    if (!archivoImportar) {
+      alert("Selecciona un archivo Excel o CSV.");
+      return;
+    }
+
+    const extension = archivoImportar.name.split(".").pop().toLowerCase();
+
+    if (!["xlsx", "xls", "csv"].includes(extension)) {
+      alert("Formato no permitido. Usa .xlsx, .xls o .csv");
+      return;
+    }
+
+    try {
+      setImportando(true);
+      setResultadoImportacion(null);
+
+      const formData = new FormData();
+      formData.append("archivo", archivoImportar);
+
+      const res = await API.post("/equipos/importar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setResultadoImportacion(res.data);
+      await cargarDatos();
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "Error importando inventario");
+    } finally {
+      setImportando(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="page-header">
@@ -253,9 +314,25 @@ export default function EquiposPage() {
         <div>
           <h1>Equipos</h1>
           <p>
-            Registra los datos básicos del equipo. Luego completa la hoja de vida técnica.
+            Registra los datos básicos del equipo. Luego completa la hoja de vida
+            técnica.
           </p>
         </div>
+      </div>
+
+      <div style={styles.importMiniBar}>
+        <div>
+          <strong>Importación masiva de inventario</strong>
+          <p>
+            Carga equipos desde archivos Excel o CSV sin afectar el registro
+            manual.
+          </p>
+        </div>
+
+        <button className="btn-primary" onClick={abrirImportador}>
+          <UploadCloud size={17} />
+          Importar inventario
+        </button>
       </div>
 
       <div className="equipos-pro-layout">
@@ -270,7 +347,11 @@ export default function EquiposPage() {
           <form onSubmit={guardarEquipo} className="equipos-pro-form">
             <div className="form-group full">
               <label>Empresa *</label>
-              <select name="empresa_id" value={form.empresa_id} onChange={handleChange}>
+              <select
+                name="empresa_id"
+                value={form.empresa_id}
+                onChange={handleChange}
+              >
                 <option value="">Seleccionar empresa</option>
                 {empresas.map((empresa) => (
                   <option key={empresa.id} value={empresa.id}>
@@ -289,7 +370,9 @@ export default function EquiposPage() {
                 disabled={!form.empresa_id}
               >
                 <option value="">
-                  {form.empresa_id ? "Seleccionar sede" : "Primero selecciona empresa"}
+                  {form.empresa_id
+                    ? "Seleccionar sede"
+                    : "Primero selecciona empresa"}
                 </option>
                 {sedesFiltradas.map((sede) => (
                   <option key={sede.id} value={sede.id}>
@@ -301,7 +384,11 @@ export default function EquiposPage() {
 
             <div className="form-group full">
               <label>Categoría</label>
-              <select name="categoria_id" value={form.categoria_id} onChange={handleChange}>
+              <select
+                name="categoria_id"
+                value={form.categoria_id}
+                onChange={handleChange}
+              >
                 <option value="">Sin categoría</option>
                 {categorias.map((categoria) => (
                   <option key={categoria.id} value={categoria.id}>
@@ -328,7 +415,11 @@ export default function EquiposPage() {
 
             <div className="form-group">
               <label>Modelo</label>
-              <input name="modelo" value={form.modelo} onChange={handleChange} />
+              <input
+                name="modelo"
+                value={form.modelo}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
@@ -338,22 +429,38 @@ export default function EquiposPage() {
 
             <div className="form-group">
               <label>Ubicación</label>
-              <input name="ubicacion" value={form.ubicacion} onChange={handleChange} />
+              <input
+                name="ubicacion"
+                value={form.ubicacion}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>INVIMA</label>
-              <input name="invima" value={form.invima} onChange={handleChange} />
+              <input
+                name="invima"
+                value={form.invima}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Código ID</label>
-              <input name="codigo_id" value={form.codigo_id} onChange={handleChange} />
+              <input
+                name="codigo_id"
+                value={form.codigo_id}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
               <label>Inventario</label>
-              <input name="inventario" value={form.inventario} onChange={handleChange} />
+              <input
+                name="inventario"
+                value={form.inventario}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="form-group">
@@ -368,7 +475,11 @@ export default function EquiposPage() {
 
             <div className="form-group">
               <label>Criticidad</label>
-              <select name="criticidad" value={form.criticidad} onChange={handleChange}>
+              <select
+                name="criticidad"
+                value={form.criticidad}
+                onChange={handleChange}
+              >
                 <option value="BAJA">Baja</option>
                 <option value="MEDIA">Media</option>
                 <option value="ALTA">Alta</option>
@@ -377,12 +488,21 @@ export default function EquiposPage() {
             </div>
 
             <label className="checkbox-line">
-              <input type="checkbox" name="activo" checked={form.activo} onChange={handleChange} />
+              <input
+                type="checkbox"
+                name="activo"
+                checked={form.activo}
+                onChange={handleChange}
+              />
               Equipo activo
             </label>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={limpiarFormulario}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={limpiarFormulario}
+              >
                 <X size={17} />
                 Limpiar
               </button>
@@ -438,11 +558,13 @@ export default function EquiposPage() {
                       <strong className="equipo-title">{equipo.nombre}</strong>
                       <br />
                       <small className="equipo-sub">
-                        {equipo.marca || "Sin marca"} | {equipo.modelo || "Sin modelo"}
+                        {equipo.marca || "Sin marca"} |{" "}
+                        {equipo.modelo || "Sin modelo"}
                       </small>
                       <br />
                       <small className="equipo-sub">
-                        Código: {equipo.codigo_id || "N/A"} | Inventario: {equipo.inventario || "N/A"}
+                        Código: {equipo.codigo_id || "N/A"} | Inventario:{" "}
+                        {equipo.inventario || "N/A"}
                       </small>
                     </td>
 
@@ -461,7 +583,8 @@ export default function EquiposPage() {
                     <td>
                       <span
                         className={
-                          equipo.criticidad === "ALTA" || equipo.criticidad === "CRITICA"
+                          equipo.criticidad === "ALTA" ||
+                          equipo.criticidad === "CRITICA"
                             ? "badge inactive"
                             : "badge active"
                         }
@@ -534,6 +657,271 @@ export default function EquiposPage() {
           </div>
         </section>
       </div>
+
+      {mostrarImportador && (
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitleBox}>
+                <div style={styles.modalIcon}>
+                  <FileSpreadsheet size={24} />
+                </div>
+
+                <div>
+                  <h2 style={styles.modalTitle}>Importar inventario</h2>
+                  <p style={styles.modalSubtitle}>
+                    Carga masiva de equipos desde archivo Excel o CSV.
+                  </p>
+                </div>
+              </div>
+
+              <button style={styles.closeBtn} onClick={cerrarImportador}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={styles.uploadBox}>
+              <label style={styles.uploadLabel}>Archivo Excel/CSV</label>
+
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => {
+                  setArchivoImportar(e.target.files?.[0] || null);
+                  setResultadoImportacion(null);
+                }}
+                style={styles.fileInput}
+              />
+
+              {archivoImportar && (
+                <div style={styles.fileSelected}>
+                  <FileSpreadsheet size={18} />
+                  <span>{archivoImportar.name}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.helpBox}>
+              <strong>Columnas recomendadas:</strong>
+              <p>
+                codigo_inventario, nombre, empresa, sede, categoria, marca,
+                modelo, serie, ubicacion, estado, criticidad.
+              </p>
+            </div>
+
+            {resultadoImportacion && (
+              <div style={styles.resultBox}>
+                <div style={styles.resultOk}>
+                  <CheckCircle size={18} />
+                  <strong>
+                    Equipos importados: {resultadoImportacion.creados || 0}
+                  </strong>
+                </div>
+
+                {resultadoImportacion.errores?.length > 0 && (
+                  <div style={styles.errorsBox}>
+                    <div style={styles.errorTitle}>
+                      <AlertTriangle size={18} />
+                      <strong>Registros con error</strong>
+                    </div>
+
+                    <ul style={styles.errorList}>
+                      {resultadoImportacion.errores.map((err, index) => (
+                        <li key={index}>
+                          Fila {err.fila}: {err.error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={cerrarImportador}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={importarInventario}
+                disabled={importando}
+              >
+                <UploadCloud size={17} />
+                {importando ? "Importando..." : "Importar inventario"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
+
+const styles = {
+  importMiniBar: {
+    background: "linear-gradient(135deg, #eff6ff, #ecfeff)",
+    border: "1px solid #dbeafe",
+    borderRadius: 20,
+    padding: "16px 18px",
+    marginBottom: 20,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
+    boxShadow: "0 14px 35px rgba(15, 23, 42, 0.06)",
+  },
+
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.45)",
+    backdropFilter: "blur(6px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 999,
+    padding: 20,
+  },
+
+  modal: {
+    width: "min(920px, 96vw)",
+    background: "white",
+    borderRadius: 26,
+    padding: 24,
+    boxShadow: "0 30px 80px rgba(15, 23, 42, 0.25)",
+  },
+
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+
+  modalTitleBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+  },
+
+  modalIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    background: "linear-gradient(135deg, #2563eb, #06b6d4)",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  modalTitle: {
+    margin: 0,
+    fontSize: 24,
+    fontWeight: 900,
+    color: "#0f172a",
+  },
+
+  modalSubtitle: {
+    margin: "5px 0 0",
+    color: "#64748b",
+  },
+
+  closeBtn: {
+    border: "none",
+    borderRadius: 12,
+    background: "#f1f5f9",
+    padding: 9,
+    cursor: "pointer",
+  },
+
+  uploadBox: {
+    border: "1px solid #dbe5ef",
+    borderRadius: 18,
+    padding: 16,
+    background: "#f8fafc",
+    marginBottom: 14,
+  },
+
+  uploadLabel: {
+    display: "block",
+    fontWeight: 900,
+    color: "#172554",
+    marginBottom: 10,
+  },
+
+  fileInput: {
+    width: "100%",
+    border: "1px solid #dbe5ef",
+    borderRadius: 14,
+    padding: 12,
+    background: "white",
+  },
+
+  fileSelected: {
+    marginTop: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    color: "#0369a1",
+    fontWeight: 800,
+  },
+
+  helpBox: {
+    background: "#eaf4ff",
+    border: "1px solid #dbeafe",
+    borderRadius: 16,
+    padding: 14,
+    color: "#1e3a8a",
+    marginBottom: 14,
+  },
+
+  resultBox: {
+    border: "1px solid #dbeafe",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+    background: "#f8fbff",
+  },
+
+  resultOk: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    color: "#15803d",
+  },
+
+  errorsBox: {
+    marginTop: 12,
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    borderRadius: 14,
+    padding: 12,
+    color: "#9a3412",
+  },
+
+  errorTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  errorList: {
+    margin: "10px 0 0",
+    paddingLeft: 20,
+    maxHeight: 180,
+    overflowY: "auto",
+  },
+
+  modalActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
+};

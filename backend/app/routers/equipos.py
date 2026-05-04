@@ -299,3 +299,126 @@ def eliminar_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Equipo eliminado correctamente"}
+
+# =========================================================
+# IMPORTAR INVENTARIO DESDE EXCEL / CSV
+# =========================================================
+
+import pandas as pd
+from fastapi import UploadFile, File
+from io import BytesIO
+
+
+@router.post("/importar")
+async def importar_equipos(
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Importa equipos desde archivo Excel o CSV.
+    """
+
+    try:
+        contenido = await archivo.read()
+
+        # Detectar tipo de archivo
+        if archivo.filename.endswith(".csv"):
+            df = pd.read_csv(BytesIO(contenido))
+        else:
+            df = pd.read_excel(BytesIO(contenido))
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error leyendo archivo: {str(e)}"
+        )
+
+    # Columnas requeridas
+    columnas = [
+        "codigo_inventario",
+        "nombre",
+        "empresa",
+        "sede",
+        "categoria",
+        "marca",
+        "modelo",
+        "serie",
+        "ubicacion",
+        "estado",
+        "criticidad"
+    ]
+
+    faltantes = [c for c in columnas if c not in df.columns]
+
+    if faltantes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faltan columnas: {faltantes}"
+        )
+
+    creados = 0
+    errores = []
+
+    for i, row in df.iterrows():
+        try:
+            # Buscar empresa
+            empresa = db.query(Empresa).filter(
+                Empresa.nombre.ilike(row["empresa"])
+            ).first()
+
+            if not empresa:
+                raise Exception("Empresa no encontrada")
+
+            # Buscar sede
+            sede = db.query(Sede).filter(
+                Sede.nombre.ilike(row["sede"]),
+                Sede.empresa_id == empresa.id
+            ).first()
+
+            if not sede:
+                raise Exception("Sede no encontrada")
+
+            # Buscar categoría (opcional)
+            categoria = None
+            if row["categoria"]:
+                categoria = db.query(Categoria).filter(
+                    Categoria.nombre.ilike(row["categoria"])
+                ).first()
+
+            # Validar estado y criticidad
+            estado = str(row["estado"]).upper()
+            criticidad = str(row["criticidad"]).upper()
+
+            validar_estado_y_criticidad(estado, criticidad)
+
+            # Crear equipo
+            nuevo = Equipo(
+                nombre=row["nombre"],
+                empresa_id=empresa.id,
+                sede_id=sede.id,
+                categoria_id=categoria.id if categoria else None,
+                marca=row["marca"],
+                modelo=row["modelo"],
+                serie=row["serie"],
+                ubicacion=row["ubicacion"],
+                codigo_id=row["codigo_inventario"],
+                estado=estado,
+                criticidad=criticidad,
+                activo=True
+            )
+
+            db.add(nuevo)
+            creados += 1
+
+        except Exception as e:
+            errores.append({
+                "fila": int(i + 2),
+                "error": str(e)
+            })
+
+    db.commit()
+
+    return {
+        "creados": creados,
+        "errores": errores
+    }
