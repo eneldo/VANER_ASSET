@@ -1,7 +1,7 @@
 // =========================================================
-// PÁGINA ADMIN - USUARIOS PRO
+// PÁGINA ADMIN - USUARIOS Y PERMISOS PRO
 // Crear, listar, buscar, paginar, editar, eliminar,
-// activar/inactivar y resetear contraseña.
+// activar/inactivar, resetear contraseña y asignar permisos.
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -17,6 +17,8 @@ import {
   Eye,
   KeyRound,
   Power,
+  Shield,
+  CheckSquare,
 } from "lucide-react";
 
 export default function UsuariosPage() {
@@ -28,6 +30,13 @@ export default function UsuariosPage() {
   const [editandoId, setEditandoId] = useState(null);
   const [detalle, setDetalle] = useState(null);
   const [busqueda, setBusqueda] = useState("");
+
+  // =======================================================
+  // ESTADOS DE PERMISOS
+  // =======================================================
+  const [permisos, setPermisos] = useState([]);
+  const [permisosUsuario, setPermisosUsuario] = useState([]);
+  const [usuarioPermisos, setUsuarioPermisos] = useState(null);
 
   // Paginación frontend
   const [pagina, setPagina] = useState(1);
@@ -55,16 +64,18 @@ export default function UsuariosPage() {
 
   const cargarDatos = async () => {
     try {
-      const [resUsuarios, resEmpresas] = await Promise.all([
+      const [resUsuarios, resEmpresas, resPermisos] = await Promise.all([
         API.get("/usuarios/"),
         API.get("/empresas/"),
+        API.get("/permisos/"),
       ]);
 
-      setUsuarios(resUsuarios.data);
-      setEmpresas(resEmpresas.data);
+      setUsuarios(resUsuarios.data || []);
+      setEmpresas(resEmpresas.data || []);
+      setPermisos(resPermisos.data || []);
     } catch (error) {
       console.error(error);
-      alert("Error cargando usuarios");
+      alert("Error cargando usuarios o permisos");
     }
   };
 
@@ -74,11 +85,12 @@ export default function UsuariosPage() {
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
 
-    return usuarios.filter((u) =>
-      u.nombre_completo?.toLowerCase().includes(texto) ||
-      u.username?.toLowerCase().includes(texto) ||
-      u.email?.toLowerCase().includes(texto) ||
-      u.rol?.toLowerCase().includes(texto)
+    return usuarios.filter(
+      (u) =>
+        u.nombre_completo?.toLowerCase().includes(texto) ||
+        u.username?.toLowerCase().includes(texto) ||
+        u.email?.toLowerCase().includes(texto) ||
+        u.rol?.toLowerCase().includes(texto)
     );
   }, [usuarios, busqueda]);
 
@@ -88,6 +100,25 @@ export default function UsuariosPage() {
     (pagina - 1) * porPagina,
     pagina * porPagina
   );
+
+  // =======================================================
+  // AGRUPAR PERMISOS POR MÓDULO
+  // =======================================================
+  const permisosAgrupados = useMemo(() => {
+    const grupos = {};
+
+    permisos.forEach((permiso) => {
+      const modulo = permiso.modulo || "GENERAL";
+
+      if (!grupos[modulo]) {
+        grupos[modulo] = [];
+      }
+
+      grupos[modulo].push(permiso);
+    });
+
+    return grupos;
+  }, [permisos]);
 
   // =======================================================
   // MANEJAR FORMULARIO
@@ -206,10 +237,7 @@ export default function UsuariosPage() {
   // RESET PASSWORD
   // =======================================================
   const resetPassword = async (usuario) => {
-    const nueva = prompt(
-      `Nueva contraseña para ${usuario.username}:`,
-      "123456"
-    );
+    const nueva = prompt(`Nueva contraseña para ${usuario.username}:`, "123456");
 
     if (!nueva) return;
 
@@ -241,6 +269,62 @@ export default function UsuariosPage() {
       console.error(error);
       alert(error.response?.data?.detail || "Error eliminando usuario");
     }
+  };
+
+  // =======================================================
+  // CARGAR PERMISOS DEL USUARIO
+  // =======================================================
+  const cargarPermisosUsuario = async (usuario) => {
+    try {
+      setUsuarioPermisos(usuario);
+
+      const res = await API.get(`/permisos/usuario/${usuario.id}`);
+
+      setPermisosUsuario(res.data?.permisos || []);
+    } catch (error) {
+      console.error(error);
+      alert("Error cargando permisos del usuario");
+    }
+  };
+
+  // =======================================================
+  // ACTIVAR / DESACTIVAR CHECKBOX DE PERMISO
+  // =======================================================
+  const togglePermiso = (codigo) => {
+    setPermisosUsuario((prev) => {
+      if (prev.includes(codigo)) {
+        return prev.filter((p) => p !== codigo);
+      }
+
+      return [...prev, codigo];
+    });
+  };
+
+  // =======================================================
+  // GUARDAR PERMISOS
+  // =======================================================
+  const guardarPermisos = async () => {
+    if (!usuarioPermisos) {
+      alert("Selecciona un usuario para asignar permisos");
+      return;
+    }
+
+    try {
+      await API.post("/permisos/usuario/asignar", {
+        usuario_id: usuarioPermisos.id,
+        permisos: permisosUsuario,
+      });
+
+      alert("Permisos guardados correctamente");
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "Error guardando permisos");
+    }
+  };
+
+  const cerrarPanelPermisos = () => {
+    setUsuarioPermisos(null);
+    setPermisosUsuario([]);
   };
 
   const nombreEmpresa = (empresaId) => {
@@ -320,9 +404,9 @@ export default function UsuariosPage() {
               <label>Rol *</label>
               <select name="rol" value={form.rol} onChange={handleChange}>
                 <option value="ADMIN">Administrador</option>
-                <option value="TECNICO">Técnico</option>
-                <option value="EMPRESA">Empresa</option>
                 <option value="COORDINADOR">Coordinador</option>
+                <option value="EMPRESA">Empresa / Cliente</option>
+                <option value="TECNICO">Técnico</option>
               </select>
             </div>
 
@@ -355,7 +439,11 @@ export default function UsuariosPage() {
             </label>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={limpiarFormulario}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={limpiarFormulario}
+              >
                 <X size={17} />
                 Limpiar
               </button>
@@ -419,38 +507,72 @@ export default function UsuariosPage() {
                     <td>{usuario.email}</td>
 
                     <td>
-                      <span className="badge role">
-                        {usuario.rol}
-                      </span>
+                      <span className="badge role">{usuario.rol}</span>
                     </td>
 
-                    <td>{usuario.empresa_id ? nombreEmpresa(usuario.empresa_id) : "N/A"}</td>
+                    <td>
+                      {usuario.empresa_id
+                        ? nombreEmpresa(usuario.empresa_id)
+                        : "N/A"}
+                    </td>
 
                     <td>
-                      <span className={usuario.activo ? "badge active" : "badge inactive"}>
+                      <span
+                        className={
+                          usuario.activo ? "badge active" : "badge inactive"
+                        }
+                      >
                         {usuario.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>
 
                     <td>
                       <div className="table-actions">
-                        <button className="icon-btn" onClick={() => verDetalle(usuario)} title="Detalle">
+                        <button
+                          className="icon-btn"
+                          onClick={() => verDetalle(usuario)}
+                          title="Detalle"
+                        >
                           <Eye size={16} />
                         </button>
 
-                        <button className="icon-btn" onClick={() => editarUsuario(usuario)} title="Editar">
+                        <button
+                          className="icon-btn"
+                          onClick={() => editarUsuario(usuario)}
+                          title="Editar"
+                        >
                           <Pencil size={16} />
                         </button>
 
-                        <button className="icon-btn" onClick={() => resetPassword(usuario)} title="Reset contraseña">
+                        <button
+                          className="icon-btn"
+                          onClick={() => cargarPermisosUsuario(usuario)}
+                          title="Permisos"
+                        >
+                          <Shield size={16} />
+                        </button>
+
+                        <button
+                          className="icon-btn"
+                          onClick={() => resetPassword(usuario)}
+                          title="Reset contraseña"
+                        >
                           <KeyRound size={16} />
                         </button>
 
-                        <button className="icon-btn" onClick={() => cambiarEstado(usuario.id)} title="Activar/Inactivar">
+                        <button
+                          className="icon-btn"
+                          onClick={() => cambiarEstado(usuario.id)}
+                          title="Activar/Inactivar"
+                        >
                           <Power size={16} />
                         </button>
 
-                        <button className="icon-btn danger" onClick={() => eliminarUsuario(usuario.id)} title="Eliminar">
+                        <button
+                          className="icon-btn danger"
+                          onClick={() => eliminarUsuario(usuario.id)}
+                          title="Eliminar"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -495,6 +617,75 @@ export default function UsuariosPage() {
       </div>
 
       {/* ===================================================
+          PANEL DE PERMISOS DEL USUARIO
+          Se agrega sin dañar el CRUD existente.
+          =================================================== */}
+      {usuarioPermisos && (
+        <section className="page-card" style={{ marginTop: 22 }}>
+          <div className="list-header">
+            <div>
+              <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Shield size={22} />
+                Permisos del usuario
+              </h2>
+              <p>
+                Usuario: <strong>{usuarioPermisos.nombre_completo}</strong> · Rol:{" "}
+                <strong>{usuarioPermisos.rol}</strong>
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn-secondary" onClick={cerrarPanelPermisos}>
+                <X size={17} />
+                Cerrar
+              </button>
+
+              <button className="btn-primary" onClick={guardarPermisos}>
+                <Save size={17} />
+                Guardar permisos
+              </button>
+            </div>
+          </div>
+
+          <div style={styles.permisosContainer}>
+            {Object.entries(permisosAgrupados).map(([modulo, items]) => (
+              <div key={modulo} style={styles.permisoGrupo}>
+                <h3 style={styles.permisoModulo}>{modulo}</h3>
+
+                <div style={styles.permisosGrid}>
+                  {items.map((permiso) => (
+                    <label key={permiso.codigo} style={styles.permisoItem}>
+                      <input
+                        type="checkbox"
+                        checked={permisosUsuario.includes(permiso.codigo)}
+                        onChange={() => togglePermiso(permiso.codigo)}
+                        style={{ marginTop: 5 }}
+                      />
+
+                      <div>
+                        <strong style={styles.permisoNombre}>
+                          <CheckSquare size={15} />
+                          {permiso.nombre}
+                        </strong>
+
+                        <code style={styles.permisoCodigo}>
+                          {permiso.codigo}
+                        </code>
+
+                        <p style={styles.permisoDescripcion}>
+                          {permiso.descripcion || "Sin descripción"}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===================================================
           MODAL SIMPLE DE DETALLE
           =================================================== */}
       {detalle && (
@@ -502,13 +693,28 @@ export default function UsuariosPage() {
           <div className="modal-card">
             <h2>Detalle del usuario</h2>
 
-            <p><strong>Nombre:</strong> {detalle.nombre_completo}</p>
-            <p><strong>Usuario:</strong> {detalle.username}</p>
-            <p><strong>Correo:</strong> {detalle.email}</p>
-            <p><strong>Rol:</strong> {detalle.rol}</p>
-            <p><strong>Empresa:</strong> {detalle.empresa_id ? nombreEmpresa(detalle.empresa_id) : "N/A"}</p>
-            <p><strong>Estado:</strong> {detalle.activo ? "Activo" : "Inactivo"}</p>
-            <p><strong>ID:</strong> {detalle.id}</p>
+            <p>
+              <strong>Nombre:</strong> {detalle.nombre_completo}
+            </p>
+            <p>
+              <strong>Usuario:</strong> {detalle.username}
+            </p>
+            <p>
+              <strong>Correo:</strong> {detalle.email}
+            </p>
+            <p>
+              <strong>Rol:</strong> {detalle.rol}
+            </p>
+            <p>
+              <strong>Empresa:</strong>{" "}
+              {detalle.empresa_id ? nombreEmpresa(detalle.empresa_id) : "N/A"}
+            </p>
+            <p>
+              <strong>Estado:</strong> {detalle.activo ? "Activo" : "Inactivo"}
+            </p>
+            <p>
+              <strong>ID:</strong> {detalle.id}
+            </p>
 
             <button className="btn-primary" onClick={() => setDetalle(null)}>
               Cerrar
@@ -519,3 +725,71 @@ export default function UsuariosPage() {
     </AdminLayout>
   );
 }
+
+// =========================================================
+// ESTILOS INTERNOS SOLO PARA EL PANEL DE PERMISOS
+// No toca ni rompe los estilos PRO existentes.
+// =========================================================
+
+const styles = {
+  permisosContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+  },
+
+  permisoGrupo: {
+    border: "1px solid #e5eef8",
+    borderRadius: 18,
+    padding: 16,
+    background: "#f8fbff",
+  },
+
+  permisoModulo: {
+    margin: "0 0 12px",
+    fontSize: 16,
+    fontWeight: 900,
+    color: "#172554",
+    textTransform: "uppercase",
+  },
+
+  permisosGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(260px, 1fr))",
+    gap: 12,
+  },
+
+  permisoItem: {
+    display: "flex",
+    gap: 10,
+    border: "1px solid #e2e8f0",
+    padding: 13,
+    borderRadius: 16,
+    background: "white",
+    cursor: "pointer",
+  },
+
+  permisoNombre: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 14,
+    color: "#0f172a",
+  },
+
+  permisoCodigo: {
+    display: "inline-block",
+    marginTop: 6,
+    background: "#111827",
+    color: "white",
+    borderRadius: 7,
+    padding: "3px 7px",
+    fontSize: 11,
+  },
+
+  permisoDescripcion: {
+    margin: "6px 0 0",
+    fontSize: 12,
+    color: "#64748b",
+  },
+};
