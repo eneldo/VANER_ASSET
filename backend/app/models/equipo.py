@@ -32,6 +32,8 @@ class Equipo(Base):
 
     # Código interno o código de inventario
     codigo_id = Column(String(100), unique=True, nullable=True)
+    # Número o código de inventario físico/institucional
+    inventario = Column(String(100), nullable=True)
 
     # Estado del equipo:
     # OPERATIVO, EN_MANTENIMIENTO, FUERA_DE_SERVICIO, BAJA

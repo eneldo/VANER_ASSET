@@ -23,6 +23,7 @@ class EquipoBase(BaseModel):
     ubicacion: Optional[str] = None
     invima: Optional[str] = None
     codigo_id: Optional[str] = None
+    inventario: Optional[str] = None
 
     # Estado y criticidad
     estado: str = "OPERATIVO"
@@ -50,6 +51,7 @@ class EquipoUpdate(BaseModel):
     ubicacion: Optional[str] = None
     invima: Optional[str] = None
     codigo_id: Optional[str] = None
+    inventario: Optional[str] = None
 
     estado: Optional[str] = None
     criticidad: Optional[str] = None

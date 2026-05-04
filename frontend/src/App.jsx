@@ -15,6 +15,7 @@ import CategoriasPage from "./pages/admin/CategoriasPage";
 import UsuariosPage from "./pages/admin/UsuariosPage";
 import TecnicosPage from "./pages/admin/TecnicosPage";
 import EquiposPage from "./pages/admin/EquiposPage";
+import HojaVidaEquipoPage from "./pages/admin/HojaVidaEquipoPage";
 import MantenimientosPage from "./pages/admin/MantenimientosPage";
 import EvidenciasPage from "./pages/admin/EvidenciasPage";
 import ReportesPage from "./pages/admin/ReportesPage";
@@ -38,6 +39,7 @@ function App() {
         <Route path="/admin/usuarios" element={<UsuariosPage />} />
         <Route path="/admin/tecnicos" element={<TecnicosPage />} />
         <Route path="/admin/equipos" element={<EquiposPage />} />
+        <Route path="/admin/equipos/:equipoId/hoja-vida" element={<HojaVidaEquipoPage />} />
         <Route path="/admin/mantenimientos" element={<MantenimientosPage />} />
         <Route path="/admin/evidencias" element={<EvidenciasPage />} />
         <Route path="/admin/reportes" element={<ReportesPage />} />

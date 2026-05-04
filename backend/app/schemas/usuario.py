@@ -1,15 +1,16 @@
 # =========================================================
 # SCHEMAS DE USUARIOS
-# Validan creación de usuarios del sistema
+# Validación de creación, edición, respuesta y reset password
 # =========================================================
 
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 
 class AdminCreate(BaseModel):
-    # Datos para crear el primer administrador
+    # Crear primer administrador del sistema
     nombre_completo: str
     username: str
     email: EmailStr
@@ -17,14 +18,41 @@ class AdminCreate(BaseModel):
 
 
 class UsuarioCreate(BaseModel):
-    # Datos generales del usuario
+    # Crear usuario normal del sistema
     nombre_completo: str
     username: str
     email: EmailStr
     password: str
-
-    # Roles permitidos: ADMIN, TECNICO, EMPRESA, COORDINADOR
     rol: str
-
-    # Solo aplica para usuario EMPRESA
     empresa_id: Optional[UUID] = None
+
+
+class UsuarioUpdate(BaseModel):
+    # Actualizar usuario parcialmente
+    nombre_completo: Optional[str] = None
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    rol: Optional[str] = None
+    empresa_id: Optional[UUID] = None
+    activo: Optional[bool] = None
+
+
+class ResetPasswordRequest(BaseModel):
+    # Nueva contraseña del usuario
+    nueva_password: str
+
+
+class UsuarioOut(BaseModel):
+    # Respuesta segura del usuario sin password_hash
+    id: UUID
+    nombre_completo: str
+    username: str
+    email: EmailStr
+    rol: str
+    empresa_id: Optional[UUID] = None
+    activo: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

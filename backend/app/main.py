@@ -17,13 +17,14 @@ from app.routers import empresas
 from app.routers import sedes
 from app.routers import categorias
 from app.routers import equipos
-from app.routers import hoja_vida
+from app.routers import equipo_hoja_vida
 from app.routers import tecnicos
 from app.routers import mantenimientos
 from app.routers import evidencias
 from app.routers import dashboard_tecnico
 
 
+# Crear instancia FastAPI
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0"
@@ -66,7 +67,7 @@ app.include_router(empresas.router)
 app.include_router(sedes.router)
 app.include_router(categorias.router)
 app.include_router(equipos.router)
-app.include_router(hoja_vida.router)
+app.include_router(equipo_hoja_vida.router)
 app.include_router(tecnicos.router)
 app.include_router(mantenimientos.router)
 app.include_router(evidencias.router)
@@ -81,5 +82,5 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "Fase 7 - Dashboard Técnico PRO"
+        "fase": "Hoja de vida tecnica completa"
     }

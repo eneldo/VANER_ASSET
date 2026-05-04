@@ -1,6 +1,6 @@
 # =========================================================
-# ROUTER TECNICOS
-# CRUD básico de técnicos vinculados a usuarios
+# ROUTER TECNICOS PRO
+# CRUD de técnicos con datos del usuario relacionado
 # =========================================================
 
 from uuid import UUID
@@ -14,6 +14,35 @@ from app.schemas.tecnico import TecnicoCreate, TecnicoUpdate, TecnicoOut
 
 
 router = APIRouter(prefix="/tecnicos", tags=["Técnicos"])
+
+
+def tecnico_con_usuario(tecnico: Tecnico, db: Session):
+    """
+    Construye una respuesta enriquecida del técnico incluyendo datos del usuario.
+    Esto facilita mostrar nombre, correo y username en el frontend.
+    """
+
+    usuario = db.query(Usuario).filter(Usuario.id == tecnico.usuario_id).first()
+
+    return {
+        "id": str(tecnico.id),
+        "usuario_id": str(tecnico.usuario_id),
+        "documento": tecnico.documento,
+        "telefono": tecnico.telefono,
+        "especialidad": tecnico.especialidad,
+        "cargo": tecnico.cargo,
+        "activo": tecnico.activo,
+        "created_at": tecnico.created_at,
+        "updated_at": tecnico.updated_at,
+        "usuario": {
+            "id": str(usuario.id) if usuario else None,
+            "nombre_completo": usuario.nombre_completo if usuario else None,
+            "username": usuario.username if usuario else None,
+            "email": usuario.email if usuario else None,
+            "rol": usuario.rol if usuario else None,
+            "activo": usuario.activo if usuario else None,
+        }
+    }
 
 
 @router.post("/", response_model=TecnicoOut)
@@ -55,19 +84,24 @@ def crear_tecnico(data: TecnicoCreate, db: Session = Depends(get_db)):
     return nuevo
 
 
-@router.get("/", response_model=list[TecnicoOut])
+@router.get("/")
 def listar_tecnicos(db: Session = Depends(get_db)):
     """
-    Lista todos los técnicos.
+    Lista todos los técnicos con datos del usuario.
     """
 
-    return db.query(Tecnico).order_by(Tecnico.created_at.desc()).all()
+    tecnicos = db.query(Tecnico).order_by(Tecnico.created_at.desc()).all()
+
+    return [
+        tecnico_con_usuario(tecnico, db)
+        for tecnico in tecnicos
+    ]
 
 
-@router.get("/{tecnico_id}", response_model=TecnicoOut)
+@router.get("/{tecnico_id}")
 def obtener_tecnico(tecnico_id: UUID, db: Session = Depends(get_db)):
     """
-    Obtiene técnico por ID.
+    Obtiene técnico por ID con datos de usuario.
     """
 
     tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
@@ -78,7 +112,7 @@ def obtener_tecnico(tecnico_id: UUID, db: Session = Depends(get_db)):
             detail="Técnico no encontrado"
         )
 
-    return tecnico
+    return tecnico_con_usuario(tecnico, db)
 
 
 @router.put("/{tecnico_id}", response_model=TecnicoOut)
@@ -88,7 +122,7 @@ def actualizar_tecnico(
     db: Session = Depends(get_db)
 ):
     """
-    Actualiza datos del técnico.
+    Actualiza datos del perfil técnico.
     """
 
     tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
@@ -110,10 +144,33 @@ def actualizar_tecnico(
     return tecnico
 
 
+@router.patch("/{tecnico_id}/estado", response_model=TecnicoOut)
+def cambiar_estado_tecnico(tecnico_id: UUID, db: Session = Depends(get_db)):
+    """
+    Activa o inactiva un técnico.
+    """
+
+    tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
+
+    if not tecnico:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Técnico no encontrado"
+        )
+
+    tecnico.activo = not tecnico.activo
+
+    db.commit()
+    db.refresh(tecnico)
+
+    return tecnico
+
+
 @router.delete("/{tecnico_id}")
 def eliminar_tecnico(tecnico_id: UUID, db: Session = Depends(get_db)):
     """
     Elimina perfil técnico.
+    No elimina el usuario, solo el perfil técnico.
     """
 
     tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()

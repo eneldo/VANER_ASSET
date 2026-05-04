@@ -3,7 +3,7 @@
 # Vista especializada para técnicos:
 # - mantenimientos asignados
 # - datos básicos del equipo
-# - hoja de vida básica
+# - hoja de vida técnica
 # - último mantenimiento
 # - evidencias
 # =========================================================
@@ -20,7 +20,14 @@ from app.models.equipo import Equipo
 from app.models.empresa import Empresa
 from app.models.sede import Sede
 from app.models.categoria import Categoria
-from app.models.hoja_vida import EquipoHojaVida
+
+# =========================================================
+# IMPORT CORREGIDO
+# Usar SOLO el modelo nuevo equipo_hoja_vida.py
+# No usar app.models.hoja_vida porque duplica la tabla
+# =========================================================
+from app.models.equipo_hoja_vida import EquipoHojaVida
+
 from app.models.evidencia import Evidencia
 
 
@@ -145,16 +152,6 @@ def detalle_mantenimiento_tecnico(
     """
     Devuelve toda la información que necesita el técnico
     al abrir un mantenimiento específico.
-
-    Incluye:
-    - mantenimiento
-    - equipo básico
-    - empresa
-    - sede
-    - categoría
-    - hoja de vida técnica
-    - último mantenimiento
-    - evidencias
     """
 
     mantenimiento = db.query(Mantenimiento).filter(
@@ -231,6 +228,7 @@ def detalle_mantenimiento_tecnico(
             "ubicacion": equipo.ubicacion,
             "invima": equipo.invima,
             "codigo_id": equipo.codigo_id,
+            "inventario": getattr(equipo, "inventario", None),
             "estado": equipo.estado,
             "criticidad": equipo.criticidad,
             "categoria": categoria.nombre if categoria else None
@@ -284,6 +282,7 @@ def construir_card_mantenimiento(mantenimiento: Mantenimiento, db: Session):
             "id": str(equipo.id) if equipo else None,
             "nombre": equipo.nombre if equipo else None,
             "codigo_id": equipo.codigo_id if equipo else None,
+            "inventario": getattr(equipo, "inventario", None) if equipo else None,
             "marca": equipo.marca if equipo else None,
             "modelo": equipo.modelo if equipo else None,
             "serie": equipo.serie if equipo else None,
