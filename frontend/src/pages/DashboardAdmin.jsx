@@ -13,10 +13,8 @@ export default function DashboardAdmin() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f5f8ff" }}>
-      {/* Sidebar institucional */}
       <Sidebar user={user} onLogout={logout} />
 
-      {/* Contenido principal */}
       <main style={{ flex: 1, padding: "32px" }}>
         <h1 style={{ color: "#172554", margin: 0 }}>
           Dashboard Administrador
@@ -26,12 +24,14 @@ export default function DashboardAdmin() {
           Bienvenido, {user?.nombre_completo}
         </p>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 18,
-          marginTop: 30
-        }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 18,
+            marginTop: 30,
+          }}
+        >
           <div className="metric-card">
             <span>Empresas</span>
             <strong>0</strong>

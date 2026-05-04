@@ -1,45 +1,50 @@
-# =========================================================
-# MODELO MANTENIMIENTO
-# Tabla: mantenimientos
-# Gestiona mantenimientos preventivos, correctivos, calibración e inspección
-# =========================================================
+# ============================================================
+# MODELO: Mantenimiento
+# Archivo: app/models/mantenimiento.py
+# Fase 18.1 / 18.2 - Mantenimientos PRO
+# ============================================================
 
-import uuid
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey, Numeric
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 
 class Mantenimiento(Base):
     __tablename__ = "mantenimientos"
 
-    # Identificador único del mantenimiento
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Integer, primary_key=True, index=True)
 
-    # Equipo al que pertenece el mantenimiento
-    equipo_id = Column(UUID(as_uuid=True), ForeignKey("equipos.id"), nullable=False)
+    equipo_id = Column(Integer, ForeignKey("equipos.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    # Técnico asignado al mantenimiento
-    tecnico_id = Column(UUID(as_uuid=True), ForeignKey("tecnicos.id"), nullable=True)
-
-    # Tipo: PREVENTIVO, CORRECTIVO, CALIBRACION, INSPECCION
     tipo = Column(String(50), nullable=False)
+    descripcion = Column(Text, nullable=True)
+    fecha_programada = Column(Date, nullable=True)
 
-    # Estado: PROGRAMADO, ASIGNADO, EN_PROCESO, PAUSADO, FINALIZADO, ANULADO
-    estado = Column(String(50), default="PROGRAMADO")
+    estado = Column(String(30), nullable=False, default="PROGRAMADO")
 
-    # Fechas del mantenimiento
-    fecha_programada = Column(DateTime, nullable=False)
+    tecnico_id = Column(Integer, ForeignKey("tecnicos.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    fecha_asignacion = Column(DateTime, nullable=True)
     fecha_inicio = Column(DateTime, nullable=True)
-    fecha_fin = Column(DateTime, nullable=True)
+    fecha_pausa = Column(DateTime, nullable=True)
+    fecha_finalizacion = Column(DateTime, nullable=True)
 
-    # Información diligenciada por el técnico
-    estado_inicial = Column(Text, nullable=True)
-    acciones_realizadas = Column(Text, nullable=True)
-    resultado_final = Column(Text, nullable=True)
     observaciones = Column(Text, nullable=True)
+    observacion_estado = Column(Text, nullable=True)
+    motivo_anulacion = Column(Text, nullable=True)
 
-    # Auditoría
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    costo = Column(Numeric(12, 2), nullable=True)
+
+    creado_en = Column(DateTime, server_default=func.now())
+    actualizado_en = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relaciones
+    equipo = relationship("Equipo")
+    tecnico = relationship("Tecnico")
+    historial = relationship(
+        "HistMantenimiento",
+        back_populates="mantenimiento",
+        cascade="all, delete-orphan"
+    )

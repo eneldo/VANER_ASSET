@@ -22,6 +22,7 @@ from app.routers import tecnicos
 from app.routers import mantenimientos
 from app.routers import evidencias
 from app.routers import dashboard_tecnico
+from app.routers import permisos
 
 
 # Crear instancia FastAPI
@@ -72,7 +73,7 @@ app.include_router(tecnicos.router)
 app.include_router(mantenimientos.router)
 app.include_router(evidencias.router)
 app.include_router(dashboard_tecnico.router)
-
+app.include_router(permisos.router)
 
 @app.get("/")
 def root():

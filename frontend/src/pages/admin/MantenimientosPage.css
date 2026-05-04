@@ -1,0 +1,502 @@
+/* ============================================================
+   MANTENIMIENTOS PRO - ESTILOS
+   Archivo: frontend/src/pages/admin/MantenimientosPage.css
+   Mantiene el estilo visual de los demás módulos SGA PRO
+============================================================ */
+
+.mant-page {
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  color: #0f172a;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.mant-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.mant-header-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.24);
+}
+
+.mant-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.mant-subtitle {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 15px;
+}
+
+.mant-dashboard-btn {
+  margin-left: auto;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 11px 15px;
+  background: white;
+  color: #1e40af;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   CARDS
+============================================================ */
+
+.mant-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 22px;
+  border: 1px solid #e5eef8;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.mant-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.mant-section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.mant-section-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* ============================================================
+   FORMULARIO
+============================================================ */
+
+.mant-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.mant-textarea-row {
+  margin-top: 14px;
+}
+
+.mant-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+}
+
+.mant-field input,
+.mant-field select,
+.mant-field textarea {
+  width: 100%;
+  border: 1px solid #dbe5ef;
+  border-radius: 14px;
+  padding: 12px 13px;
+  outline: none;
+  background: white;
+  font-size: 14px;
+  box-sizing: border-box;
+  color: #0f172a;
+}
+
+.mant-field input:focus,
+.mant-field select:focus,
+.mant-field textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.mant-field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.mant-textarea-large {
+  min-height: 76px !important;
+}
+
+.mant-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.mant-save-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2);
+}
+
+.mant-clear-btn,
+.mant-reload-btn {
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 12px 17px;
+  background: #f8fbff;
+  color: #1e40af;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mant-reload-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   BUSCADOR
+============================================================ */
+
+.mant-search-box {
+  width: 430px;
+  max-width: 100%;
+  border: 1px solid #dbe5ef;
+  border-radius: 999px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+  background: #f8fafc;
+}
+
+.mant-search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+.mant-counter {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+/* ============================================================
+   TABLA
+============================================================ */
+
+.mant-table-wrap {
+  overflow-x: auto;
+}
+
+.mant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.mant-table th {
+  text-align: left;
+  padding: 14px 12px;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mant-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #eef2f7;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.mant-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.mant-th-right {
+  text-align: right !important;
+}
+
+.mant-empty {
+  padding: 28px !important;
+  text-align: center;
+  color: #64748b !important;
+}
+
+/* ============================================================
+   BADGES
+============================================================ */
+
+.mant-badge,
+.mant-type-badge {
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-weight: 900;
+  font-size: 11px;
+  display: inline-block;
+}
+
+.mant-type-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-yellow {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ============================================================
+   ACCIONES
+============================================================ */
+
+.mant-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.mant-view-btn,
+.mant-edit-btn,
+.mant-delete-btn {
+  border: none;
+  border-radius: 11px;
+  padding: 8px 11px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.mant-view-btn {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.mant-edit-btn {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.mant-delete-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ============================================================
+   PAGINACIÓN
+============================================================ */
+
+.mant-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 11px;
+}
+
+.mant-pagination button {
+  border: 1px solid #dbeafe;
+  border-radius: 13px;
+  padding: 9px 13px;
+  background: white;
+  color: #1e40af;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mant-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mant-pagination span {
+  font-weight: 800;
+  color: #475569;
+}
+
+/* ============================================================
+   MODAL DETALLE
+============================================================ */
+
+.mant-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  backdrop-filter: blur(5px);
+}
+
+.mant-modal {
+  width: min(850px, 94vw);
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.25);
+}
+
+.mant-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mant-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.mant-modal-header button {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.mant-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.mant-detail {
+  background: #f8fafc;
+  border-radius: 15px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mant-detail span,
+.mant-detail-block span {
+  font-size: 12px;
+  font-weight: 900;
+  color: #64748b;
+}
+
+.mant-detail strong {
+  color: #0f172a;
+}
+
+.mant-detail-block {
+  background: #f8fafc;
+  border-radius: 15px;
+  padding: 13px;
+  margin-top: 12px;
+}
+
+.mant-detail-block p {
+  margin: 6px 0 0;
+  color: #0f172a;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 1200px) {
+  .mant-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mant-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mant-dashboard-btn {
+    margin-left: 0;
+  }
+
+  .mant-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .mant-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mant-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

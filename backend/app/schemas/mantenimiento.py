@@ -1,75 +1,208 @@
-# =========================================================
-# SCHEMAS MANTENIMIENTO
-# Validan creación, actualización y cambios de estado
-# =========================================================
+# ============================================================
+# SCHEMAS: Mantenimientos PRO
+# Archivo: app/schemas/mantenimiento.py
+# Proyecto: SGA Empresarial
+# Fase 18.2 / 18.3
+#
+# IMPORTANTE:
+# Tu base de datos está usando UUID en los IDs.
+# Por eso en los schemas usamos str para:
+#   - id
+#   - equipo_id
+#   - tecnico_id
+#   - mantenimiento_id
+#
+# Esto evita errores tipo:
+# ResponseValidationError: Input should be a valid integer
+# ============================================================
+
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional, List
 
 from pydantic import BaseModel
-from typing import Optional
-from uuid import UUID
-from datetime import datetime
 
+
+# ============================================================
+# BASE GENERAL DEL MANTENIMIENTO
+# Se usa como base para crear mantenimientos.
+# ============================================================
 
 class MantenimientoBase(BaseModel):
-    # Equipo asociado
-    equipo_id: UUID
+    # ID del equipo relacionado.
+    # En PostgreSQL viene como UUID, por eso se maneja como str.
+    equipo_id: str
 
-    # Técnico asignado, puede ir vacío al programar
-    tecnico_id: Optional[UUID] = None
-
-    # Tipo de mantenimiento
+    # Tipo de mantenimiento:
+    # PREVENTIVO, CORRECTIVO, CALIBRACION, INSPECCION, etc.
     tipo: str
 
-    # Estado inicial
-    estado: str = "PROGRAMADO"
+    # Descripción general del mantenimiento.
+    descripcion: Optional[str] = None
 
-    # Fecha programada
-    fecha_programada: datetime
+    # Fecha programada.
+    # Se deja como datetime porque tu BD está devolviendo fecha + hora.
+    fecha_programada: Optional[datetime] = None
 
-    # Información operativa
-    fecha_inicio: Optional[datetime] = None
-    fecha_fin: Optional[datetime] = None
-    estado_inicial: Optional[str] = None
-    acciones_realizadas: Optional[str] = None
-    resultado_final: Optional[str] = None
+    # Observaciones generales iniciales.
     observaciones: Optional[str] = None
 
+    # Costo estimado o real del mantenimiento.
+    costo: Optional[Decimal] = None
+
+
+# ============================================================
+# CREAR MANTENIMIENTO
+# Payload usado por POST /mantenimientos/
+# ============================================================
 
 class MantenimientoCreate(MantenimientoBase):
-    # Schema para crear mantenimiento
     pass
 
 
+# ============================================================
+# ACTUALIZAR MANTENIMIENTO
+# Payload usado por PUT /mantenimientos/{id}
+# Todos los campos son opcionales para permitir edición parcial.
+# ============================================================
+
 class MantenimientoUpdate(BaseModel):
-    # Actualización parcial
-    equipo_id: Optional[UUID] = None
-    tecnico_id: Optional[UUID] = None
+    equipo_id: Optional[str] = None
     tipo: Optional[str] = None
-    estado: Optional[str] = None
+    descripcion: Optional[str] = None
     fecha_programada: Optional[datetime] = None
-    fecha_inicio: Optional[datetime] = None
-    fecha_fin: Optional[datetime] = None
-    estado_inicial: Optional[str] = None
-    acciones_realizadas: Optional[str] = None
-    resultado_final: Optional[str] = None
     observaciones: Optional[str] = None
+    costo: Optional[Decimal] = None
 
 
-class CambioEstadoMantenimiento(BaseModel):
-    # Nuevo estado del mantenimiento
+# ============================================================
+# ASIGNAR TÉCNICO
+# Payload usado por:
+# PATCH /mantenimientos/{id}/asignar-tecnico
+# ============================================================
+
+class AsignarTecnicoRequest(BaseModel):
+    # ID del técnico.
+    # En tu BD también viene como UUID, por eso es str.
+    tecnico_id: str
+
+    # Observación opcional de asignación.
+    observacion: Optional[str] = "Técnico asignado al mantenimiento."
+
+    # Usuario que realiza la acción.
+    creado_por: Optional[str] = "Sistema"
+
+
+# ============================================================
+# CAMBIAR ESTADO
+# Payload usado por:
+# PATCH /mantenimientos/{id}/cambiar-estado
+# ============================================================
+
+class CambiarEstadoRequest(BaseModel):
+    # Estado nuevo:
+    # PROGRAMADO, ASIGNADO, EN_PROCESO, PAUSADO, FINALIZADO, ANULADO.
     estado_nuevo: str
 
-    # Usuario que realiza el cambio
-    usuario_id: Optional[UUID] = None
+    # Observación o motivo del cambio.
+    observacion: Optional[str] = None
 
-    # Comentario opcional
-    comentario: Optional[str] = None
+    # Usuario que realiza el cambio.
+    creado_por: Optional[str] = "Sistema"
 
 
-class MantenimientoOut(MantenimientoBase):
-    # Respuesta completa
-    id: UUID
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+# ============================================================
+# SALIDA DEL HISTORIAL
+# Response usado por GET /mantenimientos/{id}/historial
+# ============================================================
+
+class HistMantenimientoOut(BaseModel):
+    # ID del registro histórico.
+    id: str
+
+    # ID del mantenimiento relacionado.
+    mantenimiento_id: str
+
+    # Estado anterior.
+    estado_anterior: Optional[str] = None
+
+    # Estado nuevo.
+    estado_nuevo: str
+
+    # Técnico relacionado al evento.
+    tecnico_id: Optional[str] = None
+
+    # Observación registrada.
+    observacion: Optional[str] = None
+
+    # Usuario que realizó el cambio.
+    creado_por: Optional[str] = None
+
+    # Fecha del evento.
+    fecha_evento: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# SALIDA PRINCIPAL DEL MANTENIMIENTO
+# Response usado por:
+# GET /mantenimientos/
+# GET /mantenimientos/{id}
+# POST /mantenimientos/
+# PUT /mantenimientos/{id}
+# PATCH /mantenimientos/{id}/...
+# ============================================================
+
+class MantenimientoOut(BaseModel):
+    # ID del mantenimiento.
+    id: str
+
+    # ID del equipo relacionado.
+    equipo_id: str
+
+    # Tipo de mantenimiento.
+    tipo: str
+
+    # Descripción.
+    descripcion: Optional[str] = None
+
+    # Fecha programada.
+    fecha_programada: Optional[datetime] = None
+
+    # Estado actual del flujo PRO.
+    estado: str
+
+    # Técnico asignado.
+    tecnico_id: Optional[str] = None
+
+    # Fechas de trazabilidad.
+    fecha_asignacion: Optional[datetime] = None
+    fecha_inicio: Optional[datetime] = None
+    fecha_pausa: Optional[datetime] = None
+    fecha_finalizacion: Optional[datetime] = None
+
+    # Observaciones.
+    observaciones: Optional[str] = None
+    observacion_estado: Optional[str] = None
+    motivo_anulacion: Optional[str] = None
+
+    # Costo.
+    costo: Optional[Decimal] = None
+
+    # Auditoría.
+    creado_en: Optional[datetime] = None
+    actualizado_en: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================
+# SALIDA DETALLADA CON HISTORIAL
+# Response usado por GET /mantenimientos/{id}
+# ============================================================
+
+class MantenimientoDetalleOut(MantenimientoOut):
+    historial: List[HistMantenimientoOut] = []
