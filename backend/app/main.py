@@ -3,14 +3,18 @@
 # Punto principal de entrada de FastAPI
 # =========================================================
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import os
 
 from app.config import settings
 
-# Routers del sistema
+# =========================================================
+# ROUTERS DEL SISTEMA
+# =========================================================
+
 from app.routers import auth
 from app.routers import usuarios
 from app.routers import empresas
@@ -25,7 +29,10 @@ from app.routers import dashboard_tecnico
 from app.routers import permisos
 
 
-# Crear instancia FastAPI
+# =========================================================
+# CREAR INSTANCIA FASTAPI
+# =========================================================
+
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0"
@@ -46,14 +53,29 @@ app.add_middleware(
 
 
 # =========================================================
-# ARCHIVOS ESTÁTICOS
+# ARCHIVOS ESTÁTICOS / UPLOADS
+# Objetivo:
+#   Permitir visualizar archivos cargados, como:
+#   - Evidencias de mantenimiento
+#   - Imágenes
+#   - PDFs
+#
+# URL pública:
+#   http://127.0.0.1:8000/uploads/evidencias/archivo.png
+#
+# Carpeta física:
+#   backend/app/uploads/
 # =========================================================
 
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
+
+os.makedirs(UPLOADS_DIR, exist_ok=True)
+os.makedirs(os.path.join(UPLOADS_DIR, "evidencias"), exist_ok=True)
 
 app.mount(
     "/uploads",
-    StaticFiles(directory=settings.UPLOAD_DIR),
+    StaticFiles(directory=UPLOADS_DIR),
     name="uploads"
 )
 
@@ -75,6 +97,11 @@ app.include_router(evidencias.router)
 app.include_router(dashboard_tecnico.router)
 app.include_router(permisos.router)
 
+
+# =========================================================
+# RUTA BASE
+# =========================================================
+
 @app.get("/")
 def root():
     """
@@ -83,5 +110,5 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "Hoja de vida tecnica completa"
+        "fase": "SGA PRO - Evidencias y mantenimiento"
     }

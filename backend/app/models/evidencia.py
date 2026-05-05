@@ -1,7 +1,7 @@
 # =========================================================
-# MODELO EVIDENCIA
+# MODELO EVIDENCIA PRO
 # Tabla: evidencias
-# Guarda archivos/fotos asociados a un mantenimiento
+# Guarda fotos/PDF asociados a un mantenimiento y equipo
 # =========================================================
 
 import uuid
@@ -18,9 +18,22 @@ class Evidencia(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Mantenimiento relacionado
-    mantenimiento_id = Column(UUID(as_uuid=True), ForeignKey("mantenimientos.id"), nullable=False)
+    mantenimiento_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("mantenimientos.id"),
+        nullable=False
+    )
 
-    # Tipo de evidencia: ANTES, DURANTE, DESPUES
+    # Equipo relacionado.
+    # Esto permite crear galería de evidencias por equipo.
+    equipo_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("equipos.id"),
+        nullable=False
+    )
+
+    # Tipo de evidencia:
+    # ANTES, DURANTE, DESPUES, SOPORTE
     tipo = Column(String(30), nullable=False)
 
     # Ruta donde queda guardado el archivo
