@@ -27,6 +27,7 @@ from app.routers import mantenimientos
 from app.routers import evidencias
 from app.routers import dashboard_tecnico
 from app.routers import permisos
+from app.routers import cliente 
 
 
 # =========================================================
@@ -96,6 +97,9 @@ app.include_router(mantenimientos.router)
 app.include_router(evidencias.router)
 app.include_router(dashboard_tecnico.router)
 app.include_router(permisos.router)
+app.include_router(cliente.router)
+
+
 
 
 # =========================================================

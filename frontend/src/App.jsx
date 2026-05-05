@@ -21,6 +21,13 @@ import MantenimientosPage from "./pages/admin/MantenimientosPage";
 import EvidenciasPage from "./pages/admin/EvidenciasPage";
 import ReportesPage from "./pages/admin/ReportesPage";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
+//# agrego los del cliente#
+import ClienteLayout from "./pages/cliente/ClienteLayout";
+import ClienteDashboard from "./pages/cliente/ClienteDashboard";
+import ClienteSedes from "./pages/cliente/ClienteSedes";
+import ClienteEquipos from "./pages/cliente/ClienteEquipos";
+import ClienteMantenimientos from "./pages/cliente/ClienteMantenimientos";
+
 
 import Sidebar from "./components/Sidebar";
 import { AuthContext } from "./context/AuthContext";
@@ -45,7 +52,18 @@ function App() {
         <Route path="/admin/usuarios" element={<UsuariosPage />} />
         <Route path="/admin/tecnicos" element={<TecnicosPage />} />
         <Route path="/admin/equipos" element={<EquiposPage />} />
-        <Route path="/admin/equipos/:equipoId/hoja-vida" element={<HojaVidaEquipoPage />} />
+        <Route
+          path="/admin/equipos/:equipoId/hoja-vida"
+          element={<HojaVidaEquipoPage />}
+        />
+
+        <Route path="/cliente" element={<ClienteLayout />}>
+          <Route path="dashboard" element={<ClienteDashboard />} />
+          <Route path="sedes" element={<ClienteSedes />} />
+          <Route path="equipos" element={<ClienteEquipos />} />
+          <Route path="mantenimientos" element={<ClienteMantenimientos />} />
+          <Route path="cronograma" element={<ClienteMantenimientos />} />
+        </Route>
 
         {/* Solo Mantenimientos va envuelto porque el nuevo diseño no trae sidebar propio */}
         <Route

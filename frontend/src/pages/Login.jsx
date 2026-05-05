@@ -1,43 +1,53 @@
+// =========================================================
+// LOGIN PAGE SGA PRO (CORREGIDO)
+// Guarda correctamente empresa_id
+// =========================================================
+
 import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import API from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Login() {
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const [form, setForm] = useState({
     username: "",
     password: "",
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleLogin = async () => {
     try {
-      const data = await login(form.username, form.password);
+      const res = await API.post("/auth/login", form);
 
-      // Redirección por rol
-      if (data.rol === "TECNICO") {
-        navigate("/tecnico");
-      } else if (data.rol === "ADMIN") {
+      console.log("LOGIN RESPONSE:", res.data); // DEBUG
+
+      // 👉 GUARDAMOS TODO
+      login(res.data);
+
+      // 👉 REDIRECCIÓN SEGÚN ROL
+      if (res.data.rol === "ADMIN") {
         navigate("/admin");
-      } else {
-        navigate("/");
+      } else if (res.data.rol === "TECNICO") {
+        navigate("/tecnico");
+      } else if (res.data.rol === "EMPRESA") {
+        navigate("/cliente/dashboard");
       }
 
-    } catch (err) {
-      alert(err);
+    } catch (error) {
+      alert("Error en login");
+      console.error(error);
     }
   };
 
   return (
-    <div style={{ padding: 50 }}>
-      <h2>Login SGA PRO</h2>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2>SGA PRO</h2>
 
-      <form onSubmit={handleSubmit}>
         <input
-          placeholder="Usuario"
+          placeholder="Usuario o correo"
           onChange={(e) =>
             setForm({ ...form, username: e.target.value })
           }
@@ -51,8 +61,33 @@ export default function Login() {
           }
         />
 
-        <button type="submit">Ingresar</button>
-      </form>
+        <button onClick={handleLogin}>
+          Ingresar
+        </button>
+      </div>
     </div>
   );
 }
+
+// =========================================================
+// ESTILOS
+// =========================================================
+
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "#f5f8ff",
+  },
+  card: {
+    background: "white",
+    padding: 30,
+    borderRadius: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    width: 300,
+  },
+};

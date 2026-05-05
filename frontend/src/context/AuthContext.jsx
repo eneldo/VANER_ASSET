@@ -1,41 +1,37 @@
 // =========================================================
-// CONTEXTO DE AUTENTICACIÓN
-// Maneja login, logout y usuario global
+// AUTH CONTEXT SGA PRO (CORREGIDO)
+// Manejo de sesión + almacenamiento completo del usuario
 // =========================================================
 
 import { createContext, useState } from "react";
-import API from "../api/axios";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user"))
+    JSON.parse(localStorage.getItem("user")) || null
   );
 
-  const login = async (username, password) => {
-    try {
-      const res = await API.post("/auth/login", {
-        username,
-        password,
-      });
+  const login = (data) => {
+    // 👉 GUARDAMOS TODO EL USER INCLUYENDO empresa_id
+    const userData = {
+      usuario_id: data.usuario_id,
+      nombre_completo: data.nombre_completo,
+      rol: data.rol,
+      empresa_id: data.empresa_id, // 🔥 CLAVE
+    };
 
-      const data = res.data;
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", data.access_token);
 
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data));
-
-      setUser(data);
-
-      return data;
-    } catch (error) {
-      throw error.response?.data?.detail || "Error login";
-    }
+    setUser(userData);
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setUser(null);
+    window.location.href = "/";
   };
 
   return (

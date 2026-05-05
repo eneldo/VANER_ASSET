@@ -20,10 +20,9 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     """
     Permite ingresar al sistema con usuario o correo.
-    Retorna token JWT y rol para redireccionar el dashboard.
+    Retorna token JWT, rol y empresa_id para redireccionar correctamente.
     """
 
-    # Buscar usuario por username o email
     usuario = db.query(Usuario).filter(
         or_(
             Usuario.username == data.username,
@@ -31,37 +30,37 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         )
     ).first()
 
-    # Validar usuario existente
     if not usuario:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario o contraseña incorrectos"
         )
 
-    # Validar usuario activo
     if not usuario.activo:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo"
         )
 
-    # Validar contraseña
     if not verify_password(data.password, usuario.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario o contraseña incorrectos"
         )
 
-    # Crear token con información importante del usuario
+    empresa_id = str(usuario.empresa_id) if usuario.empresa_id else None
+
     token = create_access_token({
         "sub": str(usuario.id),
         "rol": usuario.rol,
-        "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None
+        "empresa_id": empresa_id
     })
 
     return TokenResponse(
         access_token=token,
+        token_type="bearer",
         usuario_id=str(usuario.id),
         nombre_completo=usuario.nombre_completo,
-        rol=usuario.rol
+        rol=usuario.rol,
+        empresa_id=empresa_id
     )
