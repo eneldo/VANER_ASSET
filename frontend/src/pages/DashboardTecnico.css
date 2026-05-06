@@ -1,0 +1,576 @@
+/* =========================================================
+   DASHBOARD TÉCNICO PRO - SGA PRO
+========================================================= */
+
+.tec-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f8ff;
+}
+
+.tec-main {
+  flex: 1;
+  padding: 32px;
+  overflow-x: hidden;
+}
+
+.tec-loading {
+  padding: 30px;
+}
+
+/* HEADER */
+.tec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.tec-kicker {
+  margin: 0 0 6px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.tec-header h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.tec-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+}
+
+/* CARDS */
+.tec-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.tec-card {
+  background: white;
+  border: 1px solid #e5eef8;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tec-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tec-card span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tec-card strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+/* TOOLBAR */
+.tec-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.tec-toolbar input,
+.tec-toolbar select,
+.tec-form input,
+.tec-form select,
+.tec-form textarea,
+.tec-observation textarea {
+  border: 1px solid #dbe5ef;
+  border-radius: 16px;
+  padding: 12px 14px;
+  outline: none;
+  background: white;
+}
+
+.tec-observation {
+  background: white;
+  border: 1px solid #e5eef8;
+  border-radius: 22px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.05);
+}
+
+.tec-observation label {
+  display: block;
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.tec-observation textarea {
+  width: 100%;
+  min-height: 75px;
+  resize: vertical;
+}
+
+/* PANEL */
+.tec-panel {
+  background: white;
+  border: 1px solid #e5eef8;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.tec-panel-header {
+  margin-bottom: 18px;
+}
+
+.tec-panel-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.tec-panel-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.tec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 18px;
+}
+
+/* CARD MANTENIMIENTO */
+.tec-maint-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.tec-maint-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.tec-maint-top h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.tec-maint-top p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.tec-maint-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tec-maint-info div {
+  background: white;
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid #e5eef8;
+}
+
+.tec-maint-info span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tec-maint-info strong {
+  display: block;
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+/* STATUS */
+.tec-status {
+  height: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.tec-status.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.tec-status.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tec-status.progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tec-status.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* BUTTONS */
+.tec-actions,
+.tec-state-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tec-actions {
+  margin-bottom: 10px;
+}
+
+.tec-btn-primary,
+.tec-btn-secondary,
+.tec-state-actions button {
+  border: none;
+  border-radius: 13px;
+  padding: 10px 13px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tec-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+}
+
+.tec-btn-secondary {
+  background: white;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.tec-state-actions button {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+/* MODALS */
+.tec-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(5px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tec-modal {
+  width: min(620px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  background: white;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.3);
+}
+
+.tec-modal-large {
+  width: min(1050px, 96vw);
+}
+
+.tec-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.tec-modal-header h2 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.tec-modal-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.tec-modal-header button {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.tec-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tec-form label {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.tec-form textarea {
+  min-height: 90px;
+}
+
+/* DETALLE */
+.tec-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.tec-info {
+  background: #f8fafc;
+  border: 1px solid #e5eef8;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.tec-info span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tec-info strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.tec-section-title {
+  margin: 24px 0 12px;
+  color: #0f172a;
+}
+
+.tec-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.tec-evidence-card {
+  text-decoration: none;
+  background: #f8fafc;
+  border: 1px solid #e5eef8;
+  border-radius: 16px;
+  padding: 14px;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tec-evidence-card span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.tec-empty {
+  padding: 26px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 18px;
+  font-weight: 800;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .tec-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tec-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .tec-main {
+    padding: 20px;
+  }
+
+  .tec-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .tec-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-maint-info {
+    grid-template-columns: 1fr;
+  }
+}
+.tec-sidebar {
+  width: 270px;
+  min-width: 270px;
+  background: linear-gradient(180deg, #102a63, #071d49);
+  color: white;
+  padding: 22px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tec-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.tec-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: white;
+  color: #1d4ed8;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tec-brand h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.tec-brand p {
+  margin: 3px 0 0;
+  color: #bfdbfe;
+  font-size: 12px;
+}
+
+.tec-user-card {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 22px;
+}
+
+.tec-user-card strong {
+  display: block;
+}
+
+.tec-user-card span {
+  display: block;
+  margin-top: 5px;
+  color: #67e8f9;
+  font-weight: 900;
+}
+
+.tec-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tec-nav button {
+  border: none;
+  border-radius: 14px;
+  padding: 13px;
+  color: white;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tec-nav button.active {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+}
+
+.tec-logout {
+  margin-top: auto;
+  border: none;
+  border-radius: 14px;
+  padding: 12px;
+  color: white;
+  background: rgba(255,255,255,.12);
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tec-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.tec-pagination button {
+  border: 1px solid #dbeafe;
+  background: white;
+  color: #1e40af;
+  border-radius: 12px;
+  padding: 9px 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tec-pagination button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}

@@ -38,6 +38,14 @@ export default function UsuariosPage() {
   const [permisosUsuario, setPermisosUsuario] = useState([]);
   const [usuarioPermisos, setUsuarioPermisos] = useState(null);
 
+  // =======================================================
+  // ESTADOS RESET PASSWORD PRO
+  // =======================================================
+  const [usuarioReset, setUsuarioReset] = useState(null);
+  const [modalPasswordOpen, setModalPasswordOpen] = useState(false);
+  const [nuevaPassword, setNuevaPassword] = useState("");
+  const [confirmarPassword, setConfirmarPassword] = useState("");
+
   // Paginación frontend
   const [pagina, setPagina] = useState(1);
   const porPagina = 6;
@@ -234,19 +242,45 @@ export default function UsuariosPage() {
   };
 
   // =======================================================
-  // RESET PASSWORD
+  // RESET PASSWORD PRO CON MODAL
   // =======================================================
-  const resetPassword = async (usuario) => {
-    const nueva = prompt(`Nueva contraseña para ${usuario.username}:`, "123456");
+  const abrirModalPassword = (usuario) => {
+    setUsuarioReset(usuario);
+    setNuevaPassword("");
+    setConfirmarPassword("");
+    setModalPasswordOpen(true);
+  };
 
-    if (!nueva) return;
+  const cerrarModalPassword = () => {
+    setUsuarioReset(null);
+    setNuevaPassword("");
+    setConfirmarPassword("");
+    setModalPasswordOpen(false);
+  };
+
+  const guardarNuevaPassword = async () => {
+    if (!usuarioReset) {
+      alert("No hay usuario seleccionado");
+      return;
+    }
+
+    if (!nuevaPassword || nuevaPassword.length < 6) {
+      alert("La nueva contraseña debe tener mínimo 6 caracteres");
+      return;
+    }
+
+    if (nuevaPassword !== confirmarPassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
 
     try {
-      await API.patch(`/usuarios/${usuario.id}/reset-password`, {
-        nueva_password: nueva,
+      await API.patch(`/usuarios/${usuarioReset.id}/reset-password`, {
+        nueva_password: nuevaPassword,
       });
 
-      alert("Contraseña actualizada correctamente");
+      alert(`Contraseña actualizada correctamente para ${usuarioReset.username}`);
+      cerrarModalPassword();
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.detail || "Error cambiando contraseña");
@@ -554,8 +588,8 @@ export default function UsuariosPage() {
 
                         <button
                           className="icon-btn"
-                          onClick={() => resetPassword(usuario)}
-                          title="Reset contraseña"
+                          onClick={() => abrirModalPassword(usuario)}
+                          title="Cambiar contraseña"
                         >
                           <KeyRound size={16} />
                         </button>
@@ -686,6 +720,81 @@ export default function UsuariosPage() {
       )}
 
       {/* ===================================================
+          MODAL CAMBIAR CONTRASEÑA PRO
+          Mantiene toda la interfaz existente y solo agrega
+          cambio de contraseña personalizado.
+          =================================================== */}
+      {modalPasswordOpen && usuarioReset && (
+        <div className="modal-backdrop">
+          <div className="modal-card" style={styles.passwordModal}>
+            <div style={styles.passwordModalHeader}>
+              <div>
+                <h2 style={{ margin: 0 }}>Cambiar contraseña</h2>
+                <p style={{ margin: "6px 0 0", color: "#64748b" }}>
+                  Usuario: <strong>{usuarioReset.nombre_completo}</strong>
+                </p>
+                <p style={{ margin: "4px 0 0", color: "#64748b" }}>
+                  Username: <strong>{usuarioReset.username}</strong> · Rol: <strong>{usuarioReset.rol}</strong>
+                </p>
+              </div>
+
+              <button className="icon-btn" onClick={cerrarModalPassword}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="crud-form" style={{ marginTop: 18 }}>
+              <div className="form-group full">
+                <label>Nueva contraseña *</label>
+                <input
+                  type="password"
+                  value={nuevaPassword}
+                  onChange={(e) => setNuevaPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group full">
+                <label>Confirmar contraseña *</label>
+                <input
+                  type="password"
+                  value={confirmarPassword}
+                  onChange={(e) => setConfirmarPassword(e.target.value)}
+                  placeholder="Repite la nueva contraseña"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      guardarNuevaPassword();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="form-actions" style={{ justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={cerrarModalPassword}
+                >
+                  <X size={17} />
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={guardarNuevaPassword}
+                >
+                  <KeyRound size={17} />
+                  Guardar contraseña
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
           MODAL SIMPLE DE DETALLE
           =================================================== */}
       {detalle && (
@@ -791,5 +900,17 @@ const styles = {
     margin: "6px 0 0",
     fontSize: 12,
     color: "#64748b",
+  },
+
+  passwordModal: {
+    width: "min(520px, 94vw)",
+    maxWidth: 520,
+  },
+
+  passwordModalHeader: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 16,
   },
 };
