@@ -1,40 +1,46 @@
 # ============================================================
 # ROUTER: Mantenimientos PRO
-# Archivo: app/routers/mantenimientos.py
-# Objetivo:
-#   CRUD de mantenimientos.
-#   Asignación de técnico.
-#   Cambio de estados PRO.
-#   Historial automático de trazabilidad.
+# Archivo: backend/app/routers/mantenimientos.py
+# CRUD + asignación técnico + estados + eliminación real
+# Permite crear mantenimiento CON o SIN fecha programada
 # ============================================================
 
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import cast, String
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models.mantenimiento import Mantenimiento
 from app.models.hist_mantenimiento import HistMantenimiento
 from app.models.tecnico import Tecnico
+from app.models.usuario import Usuario
 from app.models.equipo import Equipo
+from app.models.empresa import Empresa
+from app.models.sede import Sede
+
+try:
+    from app.models.evidencia import Evidencia
+except Exception:
+    Evidencia = None
 
 from app.schemas.mantenimiento import (
     MantenimientoCreate,
     MantenimientoUpdate,
-    MantenimientoOut,
-    MantenimientoDetalleOut,
     AsignarTecnicoRequest,
     CambiarEstadoRequest,
     HistMantenimientoOut,
 )
 
-router = APIRouter(
-    prefix="/mantenimientos",
-    tags=["Mantenimientos PRO"]
-)
+
+router = APIRouter(prefix="/mantenimientos", tags=["Mantenimientos PRO"])
+
 
 # ============================================================
-# Estados permitidos del flujo PRO
+# ESTADOS PERMITIDOS
 # ============================================================
 
 ESTADOS_PERMITIDOS = [
@@ -46,7 +52,6 @@ ESTADOS_PERMITIDOS = [
     "ANULADO",
 ]
 
-# Transiciones válidas para evitar saltos incorrectos
 TRANSICIONES_VALIDAS = {
     "PROGRAMADO": ["ASIGNADO", "ANULADO"],
     "ASIGNADO": ["EN_PROCESO", "ANULADO"],
@@ -58,21 +63,67 @@ TRANSICIONES_VALIDAS = {
 
 
 # ============================================================
-# Helper: registrar historial de mantenimiento
+# HELPERS
 # ============================================================
+
+def str_id(value):
+    """
+    Convierte UUID/int a string.
+    """
+    return str(value) if value is not None else None
+
+
+def buscar_por_id_string(db: Session, modelo, valor_id):
+    """
+    Busca por ID usando cast a texto.
+    Sirve para UUID o enteros.
+    """
+    return (
+        db.query(modelo)
+        .filter(cast(modelo.id, String) == str(valor_id))
+        .first()
+    )
+
+
+def normalizar_fecha_programada(fecha):
+    """
+    Permite guardar mantenimiento CON o SIN fecha.
+
+    - Si viene None o vacío: retorna None.
+    - Si viene datetime: retorna date().
+    - Si viene string ISO: intenta convertirlo.
+    """
+
+    if not fecha:
+        return None
+
+    try:
+        if isinstance(fecha, datetime):
+            return fecha.date()
+
+        if isinstance(fecha, str):
+            return datetime.fromisoformat(fecha.replace("Z", "")).date()
+
+        if hasattr(fecha, "date"):
+            return fecha.date()
+
+        return fecha
+
+    except Exception:
+        return None
+
 
 def registrar_historial(
     db: Session,
-    mantenimiento_id: int,
+    mantenimiento_id,
     estado_anterior: str | None,
     estado_nuevo: str,
-    tecnico_id: int | None = None,
+    tecnico_id=None,
     observacion: str | None = None,
     creado_por: str | None = "Sistema",
 ):
     """
-    Guarda una línea en hist_mantenimiento cada vez que ocurre
-    una asignación o cambio de estado.
+    Registra trazabilidad del mantenimiento.
     """
 
     evento = HistMantenimiento(
@@ -88,205 +139,411 @@ def registrar_historial(
     return evento
 
 
-# ============================================================
-# GET /mantenimientos
-# Lista mantenimientos con filtros opcionales
-# ============================================================
+def obtener_datos_relacionados(m: Mantenimiento, db: Session):
+    """
+    Obtiene equipo, empresa, sede, técnico y usuario técnico.
+    """
+
+    equipo = None
+    empresa = None
+    sede = None
+    tecnico = None
+    usuario_tecnico = None
+
+    if getattr(m, "equipo_id", None):
+        equipo = (
+            db.query(Equipo)
+            .filter(cast(Equipo.id, String) == str(m.equipo_id))
+            .first()
+        )
+
+    if equipo:
+        if getattr(equipo, "empresa_id", None):
+            empresa = (
+                db.query(Empresa)
+                .filter(cast(Empresa.id, String) == str(equipo.empresa_id))
+                .first()
+            )
+
+        if getattr(equipo, "sede_id", None):
+            sede = (
+                db.query(Sede)
+                .filter(cast(Sede.id, String) == str(equipo.sede_id))
+                .first()
+            )
+
+    if getattr(m, "tecnico_id", None):
+        tecnico = (
+            db.query(Tecnico)
+            .filter(cast(Tecnico.id, String) == str(m.tecnico_id))
+            .first()
+        )
+
+        if tecnico and getattr(tecnico, "usuario_id", None):
+            usuario_tecnico = (
+                db.query(Usuario)
+                .filter(cast(Usuario.id, String) == str(tecnico.usuario_id))
+                .first()
+            )
+
+    return equipo, empresa, sede, tecnico, usuario_tecnico
+
+
+def mantenimiento_dict(m: Mantenimiento, db: Session):
+    """
+    Respuesta enriquecida para frontend.
+    """
+
+    equipo, empresa, sede, tecnico, usuario_tecnico = obtener_datos_relacionados(
+        m, db
+    )
+
+    tecnico_nombre = None
+
+    if usuario_tecnico:
+        tecnico_nombre = usuario_tecnico.nombre_completo
+    elif tecnico:
+        tecnico_nombre = (
+            getattr(tecnico, "nombre", None)
+            or getattr(tecnico, "especialidad", None)
+            or f"Técnico {str_id(tecnico.id)}"
+        )
+
+    return {
+        "id": str_id(m.id),
+        "equipo_id": str_id(m.equipo_id),
+        "empresa_id": str_id(getattr(equipo, "empresa_id", None)) if equipo else None,
+        "sede_id": str_id(getattr(equipo, "sede_id", None)) if equipo else None,
+        "tipo": m.tipo,
+        "descripcion": m.descripcion,
+        "fecha_programada": m.fecha_programada,
+        "estado": m.estado,
+        "tecnico_id": str_id(m.tecnico_id),
+        "fecha_asignacion": m.fecha_asignacion,
+        "fecha_inicio": m.fecha_inicio,
+        "fecha_pausa": m.fecha_pausa,
+        "fecha_finalizacion": m.fecha_finalizacion,
+        "observaciones": m.observaciones,
+        "observacion_estado": m.observacion_estado,
+        "motivo_anulacion": m.motivo_anulacion,
+        "costo": m.costo,
+        "creado_en": m.creado_en,
+        "actualizado_en": m.actualizado_en,
+        "equipo_nombre": getattr(equipo, "nombre", None) if equipo else None,
+        "equipo_codigo": getattr(equipo, "codigo_id", None) if equipo else None,
+        "equipo_serie": getattr(equipo, "serie", None) if equipo else None,
+        "equipo_ubicacion": getattr(equipo, "ubicacion", None) if equipo else None,
+        "empresa_nombre": getattr(empresa, "nombre", None) if empresa else None,
+        "sede_nombre": getattr(sede, "nombre", None) if sede else None,
+        "tecnico_nombre": tecnico_nombre,
+    }
+
 
 # ============================================================
-# LISTAR MANTENIMIENTOS (SOLUCIÓN DEFINITIVA UUID)
+# LISTAR MANTENIMIENTOS
 # ============================================================
 
-@router.get("/", response_model=list[MantenimientoOut])
+@router.get("/")
 def listar_mantenimientos(db: Session = Depends(get_db)):
+    """
+    Lista mantenimientos enriquecidos.
+    """
+
     mantenimientos = (
         db.query(Mantenimiento)
         .order_by(Mantenimiento.id.desc())
         .all()
     )
 
-    resultado = []
-
-    for m in mantenimientos:
-        resultado.append({
-            "id": str(m.id),
-            "equipo_id": str(m.equipo_id),
-            "tipo": m.tipo,
-            "descripcion": m.descripcion,
-            "fecha_programada": m.fecha_programada,
-            "estado": m.estado,
-            "tecnico_id": str(m.tecnico_id) if m.tecnico_id else None,
-            "fecha_asignacion": m.fecha_asignacion,
-            "fecha_inicio": m.fecha_inicio,
-            "fecha_pausa": m.fecha_pausa,
-            "fecha_finalizacion": m.fecha_finalizacion,
-            "observaciones": m.observaciones,
-            "observacion_estado": m.observacion_estado,
-            "motivo_anulacion": m.motivo_anulacion,
-            "costo": m.costo,
-            "creado_en": m.creado_en,
-            "actualizado_en": m.actualizado_en,
-        })
-
-    return resultado
+    return [mantenimiento_dict(m, db) for m in mantenimientos]
 
 
 # ============================================================
-# GET /mantenimientos/{mantenimiento_id}
-# Detalle de mantenimiento con historial
+# OBTENER MANTENIMIENTO
 # ============================================================
 
-@router.get("/{mantenimiento_id}", response_model=MantenimientoDetalleOut)
+@router.get("/{mantenimiento_id}")
 def obtener_mantenimiento(
-    mantenimiento_id: int,
-    db: Session = Depends(get_db),
+    mantenimiento_id: str,
+    db: Session = Depends(get_db)
 ):
+    """
+    Obtiene mantenimiento por ID con historial.
+    """
+
     mantenimiento = (
         db.query(Mantenimiento)
         .options(joinedload(Mantenimiento.historial))
-        .filter(Mantenimiento.id == mantenimiento_id)
+        .filter(cast(Mantenimiento.id, String) == str(mantenimiento_id))
         .first()
     )
 
     if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
-    return mantenimiento
+    data = mantenimiento_dict(mantenimiento, db)
+
+    data["historial"] = [
+        {
+            "id": str_id(h.id),
+            "mantenimiento_id": str_id(h.mantenimiento_id),
+            "estado_anterior": h.estado_anterior,
+            "estado_nuevo": h.estado_nuevo,
+            "tecnico_id": str_id(h.tecnico_id),
+            "observacion": h.observacion,
+            "creado_por": h.creado_por,
+            "fecha_evento": h.fecha_evento,
+        }
+        for h in getattr(mantenimiento, "historial", [])
+    ]
+
+    return data
 
 
 # ============================================================
-# POST /mantenimientos
-# Crear mantenimiento en estado PROGRAMADO
+# CREAR MANTENIMIENTO
 # ============================================================
 
-@router.post("/", response_model=MantenimientoOut)
+@router.post("/")
 def crear_mantenimiento(
     payload: MantenimientoCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
-    equipo = db.query(Equipo).filter(Equipo.id == payload.equipo_id).first()
+    """
+    Crea mantenimiento en estado PROGRAMADO.
+
+    Permite:
+    - Crear con fecha programada.
+    - Crear sin fecha programada, siempre que la BD permita NULL.
+    """
+
+    equipo = (
+        db.query(Equipo)
+        .filter(cast(Equipo.id, String) == str(payload.equipo_id))
+        .first()
+    )
 
     if not equipo:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Equipo no encontrado."
+        )
+
+    fecha_programada = normalizar_fecha_programada(payload.fecha_programada)
 
     nuevo = Mantenimiento(
         equipo_id=payload.equipo_id,
         tipo=payload.tipo,
-        descripcion=payload.descripcion,
-        fecha_programada=payload.fecha_programada,
+        descripcion=(
+            payload.descripcion
+            or "Mantenimiento registrado desde bitácora profesional."
+        ),
+        fecha_programada=fecha_programada,
         observaciones=payload.observaciones,
         costo=payload.costo,
         estado="PROGRAMADO",
     )
 
-    db.add(nuevo)
-    db.flush()
+    try:
+        db.add(nuevo)
+        db.flush()
 
-    registrar_historial(
-        db=db,
-        mantenimiento_id=nuevo.id,
-        estado_anterior=None,
-        estado_nuevo="PROGRAMADO",
-        tecnico_id=None,
-        observacion="Mantenimiento creado en estado PROGRAMADO.",
-        creado_por="Sistema",
+        registrar_historial(
+            db=db,
+            mantenimiento_id=nuevo.id,
+            estado_anterior=None,
+            estado_nuevo="PROGRAMADO",
+            tecnico_id=None,
+            observacion="Mantenimiento creado en estado PROGRAMADO.",
+            creado_por="Sistema",
+        )
+
+        db.commit()
+        db.refresh(nuevo)
+
+        return mantenimiento_dict(nuevo, db)
+
+    except IntegrityError as error:
+        db.rollback()
+
+        error_text = str(error).lower()
+
+        if "fecha_programada" in error_text and "not null" in error_text:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "La base de datos todavía tiene fecha_programada como NOT NULL. "
+                    "Ejecute en PostgreSQL: "
+                    "ALTER TABLE mantenimientos ALTER COLUMN fecha_programada DROP NOT NULL;"
+                )
+            )
+
+        raise HTTPException(
+            status_code=400,
+            detail="No se pudo guardar el mantenimiento por restricción de base de datos."
+        )
+
+
+# ============================================================
+# ACTUALIZAR MANTENIMIENTO
+# ============================================================
+
+@router.put("/{mantenimiento_id}")
+def actualizar_mantenimiento(
+    mantenimiento_id: str,
+    payload: MantenimientoUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Actualiza mantenimiento.
+    """
+
+    mantenimiento = buscar_por_id_string(
+        db,
+        Mantenimiento,
+        mantenimiento_id
     )
 
-    db.commit()
-    db.refresh(nuevo)
-
-    return nuevo
-
-
-# ============================================================
-# PUT /mantenimientos/{mantenimiento_id}
-# Actualizar datos generales del mantenimiento
-# ============================================================
-
-@router.put("/{mantenimiento_id}", response_model=MantenimientoOut)
-def actualizar_mantenimiento(
-    mantenimiento_id: int,
-    payload: MantenimientoUpdate,
-    db: Session = Depends(get_db),
-):
-    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
-
     if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
     datos = payload.model_dump(exclude_unset=True)
 
     if "equipo_id" in datos:
-        equipo = db.query(Equipo).filter(Equipo.id == datos["equipo_id"]).first()
+        equipo = (
+            db.query(Equipo)
+            .filter(cast(Equipo.id, String) == str(datos["equipo_id"]))
+            .first()
+        )
+
         if not equipo:
-            raise HTTPException(status_code=404, detail="Equipo no encontrado.")
+            raise HTTPException(
+                status_code=404,
+                detail="Equipo no encontrado."
+            )
+
+    if "fecha_programada" in datos:
+        datos["fecha_programada"] = normalizar_fecha_programada(
+            datos["fecha_programada"]
+        )
 
     for campo, valor in datos.items():
         setattr(mantenimiento, campo, valor)
 
     mantenimiento.actualizado_en = datetime.now()
 
-    db.commit()
-    db.refresh(mantenimiento)
+    try:
+        db.commit()
+        db.refresh(mantenimiento)
 
-    return mantenimiento
+        return mantenimiento_dict(mantenimiento, db)
+
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=400,
+            detail="No se pudo actualizar el mantenimiento."
+        )
 
 
 # ============================================================
-# DELETE /mantenimientos/{mantenimiento_id}
-# Eliminación lógica recomendada: cambiar estado a ANULADO
+# ELIMINAR MANTENIMIENTO
 # ============================================================
 
 @router.delete("/{mantenimiento_id}")
 def eliminar_mantenimiento(
-    mantenimiento_id: int,
-    db: Session = Depends(get_db),
+    mantenimiento_id: str,
+    db: Session = Depends(get_db)
 ):
-    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
+    """
+    Elimina definitivamente el mantenimiento.
+    """
 
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
-
-    estado_anterior = mantenimiento.estado
-    mantenimiento.estado = "ANULADO"
-    mantenimiento.motivo_anulacion = "Mantenimiento anulado desde eliminación lógica."
-    mantenimiento.actualizado_en = datetime.now()
-
-    registrar_historial(
-        db=db,
-        mantenimiento_id=mantenimiento.id,
-        estado_anterior=estado_anterior,
-        estado_nuevo="ANULADO",
-        tecnico_id=mantenimiento.tecnico_id,
-        observacion="Eliminación lógica: mantenimiento marcado como ANULADO.",
-        creado_por="Sistema",
+    mantenimiento = buscar_por_id_string(
+        db,
+        Mantenimiento,
+        mantenimiento_id
     )
 
-    db.commit()
+    if not mantenimiento:
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
-    return {"ok": True, "mensaje": "Mantenimiento anulado correctamente."}
+    try:
+        if Evidencia is not None:
+            db.query(Evidencia).filter(
+                cast(Evidencia.mantenimiento_id, String) == str(mantenimiento.id)
+            ).delete(synchronize_session=False)
+
+        db.query(HistMantenimiento).filter(
+            cast(HistMantenimiento.mantenimiento_id, String) == str(mantenimiento.id)
+        ).delete(synchronize_session=False)
+
+        db.delete(mantenimiento)
+        db.commit()
+
+        return {
+            "ok": True,
+            "mensaje": "Mantenimiento eliminado correctamente."
+        }
+
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No se pudo eliminar el mantenimiento porque tiene relaciones activas."
+            )
+        )
 
 
 # ============================================================
-# PATCH /mantenimientos/{mantenimiento_id}/asignar-tecnico
-# Asignar técnico y pasar a estado ASIGNADO
+# ASIGNAR TÉCNICO
 # ============================================================
 
-@router.patch("/{mantenimiento_id}/asignar-tecnico", response_model=MantenimientoOut)
+@router.patch("/{mantenimiento_id}/asignar-tecnico")
 def asignar_tecnico(
-    mantenimiento_id: int,
+    mantenimiento_id: str,
     payload: AsignarTecnicoRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
-    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
+    """
+    Asigna técnico a mantenimiento.
+    """
+
+    mantenimiento = buscar_por_id_string(
+        db,
+        Mantenimiento,
+        mantenimiento_id
+    )
 
     if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
-    tecnico = db.query(Tecnico).filter(Tecnico.id == payload.tecnico_id).first()
+    tecnico = (
+        db.query(Tecnico)
+        .filter(cast(Tecnico.id, String) == str(payload.tecnico_id))
+        .first()
+    )
 
     if not tecnico:
-        raise HTTPException(status_code=404, detail="Técnico no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Técnico no encontrado."
+        )
 
     if mantenimiento.estado in ["FINALIZADO", "ANULADO"]:
         raise HTTPException(
@@ -315,33 +572,49 @@ def asignar_tecnico(
     db.commit()
     db.refresh(mantenimiento)
 
-    return mantenimiento
+    return mantenimiento_dict(mantenimiento, db)
 
 
 # ============================================================
-# PATCH /mantenimientos/{mantenimiento_id}/cambiar-estado
-# Cambiar estado con validaciones PRO
+# CAMBIAR ESTADO
 # ============================================================
 
-@router.patch("/{mantenimiento_id}/cambiar-estado", response_model=MantenimientoOut)
+@router.patch("/{mantenimiento_id}/cambiar-estado")
 def cambiar_estado(
-    mantenimiento_id: int,
+    mantenimiento_id: str,
     payload: CambiarEstadoRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
-    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
+    """
+    Cambia estado de mantenimiento con trazabilidad.
+    """
+
+    mantenimiento = buscar_por_id_string(
+        db,
+        Mantenimiento,
+        mantenimiento_id
+    )
 
     if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
     estado_actual = mantenimiento.estado
     estado_nuevo = payload.estado_nuevo.upper()
 
     if estado_nuevo not in ESTADOS_PERMITIDOS:
-        raise HTTPException(status_code=400, detail="Estado no permitido.")
+        raise HTTPException(
+            status_code=400,
+            detail="Estado no permitido."
+        )
 
     if estado_nuevo == estado_actual:
-        raise HTTPException(status_code=400, detail="El mantenimiento ya tiene ese estado.")
+        raise HTTPException(
+            status_code=400,
+            detail="El mantenimiento ya tiene ese estado."
+        )
 
     if estado_nuevo not in TRANSICIONES_VALIDAS.get(estado_actual, []):
         raise HTTPException(
@@ -369,9 +642,8 @@ def cambiar_estado(
 
     ahora = datetime.now()
 
-    if estado_nuevo == "EN_PROCESO":
-        if not mantenimiento.fecha_inicio:
-            mantenimiento.fecha_inicio = ahora
+    if estado_nuevo == "EN_PROCESO" and not mantenimiento.fecha_inicio:
+        mantenimiento.fecha_inicio = ahora
 
     elif estado_nuevo == "PAUSADO":
         mantenimiento.fecha_pausa = ahora
@@ -399,27 +671,37 @@ def cambiar_estado(
     db.commit()
     db.refresh(mantenimiento)
 
-    return mantenimiento
+    return mantenimiento_dict(mantenimiento, db)
 
 
 # ============================================================
-# GET /mantenimientos/{mantenimiento_id}/historial
-# Ver historial de un mantenimiento
+# HISTORIAL
 # ============================================================
 
 @router.get("/{mantenimiento_id}/historial", response_model=list[HistMantenimientoOut])
 def obtener_historial(
-    mantenimiento_id: int,
-    db: Session = Depends(get_db),
+    mantenimiento_id: str,
+    db: Session = Depends(get_db)
 ):
-    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
+    """
+    Lista historial de mantenimiento.
+    """
+
+    mantenimiento = buscar_por_id_string(
+        db,
+        Mantenimiento,
+        mantenimiento_id
+    )
 
     if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Mantenimiento no encontrado."
+        )
 
     historial = (
         db.query(HistMantenimiento)
-        .filter(HistMantenimiento.mantenimiento_id == mantenimiento_id)
+        .filter(cast(HistMantenimiento.mantenimiento_id, String) == str(mantenimiento_id))
         .order_by(HistMantenimiento.fecha_evento.desc())
         .all()
     )
@@ -428,46 +710,68 @@ def obtener_historial(
 
 
 # ============================================================
-# GET /mantenimientos/tecnico/{tecnico_id}/asignados
-# Dashboard técnico: mantenimientos asignados al técnico
+# MANTENIMIENTOS POR TÉCNICO
 # ============================================================
 
-@router.get("/tecnico/{tecnico_id}/asignados", response_model=list[MantenimientoOut])
+@router.get("/tecnico/{tecnico_id}/asignados")
 def mantenimientos_por_tecnico(
-    tecnico_id: int,
-    db: Session = Depends(get_db),
+    tecnico_id: str,
+    db: Session = Depends(get_db)
 ):
-    tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
+    """
+    Lista mantenimientos asignados a un técnico.
+    """
+
+    tecnico = (
+        db.query(Tecnico)
+        .filter(cast(Tecnico.id, String) == str(tecnico_id))
+        .first()
+    )
 
     if not tecnico:
-        raise HTTPException(status_code=404, detail="Técnico no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Técnico no encontrado."
+        )
 
     mantenimientos = (
         db.query(Mantenimiento)
-        .filter(Mantenimiento.tecnico_id == tecnico_id)
+        .filter(cast(Mantenimiento.tecnico_id, String) == str(tecnico_id))
         .order_by(Mantenimiento.id.desc())
         .all()
     )
 
-    return mantenimientos
+    return [mantenimiento_dict(m, db) for m in mantenimientos]
 
 
 # ============================================================
-# GET /mantenimientos/dashboard/tecnico/{tecnico_id}
-# Resumen dinámico para tarjetas del dashboard técnico
+# DASHBOARD TÉCNICO
 # ============================================================
 
 @router.get("/dashboard/tecnico/{tecnico_id}")
 def dashboard_tecnico(
-    tecnico_id: int,
-    db: Session = Depends(get_db),
+    tecnico_id: str,
+    db: Session = Depends(get_db)
 ):
-    tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
+    """
+    Métricas por técnico.
+    """
+
+    tecnico = (
+        db.query(Tecnico)
+        .filter(cast(Tecnico.id, String) == str(tecnico_id))
+        .first()
+    )
 
     if not tecnico:
-        raise HTTPException(status_code=404, detail="Técnico no encontrado.")
+        raise HTTPException(
+            status_code=404,
+            detail="Técnico no encontrado."
+        )
 
-    base = db.query(Mantenimiento).filter(Mantenimiento.tecnico_id == tecnico_id)
+    base = db.query(Mantenimiento).filter(
+        cast(Mantenimiento.tecnico_id, String) == str(tecnico_id)
+    )
 
     return {
         "tecnico_id": tecnico_id,

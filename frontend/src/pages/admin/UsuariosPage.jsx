@@ -1,7 +1,7 @@
 // =========================================================
 // PÁGINA ADMIN - USUARIOS Y PERMISOS PRO
-// Crear, listar, buscar, paginar, editar, eliminar,
-// activar/inactivar, resetear contraseña y asignar permisos.
+// Crear, listar, buscar, paginar, editar, eliminar/inactivar,
+// activar/inactivar, cambiar contraseña y asignar permisos.
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -22,37 +22,23 @@ import {
 } from "lucide-react";
 
 export default function UsuariosPage() {
-  // =======================================================
-  // ESTADOS PRINCIPALES
-  // =======================================================
   const [usuarios, setUsuarios] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
   const [detalle, setDetalle] = useState(null);
   const [busqueda, setBusqueda] = useState("");
 
-  // =======================================================
-  // ESTADOS DE PERMISOS
-  // =======================================================
   const [permisos, setPermisos] = useState([]);
   const [permisosUsuario, setPermisosUsuario] = useState([]);
   const [usuarioPermisos, setUsuarioPermisos] = useState(null);
 
-  // =======================================================
-  // ESTADOS RESET PASSWORD PRO
-  // =======================================================
-  const [usuarioReset, setUsuarioReset] = useState(null);
-  const [modalPasswordOpen, setModalPasswordOpen] = useState(false);
+  const [usuarioPassword, setUsuarioPassword] = useState(null);
   const [nuevaPassword, setNuevaPassword] = useState("");
   const [confirmarPassword, setConfirmarPassword] = useState("");
 
-  // Paginación frontend
   const [pagina, setPagina] = useState(1);
   const porPagina = 6;
 
-  // =======================================================
-  // FORMULARIO
-  // =======================================================
   const [form, setForm] = useState({
     nombre_completo: "",
     username: "",
@@ -63,9 +49,6 @@ export default function UsuariosPage() {
     activo: true,
   });
 
-  // =======================================================
-  // CARGA INICIAL
-  // =======================================================
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -87,9 +70,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // =======================================================
-  // FILTRO Y PAGINACIÓN
-  // =======================================================
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
 
@@ -109,28 +89,18 @@ export default function UsuariosPage() {
     pagina * porPagina
   );
 
-  // =======================================================
-  // AGRUPAR PERMISOS POR MÓDULO
-  // =======================================================
   const permisosAgrupados = useMemo(() => {
     const grupos = {};
 
     permisos.forEach((permiso) => {
       const modulo = permiso.modulo || "GENERAL";
-
-      if (!grupos[modulo]) {
-        grupos[modulo] = [];
-      }
-
+      if (!grupos[modulo]) grupos[modulo] = [];
       grupos[modulo].push(permiso);
     });
 
     return grupos;
   }, [permisos]);
 
-  // =======================================================
-  // MANEJAR FORMULARIO
-  // =======================================================
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -154,9 +124,6 @@ export default function UsuariosPage() {
     setEditandoId(null);
   };
 
-  // =======================================================
-  // CREAR O ACTUALIZAR USUARIO
-  // =======================================================
   const guardarUsuario = async (e) => {
     e.preventDefault();
 
@@ -204,9 +171,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // =======================================================
-  // EDITAR USUARIO
-  // =======================================================
   const editarUsuario = (usuario) => {
     setEditandoId(usuario.id);
 
@@ -221,20 +185,14 @@ export default function UsuariosPage() {
     });
   };
 
-  // =======================================================
-  // DETALLE USUARIO
-  // =======================================================
   const verDetalle = (usuario) => {
     setDetalle(usuario);
   };
 
-  // =======================================================
-  // ACTIVAR / INACTIVAR
-  // =======================================================
   const cambiarEstado = async (usuarioId) => {
     try {
       await API.patch(`/usuarios/${usuarioId}/estado`);
-      cargarDatos();
+      await cargarDatos();
     } catch (error) {
       console.error(error);
       alert("Error cambiando estado");
@@ -242,30 +200,25 @@ export default function UsuariosPage() {
   };
 
   // =======================================================
-  // RESET PASSWORD PRO CON MODAL
+  // CAMBIAR CONTRASEÑA CON MODAL PRO
   // =======================================================
   const abrirModalPassword = (usuario) => {
-    setUsuarioReset(usuario);
+    setUsuarioPassword(usuario);
     setNuevaPassword("");
     setConfirmarPassword("");
-    setModalPasswordOpen(true);
   };
 
   const cerrarModalPassword = () => {
-    setUsuarioReset(null);
+    setUsuarioPassword(null);
     setNuevaPassword("");
     setConfirmarPassword("");
-    setModalPasswordOpen(false);
   };
 
-  const guardarNuevaPassword = async () => {
-    if (!usuarioReset) {
-      alert("No hay usuario seleccionado");
-      return;
-    }
+  const guardarPassword = async () => {
+    if (!usuarioPassword) return;
 
     if (!nuevaPassword || nuevaPassword.length < 6) {
-      alert("La nueva contraseña debe tener mínimo 6 caracteres");
+      alert("La contraseña debe tener mínimo 6 caracteres");
       return;
     }
 
@@ -275,11 +228,11 @@ export default function UsuariosPage() {
     }
 
     try {
-      await API.patch(`/usuarios/${usuarioReset.id}/reset-password`, {
+      await API.patch(`/usuarios/${usuarioPassword.id}/reset-password`, {
         nueva_password: nuevaPassword,
       });
 
-      alert(`Contraseña actualizada correctamente para ${usuarioReset.username}`);
+      alert(`Contraseña actualizada para ${usuarioPassword.nombre_completo}`);
       cerrarModalPassword();
     } catch (error) {
       console.error(error);
@@ -288,26 +241,43 @@ export default function UsuariosPage() {
   };
 
   // =======================================================
-  // ELIMINAR USUARIO
+  // ELIMINAR / INACTIVAR USUARIO PRO
   // =======================================================
-  const eliminarUsuario = async (usuarioId) => {
-    const confirmar = confirm("¿Seguro que deseas eliminar este usuario?");
+  const eliminarUsuario = async (usuario) => {
+    if (!usuario?.id) {
+      alert("No se encontró el ID del usuario.");
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `¿Deseas eliminar/inactivar el usuario "${usuario.nombre_completo}"?\n\nEl usuario quedará inactivo para proteger el historial del sistema.`
+    );
 
     if (!confirmar) return;
 
     try {
-      await API.delete(`/usuarios/${usuarioId}`);
-      alert("Usuario eliminado correctamente");
-      cargarDatos();
+      await API.delete(`/usuarios/${usuario.id}`);
+
+      alert("Usuario eliminado/inactivado correctamente");
+
+      const nuevaCantidad = usuariosFiltrados.length - 1;
+      const nuevaTotalPaginas = Math.ceil(nuevaCantidad / porPagina) || 1;
+
+      if (pagina > nuevaTotalPaginas) {
+        setPagina(nuevaTotalPaginas);
+      }
+
+      await cargarDatos();
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error eliminando usuario");
+      console.error("Error eliminando/inactivando usuario:", error);
+
+      alert(
+        error?.response?.data?.detail ||
+          "No fue posible eliminar/inactivar el usuario"
+      );
     }
   };
 
-  // =======================================================
-  // CARGAR PERMISOS DEL USUARIO
-  // =======================================================
   const cargarPermisosUsuario = async (usuario) => {
     try {
       setUsuarioPermisos(usuario);
@@ -321,9 +291,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // =======================================================
-  // ACTIVAR / DESACTIVAR CHECKBOX DE PERMISO
-  // =======================================================
   const togglePermiso = (codigo) => {
     setPermisosUsuario((prev) => {
       if (prev.includes(codigo)) {
@@ -334,9 +301,6 @@ export default function UsuariosPage() {
     });
   };
 
-  // =======================================================
-  // GUARDAR PERMISOS
-  // =======================================================
   const guardarPermisos = async () => {
     if (!usuarioPermisos) {
       alert("Selecciona un usuario para asignar permisos");
@@ -368,9 +332,6 @@ export default function UsuariosPage() {
 
   return (
     <AdminLayout>
-      {/* ===================================================
-          ENCABEZADO
-          =================================================== */}
       <div className="page-header">
         <div className="page-icon">
           <Users size={26} />
@@ -383,9 +344,6 @@ export default function UsuariosPage() {
       </div>
 
       <div className="crud-grid">
-        {/* =================================================
-            FORMULARIO USUARIO
-            ================================================= */}
         <section className="page-card">
           <h2>{editandoId ? "Editar usuario" : "Crear usuario"}</h2>
 
@@ -490,9 +448,6 @@ export default function UsuariosPage() {
           </form>
         </section>
 
-        {/* =================================================
-            LISTADO USUARIOS
-            ================================================= */}
         <section className="page-card">
           <div className="list-header">
             <div>
@@ -604,8 +559,8 @@ export default function UsuariosPage() {
 
                         <button
                           className="icon-btn danger"
-                          onClick={() => eliminarUsuario(usuario.id)}
-                          title="Eliminar"
+                          onClick={() => eliminarUsuario(usuario)}
+                          title="Eliminar/Inactivar"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -625,7 +580,6 @@ export default function UsuariosPage() {
             </table>
           </div>
 
-          {/* Paginación */}
           <div className="pagination">
             <button
               className="btn-secondary"
@@ -650,10 +604,6 @@ export default function UsuariosPage() {
         </section>
       </div>
 
-      {/* ===================================================
-          PANEL DE PERMISOS DEL USUARIO
-          Se agrega sin dañar el CRUD existente.
-          =================================================== */}
       {usuarioPermisos && (
         <section className="page-card" style={{ marginTop: 22 }}>
           <div className="list-header">
@@ -719,84 +669,6 @@ export default function UsuariosPage() {
         </section>
       )}
 
-      {/* ===================================================
-          MODAL CAMBIAR CONTRASEÑA PRO
-          Mantiene toda la interfaz existente y solo agrega
-          cambio de contraseña personalizado.
-          =================================================== */}
-      {modalPasswordOpen && usuarioReset && (
-        <div className="modal-backdrop">
-          <div className="modal-card" style={styles.passwordModal}>
-            <div style={styles.passwordModalHeader}>
-              <div>
-                <h2 style={{ margin: 0 }}>Cambiar contraseña</h2>
-                <p style={{ margin: "6px 0 0", color: "#64748b" }}>
-                  Usuario: <strong>{usuarioReset.nombre_completo}</strong>
-                </p>
-                <p style={{ margin: "4px 0 0", color: "#64748b" }}>
-                  Username: <strong>{usuarioReset.username}</strong> · Rol: <strong>{usuarioReset.rol}</strong>
-                </p>
-              </div>
-
-              <button className="icon-btn" onClick={cerrarModalPassword}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="crud-form" style={{ marginTop: 18 }}>
-              <div className="form-group full">
-                <label>Nueva contraseña *</label>
-                <input
-                  type="password"
-                  value={nuevaPassword}
-                  onChange={(e) => setNuevaPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  autoFocus
-                />
-              </div>
-
-              <div className="form-group full">
-                <label>Confirmar contraseña *</label>
-                <input
-                  type="password"
-                  value={confirmarPassword}
-                  onChange={(e) => setConfirmarPassword(e.target.value)}
-                  placeholder="Repite la nueva contraseña"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      guardarNuevaPassword();
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="form-actions" style={{ justifyContent: "flex-end" }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={cerrarModalPassword}
-                >
-                  <X size={17} />
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={guardarNuevaPassword}
-                >
-                  <KeyRound size={17} />
-                  Guardar contraseña
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================
-          MODAL SIMPLE DE DETALLE
-          =================================================== */}
       {detalle && (
         <div className="modal-backdrop">
           <div className="modal-card">
@@ -831,14 +703,56 @@ export default function UsuariosPage() {
           </div>
         </div>
       )}
+
+      {usuarioPassword && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h2>Cambiar contraseña</h2>
+
+            <p>
+              Usuario: <strong>{usuarioPassword.nombre_completo}</strong>
+            </p>
+            <p>
+              Rol: <strong>{usuarioPassword.rol}</strong>
+            </p>
+
+            <div className="form-group full">
+              <label>Nueva contraseña *</label>
+              <input
+                type="password"
+                value={nuevaPassword}
+                onChange={(e) => setNuevaPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+
+            <div className="form-group full">
+              <label>Confirmar contraseña *</label>
+              <input
+                type="password"
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                placeholder="Repite la contraseña"
+              />
+            </div>
+
+            <div className="form-actions" style={{ marginTop: 18 }}>
+              <button className="btn-secondary" onClick={cerrarModalPassword}>
+                <X size={17} />
+                Cancelar
+              </button>
+
+              <button className="btn-primary" onClick={guardarPassword}>
+                <Save size={17} />
+                Guardar contraseña
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
-
-// =========================================================
-// ESTILOS INTERNOS SOLO PARA EL PANEL DE PERMISOS
-// No toca ni rompe los estilos PRO existentes.
-// =========================================================
 
 const styles = {
   permisosContainer: {
@@ -900,17 +814,5 @@ const styles = {
     margin: "6px 0 0",
     fontSize: 12,
     color: "#64748b",
-  },
-
-  passwordModal: {
-    width: "min(520px, 94vw)",
-    maxWidth: 520,
-  },
-
-  passwordModalHeader: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 16,
   },
 };

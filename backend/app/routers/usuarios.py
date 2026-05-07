@@ -139,9 +139,7 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
 def listar_usuarios(db: Session = Depends(get_db)):
     """
     Lista todos los usuarios del sistema.
-    La paginación se hará en frontend por ahora.
     """
-
     usuarios = db.query(Usuario).order_by(Usuario.created_at.desc()).all()
     return usuarios
 
@@ -284,8 +282,16 @@ def reset_password(
 @router.delete("/{usuario_id}")
 def eliminar_usuario(usuario_id: UUID, db: Session = Depends(get_db)):
     """
-    Elimina un usuario físicamente.
-    Recomendación futura: cambiar a eliminación lógica.
+    Eliminación segura PRO.
+
+    No elimina físicamente el usuario porque puede tener relaciones con:
+    - técnicos
+    - mantenimientos
+    - permisos
+    - auditoría
+    - historial
+
+    En su lugar lo deja INACTIVO.
     """
 
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
@@ -296,7 +302,18 @@ def eliminar_usuario(usuario_id: UUID, db: Session = Depends(get_db)):
             detail="Usuario no encontrado"
         )
 
-    db.delete(usuario)
-    db.commit()
+    if usuario.rol == "ADMIN" and usuario.username.lower() == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar/inactivar el administrador principal"
+        )
 
-    return {"message": "Usuario eliminado correctamente"}
+    usuario.activo = False
+
+    db.commit()
+    db.refresh(usuario)
+
+    return {
+        "message": "Usuario eliminado/inactivado correctamente",
+        "usuario": usuario.username
+    }

@@ -2,10 +2,13 @@
 // MANTENIMIENTOS PRO - BITÁCORA PROFESIONAL
 // Archivo: frontend/src/pages/admin/MantenimientosPage.jsx
 // Proyecto: SGA PRO
-// Objetivo:
-//   - Mantener el mismo diseño visual de los demás módulos.
-//   - Crear mantenimientos desde formulario técnico.
-//   - Listar, buscar, paginar, editar, ver detalle y anular.
+//
+// Mejoras aplicadas:
+// - Técnico responsable muestra nombre real del usuario técnico.
+// - Tabla muestra técnico, empresa y sede correctamente.
+// - Botón Eliminar funciona con DELETE /mantenimientos/{id}.
+// - Edición conserva selección dependiente empresa/sede/equipo.
+// - Diseño conserva clases visuales actuales del módulo.
 // ============================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -26,10 +29,10 @@ import {
 
 import "./MantenimientosPage.css";
 
-const API = "http://127.0.0.1:8000";
+const API_BASE = "http://127.0.0.1:8000";
 
 const api = axios.create({
-  baseURL: API,
+  baseURL: API_BASE,
 });
 
 // ============================================================
@@ -165,22 +168,46 @@ export default function MantenimientosPage() {
 
   const getEquipo = (id) => {
     const equipo = equipos.find((e) => String(e.id) === String(id));
+    return equipo?.nombre || equipo?.codigo_id || equipo?.codigo || "—";
+  };
+
+  const getTecnicoNombre = (tecnico) => {
+    if (!tecnico) return "—";
+
     return (
-      equipo?.nombre ||
-      equipo?.codigo_id ||
-      equipo?.codigo ||
-      `Equipo ${id || ""}`
+      tecnico.usuario?.nombre_completo ||
+      tecnico.nombre_completo ||
+      tecnico.nombre ||
+      tecnico.nombres ||
+      tecnico.username ||
+      tecnico.usuario?.username ||
+      `Técnico ${tecnico.id}`
     );
   };
 
   const getTecnico = (id) => {
     const tecnico = tecnicos.find((t) => String(t.id) === String(id));
-    return (
-      tecnico?.nombre ||
-      tecnico?.nombres ||
-      tecnico?.nombre_completo ||
-      "—"
-    );
+    return getTecnicoNombre(tecnico);
+  };
+
+  const getEstado = (estado) => ESTADOS[estado] || { label: estado || "—", className: "badge-blue" };
+
+  // ============================================================
+  // Utilidades de fechas
+  // ============================================================
+
+  const convertirFechaInput = (value) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 16);
+  };
+
+  const formatearFecha = (value) => {
+    if (!value) return "—";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleString();
   };
 
   // ============================================================
@@ -202,31 +229,29 @@ export default function MantenimientosPage() {
     if (!form.tecnico_id) return alert("Seleccione técnico responsable.");
 
     const payload = {
-      empresa_id: form.empresa_id,
-      sede_id: form.sede_id,
       equipo_id: form.equipo_id,
-      tecnico_id: form.tecnico_id,
       tipo: form.tipo,
-      estado: form.estado,
-      fecha_programada: form.fecha_programada || null,
-      fecha_inicio_programada: form.fecha_inicio_programada || null,
-      fecha_fin_programada: form.fecha_fin_programada || null,
-      latitud: form.latitud || null,
-      longitud: form.longitud || null,
-      estado_inicial_equipo: form.estado_inicial_equipo,
-      acciones_realizadas: form.acciones_realizadas,
-      resultado_final: form.resultado_final,
-      observaciones: form.observaciones,
       descripcion:
         form.descripcion ||
         form.acciones_realizadas ||
         "Mantenimiento registrado desde bitácora profesional.",
+      fecha_programada: form.fecha_programada || null,
+      observaciones: form.observaciones,
       costo: form.costo ? Number(form.costo) : null,
     };
 
     try {
       if (form.id) {
         await api.put(`/mantenimientos/${form.id}`, payload);
+
+        if (form.tecnico_id) {
+          await api.patch(`/mantenimientos/${form.id}/asignar-tecnico`, {
+            tecnico_id: form.tecnico_id,
+            observacion: "Técnico actualizado desde bitácora profesional.",
+            creado_por: "Administrador SGA",
+          });
+        }
+
         alert("Mantenimiento actualizado correctamente.");
       } else {
         const creado = await api.post("/mantenimientos/", payload);
@@ -255,10 +280,12 @@ export default function MantenimientosPage() {
   // ============================================================
 
   const editarMantenimiento = (m) => {
+    const equipo = equipos.find((eq) => String(eq.id) === String(m.equipo_id));
+
     setForm({
       id: m.id,
-      empresa_id: m.empresa_id || "",
-      sede_id: m.sede_id || "",
+      empresa_id: m.empresa_id || equipo?.empresa_id || "",
+      sede_id: m.sede_id || equipo?.sede_id || "",
       equipo_id: m.equipo_id || "",
       tecnico_id: m.tecnico_id || "",
       tipo: m.tipo || "PREVENTIVO",
@@ -280,20 +307,28 @@ export default function MantenimientosPage() {
   };
 
   // ============================================================
-  // Anular mantenimiento
+  // Eliminar mantenimiento definitivamente
   // ============================================================
 
   const eliminarMantenimiento = async (m) => {
-    const ok = confirm(`¿Deseas anular el mantenimiento #${m.id}?`);
+    const ok = window.confirm(
+      `¿Deseas eliminar definitivamente el mantenimiento #${m.id}?\n\nEsta acción quitará el registro del historial de mantenimientos.`
+    );
 
     if (!ok) return;
 
     try {
       await api.delete(`/mantenimientos/${m.id}`);
+      alert("Mantenimiento eliminado correctamente.");
+
+      const nuevaCantidad = mantenimientosFiltrados.length - 1;
+      const nuevasPaginas = Math.max(1, Math.ceil(nuevaCantidad / porPagina));
+      if (pagina > nuevasPaginas) setPagina(nuevasPaginas);
+
       await cargarTodo();
     } catch (error) {
-      console.error("Error anulando mantenimiento:", error);
-      alert("No se pudo anular el mantenimiento.");
+      console.error("Error eliminando mantenimiento:", error);
+      alert(error?.response?.data?.detail || "No se pudo eliminar el mantenimiento.");
     }
   };
 
@@ -307,12 +342,12 @@ export default function MantenimientosPage() {
     return mantenimientos.filter((m) => {
       const texto = `
         ${m.id}
-        ${getEmpresa(m.empresa_id)}
-        ${getSede(m.sede_id)}
-        ${getEquipo(m.equipo_id)}
-        ${getTecnico(m.tecnico_id)}
-        ${m.tipo}
-        ${m.estado}
+        ${m.empresa_nombre || getEmpresa(m.empresa_id)}
+        ${m.sede_nombre || getSede(m.sede_id)}
+        ${m.equipo_nombre || getEquipo(m.equipo_id)}
+        ${m.tecnico_nombre || getTecnico(m.tecnico_id)}
+        ${m.tipo || ""}
+        ${m.estado || ""}
         ${m.resultado_final || ""}
       `.toLowerCase();
 
@@ -320,10 +355,7 @@ export default function MantenimientosPage() {
     });
   }, [mantenimientos, busqueda, empresas, sedes, equipos, tecnicos]);
 
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(mantenimientosFiltrados.length / porPagina)
-  );
+  const totalPaginas = Math.max(1, Math.ceil(mantenimientosFiltrados.length / porPagina));
 
   const visibles = mantenimientosFiltrados.slice(
     (pagina - 1) * porPagina,
@@ -336,7 +368,6 @@ export default function MantenimientosPage() {
 
   return (
     <div className="mant-page">
-      {/* HEADER INTEGRADO AL LAYOUT */}
       <div className="mant-header">
         <div className="mant-header-icon">
           <Wrench size={26} />
@@ -358,7 +389,6 @@ export default function MantenimientosPage() {
         </button>
       </div>
 
-      {/* FORMULARIO */}
       <section className="mant-card">
         <div className="mant-section-header">
           <div>
@@ -377,12 +407,7 @@ export default function MantenimientosPage() {
             <select
               value={form.empresa_id}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  empresa_id: e.target.value,
-                  sede_id: "",
-                  equipo_id: "",
-                })
+                setForm({ ...form, empresa_id: e.target.value, sede_id: "", equipo_id: "" })
               }
             >
               <option value="">Seleccione empresa *</option>
@@ -397,20 +422,14 @@ export default function MantenimientosPage() {
           <Field label="Sede">
             <select
               value={form.sede_id}
-              onChange={(e) =>
-                setForm({ ...form, sede_id: e.target.value, equipo_id: "" })
-              }
+              onChange={(e) => setForm({ ...form, sede_id: e.target.value, equipo_id: "" })}
               disabled={!form.empresa_id}
             >
               <option value="">
-                {form.empresa_id
-                  ? "Seleccione sede *"
-                  : "Primero seleccione empresa"}
+                {form.empresa_id ? "Seleccione sede *" : "Primero seleccione empresa"}
               </option>
               {sedesFiltradas.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre}
-                </option>
+                <option key={s.id} value={s.id}>{s.nombre}</option>
               ))}
             </select>
           </Field>
@@ -422,9 +441,7 @@ export default function MantenimientosPage() {
               disabled={!form.sede_id}
             >
               <option value="">
-                {form.sede_id
-                  ? "Seleccione equipo *"
-                  : "Primero seleccione sede"}
+                {form.sede_id ? "Seleccione equipo *" : "Primero seleccione sede"}
               </option>
               {equiposFiltrados.map((eq) => (
                 <option key={eq.id} value={eq.id}>
@@ -442,20 +459,14 @@ export default function MantenimientosPage() {
               <option value="">Seleccione técnico responsable *</option>
               {tecnicos.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.nombre ||
-                    t.nombres ||
-                    t.nombre_completo ||
-                    `Técnico ${t.id}`}
+                  {getTecnicoNombre(t)}
                 </option>
               ))}
             </select>
           </Field>
 
           <Field label="Tipo de mantenimiento">
-            <select
-              value={form.tipo}
-              onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-            >
+            <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
               <option value="PREVENTIVO">Preventivo</option>
               <option value="CORRECTIVO">Correctivo</option>
               <option value="CALIBRACION">Calibración</option>
@@ -464,10 +475,7 @@ export default function MantenimientosPage() {
           </Field>
 
           <Field label="Estado">
-            <select
-              value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value })}
-            >
+            <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
               <option value="PROGRAMADO">Programado</option>
               <option value="ASIGNADO">Asignado</option>
               <option value="EN_PROCESO">En proceso</option>
@@ -481,9 +489,7 @@ export default function MantenimientosPage() {
             <input
               type="datetime-local"
               value={form.fecha_programada}
-              onChange={(e) =>
-                setForm({ ...form, fecha_programada: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, fecha_programada: e.target.value })}
             />
           </Field>
 
@@ -491,12 +497,7 @@ export default function MantenimientosPage() {
             <input
               type="datetime-local"
               value={form.fecha_inicio_programada}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  fecha_inicio_programada: e.target.value,
-                })
-              }
+              onChange={(e) => setForm({ ...form, fecha_inicio_programada: e.target.value })}
             />
           </Field>
 
@@ -504,110 +505,65 @@ export default function MantenimientosPage() {
             <input
               type="datetime-local"
               value={form.fecha_fin_programada}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  fecha_fin_programada: e.target.value,
-                })
-              }
+              onChange={(e) => setForm({ ...form, fecha_fin_programada: e.target.value })}
             />
           </Field>
 
           <Field label="Latitud">
-            <input
-              placeholder="Latitud"
-              value={form.latitud}
-              onChange={(e) => setForm({ ...form, latitud: e.target.value })}
-            />
+            <input placeholder="Latitud" value={form.latitud} onChange={(e) => setForm({ ...form, latitud: e.target.value })} />
           </Field>
 
           <Field label="Longitud">
-            <input
-              placeholder="Longitud"
-              value={form.longitud}
-              onChange={(e) => setForm({ ...form, longitud: e.target.value })}
-            />
+            <input placeholder="Longitud" value={form.longitud} onChange={(e) => setForm({ ...form, longitud: e.target.value })} />
           </Field>
 
           <Field label="Costo">
-            <input
-              type="number"
-              placeholder="0"
-              value={form.costo}
-              onChange={(e) => setForm({ ...form, costo: e.target.value })}
-            />
+            <input type="number" placeholder="0" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} />
           </Field>
         </div>
 
         <div className="mant-grid-3 mant-textarea-row">
           <Field label="Estado inicial del equipo / cómo se encontró">
-            <textarea
-              value={form.estado_inicial_equipo}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  estado_inicial_equipo: e.target.value,
-                })
-              }
-            />
+            <textarea value={form.estado_inicial_equipo} onChange={(e) => setForm({ ...form, estado_inicial_equipo: e.target.value })} />
           </Field>
 
           <Field label="Acciones realizadas">
-            <textarea
-              value={form.acciones_realizadas}
-              onChange={(e) =>
-                setForm({ ...form, acciones_realizadas: e.target.value })
-              }
-            />
+            <textarea value={form.acciones_realizadas} onChange={(e) => setForm({ ...form, acciones_realizadas: e.target.value })} />
           </Field>
 
           <Field label="Resultado final">
-            <textarea
-              value={form.resultado_final}
-              onChange={(e) =>
-                setForm({ ...form, resultado_final: e.target.value })
-              }
-            />
+            <textarea value={form.resultado_final} onChange={(e) => setForm({ ...form, resultado_final: e.target.value })} />
           </Field>
         </div>
 
         <Field label="Observaciones">
-          <textarea
-            className="mant-textarea-large"
-            value={form.observaciones}
-            onChange={(e) =>
-              setForm({ ...form, observaciones: e.target.value })
-            }
-          />
+          <textarea value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} />
         </Field>
 
         <div className="mant-form-actions">
-          <button className="mant-save-btn" onClick={guardarMantenimiento}>
-            <Save size={17} />
+          <button className="mant-save-btn" onClick={guardarMantenimiento} disabled={loading}>
+            <Save size={16} />
             {form.id ? "Actualizar mantenimiento" : "Guardar mantenimiento"}
           </button>
 
-          <button className="mant-clear-btn" onClick={limpiarFormulario}>
+          <button className="mant-clean-btn" onClick={limpiarFormulario}>
             Limpiar
           </button>
         </div>
       </section>
 
-      {/* LISTADO */}
-      <section className="mant-card">
+      <section className="mant-card mant-history-card">
         <div className="mant-section-header">
           <div>
             <h2>Historial de mantenimientos</h2>
-            <p>Consulta, búsqueda, edición y anulación segura.</p>
+            <p>Consulta, búsqueda, edición y eliminación segura.</p>
           </div>
 
-          <span className="mant-counter">
-            {mantenimientosFiltrados.length} registros
-          </span>
+          <span className="mant-counter">{mantenimientosFiltrados.length} registros</span>
         </div>
 
         <div className="mant-search-box">
-          <Search size={17} />
+          <Search size={16} />
           <input
             placeholder="Buscar por empresa, sede, equipo, técnico, tipo o resultado"
             value={busqueda}
@@ -631,160 +587,89 @@ export default function MantenimientosPage() {
                 <th>Inicio</th>
                 <th>Fin</th>
                 <th>Resultado</th>
-                <th className="mant-th-right">Acciones</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="10" className="mant-empty">
-                    Cargando...
-                  </td>
-                </tr>
-              ) : visibles.length === 0 ? (
-                <tr>
-                  <td colSpan="10" className="mant-empty">
-                    No hay mantenimientos registrados.
-                  </td>
-                </tr>
-              ) : (
-                visibles.map((m) => (
+              {visibles.map((m) => {
+                const estado = getEstado(m.estado);
+                return (
                   <tr key={m.id}>
-                    <td>{getEmpresa(m.empresa_id)}</td>
-                    <td>{getSede(m.sede_id)}</td>
-                    <td>{getEquipo(m.equipo_id)}</td>
-                    <td>{getTecnico(m.tecnico_id)}</td>
-                    <td>
-                      <span className="mant-type-badge">{m.tipo}</span>
-                    </td>
-                    <td>
-                      <Badge estado={m.estado} />
-                    </td>
-                    <td>
-                      {formatearFecha(
-                        m.fecha_inicio_programada || m.fecha_programada
-                      )}
-                    </td>
-                    <td>
-                      {formatearFecha(
-                        m.fecha_fin_programada || m.fecha_finalizacion
-                      )}
-                    </td>
-                    <td>{m.resultado_final || "—"}</td>
+                    <td>{m.empresa_nombre || getEmpresa(m.empresa_id)}</td>
+                    <td>{m.sede_nombre || getSede(m.sede_id)}</td>
+                    <td>{m.equipo_nombre || getEquipo(m.equipo_id)}</td>
+                    <td>{m.tecnico_nombre || getTecnico(m.tecnico_id)}</td>
+                    <td><span className="badge-blue">{m.tipo}</span></td>
+                    <td><span className={estado.className}>{estado.label}</span></td>
+                    <td>{formatearFecha(m.fecha_inicio || m.fecha_programada)}</td>
+                    <td>{formatearFecha(m.fecha_finalizacion)}</td>
+                    <td>{m.resultado_final || m.observacion_estado || "—"}</td>
                     <td>
                       <div className="mant-actions">
-                        <button
-                          className="mant-view-btn"
-                          onClick={() => setDetalle(m)}
-                        >
+                        <button className="mant-view-btn" onClick={() => setDetalle(m)}>
                           <Eye size={14} /> Ver
                         </button>
-
-                        <button
-                          className="mant-edit-btn"
-                          onClick={() => editarMantenimiento(m)}
-                        >
+                        <button className="mant-edit-btn" onClick={() => editarMantenimiento(m)}>
                           <Edit size={14} /> Editar
                         </button>
-
-                        <button
-                          className="mant-delete-btn"
-                          onClick={() => eliminarMantenimiento(m)}
-                        >
-                          <Trash2 size={14} /> Anular
+                        <button className="mant-delete-btn" onClick={() => eliminarMantenimiento(m)}>
+                          <Trash2 size={14} /> Eliminar
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })}
+
+              {visibles.length === 0 && (
+                <tr>
+                  <td colSpan="10" style={{ textAlign: "center", padding: 30 }}>
+                    No hay mantenimientos registrados.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
 
         <div className="mant-pagination">
-          <button
-            disabled={pagina === 1}
-            onClick={() => setPagina((p) => Math.max(1, p - 1))}
-          >
-            <ChevronLeft size={16} />
-            Anterior
+          <button disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>
+            <ChevronLeft size={16} /> Anterior
           </button>
 
-          <span>
-            Página {pagina} de {totalPaginas}
-          </span>
+          <span>Página {pagina} de {totalPaginas}</span>
 
-          <button
-            disabled={pagina === totalPaginas}
-            onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-          >
-            Siguiente
-            <ChevronRight size={16} />
+          <button disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>
+            Siguiente <ChevronRight size={16} />
           </button>
         </div>
       </section>
 
-      {/* MODAL DETALLE */}
       {detalle && (
-        <div className="mant-overlay">
+        <div className="mant-modal-backdrop">
           <div className="mant-modal">
             <div className="mant-modal-header">
               <h2>Detalle del mantenimiento</h2>
-
-              <button onClick={() => setDetalle(null)}>
-                <X size={20} />
-              </button>
+              <button onClick={() => setDetalle(null)}><X size={18} /></button>
             </div>
 
             <div className="mant-detail-grid">
-              <Detail label="Empresa" value={getEmpresa(detalle.empresa_id)} />
-              <Detail label="Sede" value={getSede(detalle.sede_id)} />
-              <Detail label="Equipo" value={getEquipo(detalle.equipo_id)} />
-              <Detail label="Técnico" value={getTecnico(detalle.tecnico_id)} />
+              <Detail label="Empresa" value={detalle.empresa_nombre || getEmpresa(detalle.empresa_id)} />
+              <Detail label="Sede" value={detalle.sede_nombre || getSede(detalle.sede_id)} />
+              <Detail label="Equipo" value={detalle.equipo_nombre || getEquipo(detalle.equipo_id)} />
+              <Detail label="Técnico" value={detalle.tecnico_nombre || getTecnico(detalle.tecnico_id)} />
               <Detail label="Tipo" value={detalle.tipo} />
-              <Detail
-                label="Estado"
-                value={ESTADOS[detalle.estado]?.label || detalle.estado}
-              />
-              <Detail
-                label="Fecha programada"
-                value={formatearFecha(detalle.fecha_programada)}
-              />
-              <Detail
-                label="Inicio"
-                value={formatearFecha(detalle.fecha_inicio_programada)}
-              />
-              <Detail
-                label="Fin"
-                value={formatearFecha(detalle.fecha_fin_programada)}
-              />
-              <Detail
-                label="Resultado"
-                value={detalle.resultado_final || "—"}
-              />
+              <Detail label="Estado" value={detalle.estado} />
+              <Detail label="Fecha programada" value={formatearFecha(detalle.fecha_programada)} />
+              <Detail label="Observaciones" value={detalle.observaciones} />
             </div>
-
-            <DetailBlock
-              label="Estado inicial"
-              value={detalle.estado_inicial_equipo}
-            />
-            <DetailBlock
-              label="Acciones realizadas"
-              value={detalle.acciones_realizadas}
-            />
-            <DetailBlock label="Observaciones" value={detalle.observaciones} />
           </div>
         </div>
       )}
     </div>
   );
 }
-
-// ============================================================
-// Componentes auxiliares
-// ============================================================
 
 function Field({ label, children }) {
   return (
@@ -795,50 +680,11 @@ function Field({ label, children }) {
   );
 }
 
-function Badge({ estado }) {
-  const e = ESTADOS[estado] || ESTADOS.PROGRAMADO;
-
-  return <span className={`mant-badge ${e.className}`}>{e.label}</span>;
-}
-
 function Detail({ label, value }) {
   return (
-    <div className="mant-detail">
+    <div className="mant-detail-item">
       <span>{label}</span>
       <strong>{value || "—"}</strong>
     </div>
   );
-}
-
-function DetailBlock({ label, value }) {
-  return (
-    <div className="mant-detail-block">
-      <span>{label}</span>
-      <p>{value || "—"}</p>
-    </div>
-  );
-}
-
-// ============================================================
-// Utilidades de fecha
-// ============================================================
-
-function convertirFechaInput(value) {
-  if (!value) return "";
-
-  const d = new Date(value);
-
-  if (Number.isNaN(d.getTime())) return "";
-
-  return d.toISOString().slice(0, 16);
-}
-
-function formatearFecha(value) {
-  if (!value) return "—";
-
-  const d = new Date(value);
-
-  if (Number.isNaN(d.getTime())) return value;
-
-  return d.toLocaleString();
 }
