@@ -1,13 +1,31 @@
 // =========================================================
 // PÁGINA ADMIN - EMPRESAS / CLIENTES
-// CRUD completo conectado al backend FastAPI
+// CRUD completo conectado al backend FastAPI.
 // Endpoint base: /empresas/
+//
+// Patrón PRO aplicado:
+// - Usa AdminLayout igual que EquiposPage.
+// - Usa clases reutilizadas de EquiposPage.
+// - Tiene búsqueda local.
+// - Tiene paginación.
+// - No modifica backend.
 // =========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
-import { Building2, Plus, Save, Trash2, Pencil, X } from "lucide-react";
+
+import {
+  Building2,
+  Plus,
+  Save,
+  Trash2,
+  Pencil,
+  X,
+  RefreshCcw,
+} from "lucide-react";
+
+import "../../styles/sidebar.css";
 
 export default function EmpresasPage() {
   // =======================================================
@@ -16,6 +34,13 @@ export default function EmpresasPage() {
   const [empresas, setEmpresas] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
   const [cargando, setCargando] = useState(false);
+
+  // =======================================================
+  // BÚSQUEDA Y PAGINACIÓN
+  // =======================================================
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 6;
 
   // =======================================================
   // FORMULARIO
@@ -38,13 +63,20 @@ export default function EmpresasPage() {
   }, []);
 
   // =======================================================
+  // REINICIA PÁGINA AL BUSCAR
+  // =======================================================
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda]);
+
+  // =======================================================
   // LISTAR EMPRESAS
   // =======================================================
   const cargarEmpresas = async () => {
     try {
       setCargando(true);
       const res = await API.get("/empresas/");
-      setEmpresas(res.data);
+      setEmpresas(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error(error);
       alert("Error cargando empresas");
@@ -54,7 +86,41 @@ export default function EmpresasPage() {
   };
 
   // =======================================================
-  // MANEJAR CAMBIOS DEL FORMULARIO
+  // FILTRADO LOCAL
+  // =======================================================
+  const empresasFiltradas = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+
+    if (!texto) return empresas;
+
+    return empresas.filter((empresa) => {
+      const contenido = [
+        empresa.nombre,
+        empresa.nit,
+        empresa.telefono,
+        empresa.correo,
+        empresa.direccion,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return contenido.includes(texto);
+    });
+  }, [empresas, busqueda]);
+
+  // =======================================================
+  // PAGINACIÓN
+  // =======================================================
+  const totalPaginas = Math.ceil(empresasFiltradas.length / porPagina) || 1;
+
+  const empresasPaginadas = empresasFiltradas.slice(
+    (pagina - 1) * porPagina,
+    pagina * porPagina
+  );
+
+  // =======================================================
+  // CAMBIOS DEL FORMULARIO
   // =======================================================
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -95,11 +161,9 @@ export default function EmpresasPage() {
 
     try {
       if (editandoId) {
-        // Actualizar empresa existente
         await API.put(`/empresas/${editandoId}`, form);
         alert("Empresa actualizada correctamente");
       } else {
-        // Crear nueva empresa
         await API.post("/empresas/", form);
         alert("Empresa creada correctamente");
       }
@@ -113,7 +177,7 @@ export default function EmpresasPage() {
   };
 
   // =======================================================
-  // CARGAR EMPRESA AL FORMULARIO PARA EDITAR
+  // EDITAR EMPRESA
   // =======================================================
   const editarEmpresa = (empresa) => {
     setEditandoId(empresa.id);
@@ -125,7 +189,7 @@ export default function EmpresasPage() {
       direccion: empresa.direccion || "",
       correo: empresa.correo || "",
       logo_url: empresa.logo_url || "",
-      activo: empresa.activo,
+      activo: empresa.activo ?? true,
     });
   };
 
@@ -153,7 +217,7 @@ export default function EmpresasPage() {
     <AdminLayout>
       {/* ===================================================
           ENCABEZADO
-          =================================================== */}
+      =================================================== */}
       <div className="page-header">
         <div className="page-icon">
           <Building2 size={26} />
@@ -165,15 +229,23 @@ export default function EmpresasPage() {
         </div>
       </div>
 
-      <div className="crud-grid">
+      {/* ===================================================
+          LAYOUT PRO IGUAL A EQUIPOS
+      =================================================== */}
+      <div className="equipos-pro-layout">
         {/* =================================================
-            FORMULARIO EMPRESA
-            ================================================= */}
-        <section className="page-card">
-          <h2>{editandoId ? "Editar empresa" : "Crear empresa"}</h2>
+            FORMULARIO
+        ================================================= */}
+        <section className="equipos-pro-form-card">
+          <div className="equipos-card-title">
+            <div>
+              <h2>{editandoId ? "Editar empresa" : "Crear empresa"}</h2>
+              <p>Registra la información principal del cliente.</p>
+            </div>
+          </div>
 
-          <form onSubmit={guardarEmpresa} className="crud-form">
-            <div className="form-group">
+          <form onSubmit={guardarEmpresa} className="equipos-pro-form">
+            <div className="form-group full">
               <label>Nombre de empresa *</label>
               <input
                 name="nombre"
@@ -203,7 +275,7 @@ export default function EmpresasPage() {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group full">
               <label>Correo</label>
               <input
                 name="correo"
@@ -245,7 +317,11 @@ export default function EmpresasPage() {
             </label>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={limpiarFormulario}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={limpiarFormulario}
+              >
                 <X size={17} />
                 Limpiar
               </button>
@@ -259,85 +335,139 @@ export default function EmpresasPage() {
         </section>
 
         {/* =================================================
-            LISTADO EMPRESAS
-            ================================================= */}
-        <section className="page-card">
-          <div className="list-header">
+            LISTADO
+        ================================================= */}
+        <section className="equipos-pro-list-card">
+          <div className="equipos-toolbar">
             <div>
               <h2>Empresas registradas</h2>
-              <p>{empresas.length} registros encontrados</p>
+              <p>
+                {empresasFiltradas.length} registros encontrados
+                {busqueda ? ` de ${empresas.length} empresas` : ""}
+              </p>
             </div>
 
-            <button className="btn-secondary" onClick={cargarEmpresas}>
-              Recargar
+            <button
+              className="btn-secondary"
+              onClick={cargarEmpresas}
+              disabled={cargando}
+            >
+              <RefreshCcw size={16} />
+              {cargando ? "Cargando..." : "Recargar"}
             </button>
           </div>
+
+          <input
+            className="equipos-search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por empresa, NIT, teléfono, correo o dirección..."
+          />
 
           {cargando ? (
             <p>Cargando empresas...</p>
           ) : (
-            <div className="table-wrap">
-              <table className="sga-table">
-                <thead>
-                  <tr>
-                    <th>Empresa</th>
-                    <th>NIT</th>
-                    <th>Teléfono</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {empresas.map((empresa) => (
-                    <tr key={empresa.id}>
-                      <td>
-                        <strong>{empresa.nombre}</strong>
-                        <br />
-                        <small>{empresa.correo || "Sin correo"}</small>
-                      </td>
-
-                      <td>{empresa.nit || "N/A"}</td>
-                      <td>{empresa.telefono || "N/A"}</td>
-
-                      <td>
-                        <span className={empresa.activo ? "badge active" : "badge inactive"}>
-                          {empresa.activo ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            className="icon-btn"
-                            onClick={() => editarEmpresa(empresa)}
-                            title="Editar"
-                          >
-                            <Pencil size={16} />
-                          </button>
-
-                          <button
-                            className="icon-btn danger"
-                            onClick={() => eliminarEmpresa(empresa.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {empresas.length === 0 && (
+            <>
+              <div className="table-wrap equipos-table-wrap">
+                <table className="sga-table">
+                  <thead>
                     <tr>
-                      <td colSpan="5" style={{ textAlign: "center", padding: 30 }}>
-                        No hay empresas registradas.
-                      </td>
+                      <th>Empresa</th>
+                      <th>NIT</th>
+                      <th>Teléfono</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+
+                  <tbody>
+                    {empresasPaginadas.map((empresa) => (
+                      <tr key={empresa.id}>
+                        <td>
+                          <strong className="equipo-title">
+                            {empresa.nombre}
+                          </strong>
+                          <br />
+                          <small className="equipo-sub">
+                            {empresa.correo || "Sin correo"}
+                          </small>
+                          <br />
+                          <small className="equipo-sub">
+                            {empresa.direccion || "Sin dirección"}
+                          </small>
+                        </td>
+
+                        <td>{empresa.nit || "N/A"}</td>
+                        <td>{empresa.telefono || "N/A"}</td>
+
+                        <td>
+                          <span
+                            className={
+                              empresa.activo ? "badge active" : "badge inactive"
+                            }
+                          >
+                            {empresa.activo ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              className="icon-btn"
+                              onClick={() => editarEmpresa(empresa)}
+                              title="Editar empresa"
+                            >
+                              <Pencil size={16} />
+                            </button>
+
+                            <button
+                              className="icon-btn danger"
+                              onClick={() => eliminarEmpresa(empresa.id)}
+                              title="Eliminar empresa"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {empresasPaginadas.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: "center", padding: 30 }}>
+                          No hay empresas registradas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ===========================================
+                  PAGINACIÓN
+              =========================================== */}
+              <div className="pagination">
+                <button
+                  className="btn-secondary"
+                  disabled={pagina === 1}
+                  onClick={() => setPagina(pagina - 1)}
+                >
+                  Anterior
+                </button>
+
+                <span>
+                  Página {pagina} de {totalPaginas}
+                </span>
+
+                <button
+                  className="btn-secondary"
+                  disabled={pagina === totalPaginas}
+                  onClick={() => setPagina(pagina + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </>
           )}
         </section>
       </div>

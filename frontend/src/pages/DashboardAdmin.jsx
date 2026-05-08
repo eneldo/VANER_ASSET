@@ -70,10 +70,17 @@ export default function DashboardAdmin() {
   const [busqueda, setBusqueda] = useState("");
   const [sedeSeleccionada, setSedeSeleccionada] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(10);
 
   useEffect(() => {
     cargarDashboard();
   }, []);
+
+  // Reinicia la paginación cuando cambia la vista o el filtro de búsqueda.
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [vista, busqueda, registrosPorPagina]);
 
   const cargarDashboard = async () => {
     try {
@@ -436,6 +443,10 @@ export default function DashboardAdmin() {
                 <DataTable
                   tipo={vista}
                   data={dataFiltrada}
+                  paginaActual={paginaActual}
+                  setPaginaActual={setPaginaActual}
+                  registrosPorPagina={registrosPorPagina}
+                  setRegistrosPorPagina={setRegistrosPorPagina}
                   onRowClick={(item) => {
                     if (vista === "sedes") setSedeSeleccionada(item);
                   }}
@@ -486,7 +497,15 @@ function AlertCard({ title, value, icon, type, onClick }) {
   );
 }
 
-function DataTable({ tipo, data, onRowClick }) {
+function DataTable({
+  tipo,
+  data,
+  onRowClick,
+  paginaActual,
+  setPaginaActual,
+  registrosPorPagina,
+  setRegistrosPorPagina,
+}) {
   if (!data.length) {
     return <div className="dash-empty">No hay registros para mostrar.</div>;
   }
@@ -504,31 +523,117 @@ function DataTable({ tipo, data, onRowClick }) {
 
   const columns = columnsByType[tipo] || Object.keys(data[0]).slice(0, 6);
 
-  return (
-    <div className="dash-table-wrap">
-      <table className="dash-table">
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c}>{c.replaceAll("_", " ")}</th>
-            ))}
-          </tr>
-        </thead>
+  // =========================================================
+  // PAGINACIÓN FRONTEND
+  // =========================================================
+  // Esta paginación trabaja sobre los datos ya cargados desde el backend.
+  // Es ideal para la vista rápida del dashboard porque evita mostrar listas
+  // largas completas cuando crecen equipos, técnicos o mantenimientos.
+  const totalRegistros = data.length;
+  const totalPaginas = Math.max(1, Math.ceil(totalRegistros / registrosPorPagina));
+  const paginaSegura = Math.min(Math.max(paginaActual, 1), totalPaginas);
+  const inicio = (paginaSegura - 1) * registrosPorPagina;
+  const fin = inicio + registrosPorPagina;
+  const dataPaginada = data.slice(inicio, fin);
 
-        <tbody>
-          {data.slice(0, 15).map((item, index) => (
-            <tr
-              key={item.id || index}
-              className={onRowClick ? "dash-row-clickable" : ""}
-              onClick={() => onRowClick && onRowClick(item)}
-            >
+  const irPaginaAnterior = () => {
+    setPaginaActual((prev) => Math.max(prev - 1, 1));
+  };
+
+  const irPaginaSiguiente = () => {
+    setPaginaActual((prev) => Math.min(prev + 1, totalPaginas));
+  };
+
+  const cambiarRegistrosPorPagina = (e) => {
+    setRegistrosPorPagina(Number(e.target.value));
+  };
+
+  return (
+    <div className="dash-table-section">
+      <div className="dash-table-topbar">
+        <div>
+          <strong>Listado PRO</strong>
+          <span>
+            Mostrando {inicio + 1} - {Math.min(fin, totalRegistros)} de {totalRegistros} registros
+          </span>
+        </div>
+
+        <label className="dash-page-size">
+          Registros por página
+          <select value={registrosPorPagina} onChange={cambiarRegistrosPorPagina}>
+            <option value={10}>10</option>
+            <option value={15}>15</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="dash-table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
               {columns.map((c) => (
-                <td key={c}>{formatValue(item[c])}</td>
+                <th key={c}>{c.replaceAll("_", " ")}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {dataPaginada.map((item, index) => (
+              <tr
+                key={item.id || `${tipo}-${inicio + index}`}
+                className={onRowClick ? "dash-row-clickable" : ""}
+                onClick={() => onRowClick && onRowClick(item)}
+              >
+                {columns.map((c) => (
+                  <td key={c}>{formatValue(item[c])}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPaginas > 1 && (
+        <div className="dash-pagination">
+          <button
+            type="button"
+            onClick={() => setPaginaActual(1)}
+            disabled={paginaSegura === 1}
+          >
+            « Primero
+          </button>
+
+          <button
+            type="button"
+            onClick={irPaginaAnterior}
+            disabled={paginaSegura === 1}
+          >
+            ‹ Anterior
+          </button>
+
+          <span>
+            Página <strong>{paginaSegura}</strong> de <strong>{totalPaginas}</strong>
+          </span>
+
+          <button
+            type="button"
+            onClick={irPaginaSiguiente}
+            disabled={paginaSegura === totalPaginas}
+          >
+            Siguiente ›
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPaginaActual(totalPaginas)}
+            disabled={paginaSegura === totalPaginas}
+          >
+            Último »
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,23 +1,33 @@
 // =========================================================
-// ADMIN LAYOUT
-// Contenedor general para páginas del administrador
-// Incluye sidebar + contenido dinámico
+// ADMIN LAYOUT PRO SGA
+// Layout global para TODOS los módulos administrativos.
+//
+// FUNCIONES:
+// - Renderiza la barra lateral.
+// - Mantiene scroll interno.
+// - Responsive.
+// - Mantiene el contenido dentro del layout.
+//
+// IMPORTANTE:
+// NO redirecciona roles.
+// SOLO pinta el layout.
 // =========================================================
 
-import { useContext } from "react";
-import { AuthContext } from "../../context/AuthContext";
 import Sidebar from "../../components/Sidebar";
+import "../../styles/sidebar.css";
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useContext(AuthContext);
-
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f5f8ff" }}>
-      {/* Sidebar institucional */}
-      <Sidebar user={user} onLogout={logout} />
+    <div className="admin-layout-pro">
+      {/* =====================================================
+          SIDEBAR IZQUIERDA
+      ===================================================== */}
+      <Sidebar />
 
-      {/* Contenido principal */}
-      <main style={{ flex: 1, padding: "32px" }}>
+      {/* =====================================================
+          CONTENIDO PRINCIPAL
+      ===================================================== */}
+      <main className="admin-content-pro">
         {children}
       </main>
     </div>

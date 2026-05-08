@@ -7,7 +7,7 @@
   width: 260px;
   min-height: 100vh;
   background: linear-gradient(180deg, #0f2363 0%, #07183f 100%);
-  color: white;
+  color: rgb(59, 105, 231);
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
@@ -29,26 +29,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: 600;
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
 }
 
 .sga-brand h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .sga-brand p {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: 10px;
   color: #b9c7ff;
 }
 
 .sga-menu-title {
   font-size: 11px;
   color: #8fa6e8;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 14px;
 }
 
@@ -68,8 +68,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -105,7 +105,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .sga-user-card strong {
@@ -116,7 +116,7 @@
 .sga-user-card span {
   font-size: 12px;
   color: #67e8f9;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .sga-logout {
@@ -221,7 +221,7 @@
   margin: 0;
   color: #172554;
   font-size: 30px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .page-header p {
@@ -274,7 +274,7 @@
 .form-group label {
   font-size: 13px;
   color: #334155;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .form-group input,
@@ -392,6 +392,7 @@
   border-bottom: 1px solid #edf2f7;
   color: #334155;
   font-size: 14px;
+  font-weight: 600;
 }
 
 .sga-table small {
@@ -867,4 +868,819 @@ main::-webkit-scrollbar-thumb {
 
 main::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #1d4ed8, #0891b2);
+}
+
+/* =========================================================
+   ADMIN LAYOUT PRO - BASE GLOBAL PARA MÓDULOS ADMIN
+   Mantiene la barra lateral fija y el contenido con scroll interno.
+   ========================================================= */
+
+.admin-layout-pro {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: #f5f8ff;
+  overflow: hidden;
+}
+
+.admin-content-pro {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 32px 90px;
+  background: #f5f8ff;
+}
+
+.admin-content-pro::-webkit-scrollbar {
+  width: 10px;
+}
+
+.admin-content-pro::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+
+.admin-content-pro::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 20px;
+}
+
+/* =========================================================
+   EMPRESAS / CLIENTE PRO - AJUSTE DE VISTA COMPLETA
+   Evita bajar zoom y permite trabajar con muchos registros.
+   ========================================================= */
+
+.empresas-pro-grid {
+  display: grid;
+  grid-template-columns: 430px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.empresas-form-card {
+  position: sticky;
+  top: 0;
+}
+
+.empresas-toolbar-pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.empresas-toolbar-pro input {
+  width: min(420px, 100%);
+  height: 44px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  color: #172554;
+  background: #f8fbff;
+  font-weight: 600;
+}
+
+.empresas-toolbar-pro input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.empresas-table-card {
+  min-width: 0;
+}
+
+.empresas-pagination-pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-info {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.empresas-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-actions select,
+.empresas-pagination-actions button {
+  height: 38px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172554;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.empresas-pagination-actions button {
+  cursor: pointer;
+}
+
+.empresas-pagination-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.empresas-page-current {
+  color: #334155;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+@media (max-width: 1300px) {
+  .empresas-pro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empresas-form-card {
+    position: relative;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-layout-pro {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sga-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .admin-content-pro {
+    height: auto;
+    min-height: 100vh;
+    padding: 22px 16px 70px;
+  }
+
+  .empresas-toolbar-pro,
+  .empresas-pagination-pro,
+  .list-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* =========================================================
+   FIX FINAL EMPRESAS / CLIENTE PRO
+   - Evita que el formulario se comprima.
+   - Mantiene sidebar fijo y contenido con scroll interno.
+   - Mantiene la tabla responsive sin bajar zoom.
+   ========================================================= */
+
+.admin-layout-pro {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  background: #f5f8ff;
+  overflow: hidden;
+}
+
+.admin-content-pro {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px 32px 90px;
+  background: #f5f8ff;
+}
+
+.empresas-pro-grid {
+  display: grid;
+  grid-template-columns: 430px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.empresas-form-card {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
+.empresas-form-card .crud-form {
+  grid-template-columns: 1fr 1fr;
+}
+
+.empresas-form-card .form-group input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.empresas-table-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.empresas-table-card .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.empresas-table-card .sga-table {
+  min-width: 900px;
+}
+
+.empresas-toolbar-pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.empresas-toolbar-pro input {
+  width: min(460px, 100%);
+  height: 44px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  color: #172554;
+  background: #f8fbff;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.empresas-toolbar-pro input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.empresas-pagination-pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-info {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.empresas-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-actions select,
+.empresas-pagination-actions button {
+  height: 38px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172554;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.empresas-pagination-actions button {
+  cursor: pointer;
+}
+
+.empresas-pagination-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.empresas-page-current {
+  color: #334155;
+  font-weight: 900;
+  font-size: 13px;
+  padding: 0 4px;
+}
+
+@media (max-width: 1300px) {
+  .empresas-pro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empresas-form-card {
+    position: relative;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-layout-pro {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .sga-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .admin-content-pro {
+    height: auto;
+    min-height: 100vh;
+    padding: 22px 16px 70px;
+  }
+
+  .empresas-toolbar-pro,
+  .empresas-pagination-pro,
+  .list-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .empresas-form-card .crud-form {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   ADMIN LAYOUT GLOBAL PRO
+========================================================= */
+
+.admin-layout-pro {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: #f5f8ff;
+  overflow: hidden;
+}
+
+.admin-content-pro {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px;
+  background: #f5f8ff;
+}
+
+/* =========================================================
+   EMPRESAS / CLIENTE PRO
+========================================================= */
+
+.empresas-pro-grid {
+  display: grid;
+  grid-template-columns: 430px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.empresas-form-card {
+  position: sticky;
+  top: 0;
+}
+
+.empresas-table-card {
+  min-width: 0;
+}
+
+.empresas-toolbar-pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.empresas-toolbar-pro input {
+  width: 100%;
+  max-width: 480px;
+  height: 46px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  font-weight: 500;
+}
+
+.empresas-toolbar-pro input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+/* =========================================================
+   PAGINACIÓN PRO
+========================================================= */
+
+.empresas-pagination-pro {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-info {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.empresas-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.empresas-pagination-actions select,
+.empresas-pagination-actions button {
+  height: 40px;
+  border: 1px solid #dbe4f0;
+  background: white;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-weight: 600;
+}
+
+.empresas-pagination-actions button {
+  cursor: pointer;
+}
+
+.empresas-pagination-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.empresas-page-current {
+  font-weight: 700;
+  color: #172554;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1300px) {
+  .empresas-pro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empresas-form-card {
+    position: relative;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-layout-pro {
+    display: block;
+  }
+
+  .admin-content-pro {
+    height: auto;
+    padding: 20px 16px 70px;
+  }
+
+  .sga-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+}
+/* =========================================================
+   EMPRESAS / CLIENTE
+   SCROLL INTERNO PROFESIONAL
+========================================================= */
+
+/* Layout principal */
+.equipos-pro-layout {
+  align-items: stretch;
+}
+
+/* Card del listado */
+.equipos-pro-list-card {
+  display: flex;
+  flex-direction: column;
+
+  /* ==========================================
+     Altura máxima visible en pantalla
+  ========================================== */
+  max-height: calc(100vh - 140px);
+
+  overflow: hidden;
+}
+
+/* Contenedor interno tabla */
+.equipos-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-right: 4px;
+}
+
+/* ==========================================
+   SCROLLBAR PRO
+========================================== */
+
+.equipos-table-wrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.equipos-table-wrap::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+
+.equipos-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    #4f46e5,
+    #7c3aed
+  );
+
+  border-radius: 20px;
+}
+
+.equipos-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    #4338ca,
+    #6d28d9
+  );
+}
+/* =========================================================
+   CATEGORÍAS PRO - TABLA MÁS ELEGANTE Y COMPACTA
+========================================================= */
+
+.categorias-layout-pro {
+  display: grid;
+  grid-template-columns: 420px minmax(680px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.categorias-list-card {
+  max-width: 1180px;
+}
+
+.categorias-table-wrap {
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 18px;
+}
+
+.categorias-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.categorias-table th:nth-child(1),
+.categorias-table td:nth-child(1) {
+  width: 24%;
+}
+
+.categorias-table th:nth-child(2),
+.categorias-table td:nth-child(2) {
+  width: 50%;
+}
+
+.categorias-table th:nth-child(3),
+.categorias-table td:nth-child(3) {
+  width: 13%;
+  text-align: center;
+}
+
+.categorias-table th:nth-child(4),
+.categorias-table td:nth-child(4) {
+  width: 13%;
+  text-align: center;
+}
+
+.categorias-table td {
+  white-space: normal;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.categorias-table .table-actions {
+  justify-content: center;
+}
+
+.categorias-list-card .pagination {
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 1200px) {
+  .categorias-layout-pro {
+    grid-template-columns: 1fr;
+  }
+
+  .categorias-list-card {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   FUENTE GLOBAL PRO
+========================================================= */
+
+body,
+input,
+textarea,
+select,
+button,
+table,
+.sga-table,
+.page-card,
+.page-header,
+.sga-sidebar {
+  font-family: "Times New Roman", serif;
+}
+
+/* Texto elegante cursivo */
+.page-header h1,
+.page-header p,
+.page-card h2,
+.page-card p,
+.sga-table td,
+.sga-table th,
+label,
+button,
+input,
+textarea,
+select {
+  font-style: italic;
+}
+
+/* =========================================================
+   CATEGORÍAS PRO FULL
+========================================================= */
+
+.categorias-layout-pro {
+  display: grid;
+  grid-template-columns: 420px minmax(680px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.categorias-list-card {
+  max-width: 1180px;
+}
+
+.categorias-table-wrap {
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 18px;
+}
+
+.categorias-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.categorias-table th:nth-child(1),
+.categorias-table td:nth-child(1) {
+  width: 24%;
+}
+
+.categorias-table th:nth-child(2),
+.categorias-table td:nth-child(2) {
+  width: 50%;
+}
+
+.categorias-table th:nth-child(3),
+.categorias-table td:nth-child(3) {
+  width: 13%;
+  text-align: center;
+}
+
+.categorias-table th:nth-child(4),
+.categorias-table td:nth-child(4) {
+  width: 13%;
+  text-align: center;
+}
+
+.categorias-table td {
+  white-space: normal;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.categorias-table .table-actions {
+  justify-content: center;
+}
+
+.categorias-list-card .pagination {
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 1200px) {
+  .categorias-layout-pro {
+    grid-template-columns: 1fr;
+  }
+
+  .categorias-list-card {
+    max-width: 100%;
+  }
+}
+
+/* =========================================================
+   SEDES - SOLO SCROLL + PAGINACIÓN + RESPONSIVE
+   Conserva formulario y tabla existentes
+========================================================= */
+
+.sedes-list-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 190px);
+  overflow: hidden;
+}
+
+.sedes-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 16px;
+  padding-right: 4px;
+}
+
+/* Scroll elegante */
+.sedes-table-wrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.sedes-table-wrap::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+
+.sedes-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 20px;
+}
+
+.sedes-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1d4ed8, #0891b2);
+}
+
+/* Mantiene tabla organizada sin deformar diseño */
+.sedes-table {
+  min-width: 980px;
+}
+
+/* Paginación fija abajo dentro de la tarjeta */
+.sedes-list-card .pagination {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  background: white;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .sedes-list-card {
+    max-height: none;
+  }
+
+  .sedes-table-wrap {
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sedes-table-wrap {
+    max-height: 420px;
+  }
+
+  .sedes-table {
+    min-width: 900px;
+  }
 }

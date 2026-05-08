@@ -508,6 +508,110 @@
   margin: 3px 0 0;
 }
 
+
+/* =========================================================
+   PAGINACIÓN PRO
+========================================================= */
+
+.dash-table-section {
+  width: 100%;
+  min-width: 0;
+}
+
+.dash-table-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5eef8;
+  background: #f8fbff;
+  border-radius: 16px;
+}
+
+.dash-table-topbar strong {
+  display: block;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.dash-table-topbar span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.dash-page-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.dash-page-size select {
+  border: 1px solid #dbeafe;
+  background: white;
+  color: #0f172a;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-weight: 900;
+  outline: none;
+  cursor: pointer;
+}
+
+.dash-page-size select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.dash-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eef2f7;
+}
+
+.dash-pagination button {
+  border: 1px solid #dbeafe;
+  background: white;
+  color: #1e40af;
+  border-radius: 12px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.dash-pagination button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.12);
+}
+
+.dash-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dash-pagination span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 4px;
+}
+
+
 /* =========================================================
    RESPONSIVE
 ========================================================= */
@@ -541,9 +645,19 @@
 
   .dash-header,
   .dash-detail-header,
-  .dash-filter-row {
+  .dash-filter-row,
+  .dash-table-topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .dash-page-size {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dash-pagination {
+    justify-content: center;
   }
 
   .dash-cards,

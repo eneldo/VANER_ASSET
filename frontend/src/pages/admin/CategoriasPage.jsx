@@ -1,46 +1,58 @@
 // =========================================================
-// PÁGINA ADMIN - CATEGORÍAS
-// CRUD completo conectado al backend FastAPI
-// Endpoint base: /categorias/
+// CATEGORÍAS PAGE - SGA PRO
+// Mantiene diseño en tarjetas como Técnicos / Equipos.
+// Incluye:
+// - AdminLayout con barra lateral
+// - CRUD categorías
+// - Búsqueda
+// - Paginación
+// - Tabla compacta
 // =========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
-import { Tags, Plus, Save, Trash2, Pencil, X } from "lucide-react";
+
+import {
+  Tags,
+  Plus,
+  Save,
+  Trash2,
+  Pencil,
+  X,
+  RefreshCcw,
+} from "lucide-react";
+
+import "../../styles/sidebar.css";
 
 export default function CategoriasPage() {
-  // =======================================================
-  // ESTADOS PRINCIPALES
-  // =======================================================
   const [categorias, setCategorias] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
   const [cargando, setCargando] = useState(false);
 
-  // =======================================================
-  // FORMULARIO
-  // =======================================================
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 7;
+
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
     activo: true,
   });
 
-  // =======================================================
-  // CARGA INICIAL
-  // =======================================================
   useEffect(() => {
     cargarCategorias();
   }, []);
 
-  // =======================================================
-  // LISTAR CATEGORÍAS
-  // =======================================================
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda]);
+
   const cargarCategorias = async () => {
     try {
       setCargando(true);
       const res = await API.get("/categorias/");
-      setCategorias(res.data);
+      setCategorias(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error(error);
       alert("Error cargando categorías");
@@ -49,9 +61,27 @@ export default function CategoriasPage() {
     }
   };
 
-  // =======================================================
-  // CAMBIOS DEL FORMULARIO
-  // =======================================================
+  const categoriasFiltradas = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+
+    if (!texto) return categorias;
+
+    return categorias.filter((categoria) =>
+      [categoria.nombre, categoria.descripcion]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(texto)
+    );
+  }, [categorias, busqueda]);
+
+  const totalPaginas = Math.ceil(categoriasFiltradas.length / porPagina) || 1;
+
+  const categoriasPaginadas = categoriasFiltradas.slice(
+    (pagina - 1) * porPagina,
+    pagina * porPagina
+  );
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -61,37 +91,31 @@ export default function CategoriasPage() {
     });
   };
 
-  // =======================================================
-  // LIMPIAR FORMULARIO
-  // =======================================================
   const limpiarFormulario = () => {
+    setEditandoId(null);
+
     setForm({
       nombre: "",
       descripcion: "",
       activo: true,
     });
-
-    setEditandoId(null);
   };
 
-  // =======================================================
-  // CREAR O ACTUALIZAR CATEGORÍA
-  // =======================================================
   const guardarCategoria = async (e) => {
     e.preventDefault();
 
     if (!form.nombre.trim()) {
-      alert("El nombre de la categoría es obligatorio");
+      alert("El nombre es obligatorio");
       return;
     }
 
     try {
       if (editandoId) {
         await API.put(`/categorias/${editandoId}`, form);
-        alert("Categoría actualizada correctamente");
+        alert("Categoría actualizada");
       } else {
         await API.post("/categorias/", form);
-        alert("Categoría creada correctamente");
+        alert("Categoría creada");
       }
 
       limpiarFormulario();
@@ -102,32 +126,23 @@ export default function CategoriasPage() {
     }
   };
 
-  // =======================================================
-  // CARGAR DATOS PARA EDITAR
-  // =======================================================
   const editarCategoria = (categoria) => {
     setEditandoId(categoria.id);
 
     setForm({
       nombre: categoria.nombre || "",
       descripcion: categoria.descripcion || "",
-      activo: categoria.activo,
+      activo: categoria.activo ?? true,
     });
   };
 
-  // =======================================================
-  // ELIMINAR CATEGORÍA
-  // =======================================================
   const eliminarCategoria = async (categoriaId) => {
-    const confirmar = confirm(
-      "¿Seguro que deseas eliminar esta categoría? Si tiene equipos asociados, la base de datos puede impedir eliminarla."
-    );
-
+    const confirmar = confirm("¿Seguro que deseas eliminar esta categoría?");
     if (!confirmar) return;
 
     try {
       await API.delete(`/categorias/${categoriaId}`);
-      alert("Categoría eliminada correctamente");
+      alert("Categoría eliminada");
       cargarCategorias();
     } catch (error) {
       console.error(error);
@@ -139,7 +154,7 @@ export default function CategoriasPage() {
     <AdminLayout>
       {/* ===================================================
           ENCABEZADO
-          =================================================== */}
+      =================================================== */}
       <div className="page-header">
         <div className="page-icon">
           <Tags size={26} />
@@ -151,21 +166,27 @@ export default function CategoriasPage() {
         </div>
       </div>
 
-      <div className="crud-grid">
+      {/* ===================================================
+          LAYOUT EN TARJETAS PRO
+      =================================================== */}
+      <div className="equipos-pro-layout categorias-layout-pro">
         {/* =================================================
-            FORMULARIO CATEGORÍA
-            ================================================= */}
-        <section className="page-card">
-          <h2>{editandoId ? "Editar categoría" : "Crear categoría"}</h2>
+            FORMULARIO
+        ================================================= */}
+        <section className="equipos-pro-form-card categorias-form-card">
+          <div className="equipos-card-title">
+            <h2>{editandoId ? "Editar categoría" : "Crear categoría"}</h2>
+            <p>Gestiona tipos y clasificaciones técnicas.</p>
+          </div>
 
-          <form onSubmit={guardarCategoria} className="crud-form">
+          <form onSubmit={guardarCategoria} className="equipos-pro-form">
             <div className="form-group full">
               <label>Nombre *</label>
               <input
                 name="nombre"
                 value={form.nombre}
                 onChange={handleChange}
-                placeholder="Ej: Biomédico, Refrigeración, CCTV"
+                placeholder="Ej: Biomédico, CCTV..."
               />
             </div>
 
@@ -175,7 +196,7 @@ export default function CategoriasPage() {
                 name="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
-                placeholder="Describe el tipo de equipos que pertenecen a esta categoría"
+                placeholder="Describe esta categoría..."
               />
             </div>
 
@@ -190,13 +211,17 @@ export default function CategoriasPage() {
             </label>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={limpiarFormulario}>
-                <X size={17} />
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={limpiarFormulario}
+              >
+                <X size={16} />
                 Limpiar
               </button>
 
               <button type="submit" className="btn-primary">
-                {editandoId ? <Save size={17} /> : <Plus size={17} />}
+                {editandoId ? <Save size={16} /> : <Plus size={16} />}
                 {editandoId ? "Actualizar" : "Crear categoría"}
               </button>
             </div>
@@ -204,82 +229,121 @@ export default function CategoriasPage() {
         </section>
 
         {/* =================================================
-            LISTADO CATEGORÍAS
-            ================================================= */}
-        <section className="page-card">
-          <div className="list-header">
+            LISTADO
+        ================================================= */}
+        <section className="equipos-pro-list-card categorias-list-card">
+          <div className="equipos-toolbar">
             <div>
               <h2>Categorías registradas</h2>
-              <p>{categorias.length} registros encontrados</p>
+              <p>{categoriasFiltradas.length} registros encontrados</p>
             </div>
 
-            <button className="btn-secondary" onClick={cargarCategorias}>
-              Recargar
+            <button
+              className="btn-secondary"
+              onClick={cargarCategorias}
+              disabled={cargando}
+            >
+              <RefreshCcw size={16} />
+              {cargando ? "Cargando..." : "Recargar"}
             </button>
           </div>
 
-          {cargando ? (
-            <p>Cargando categorías...</p>
-          ) : (
-            <div className="table-wrap">
-              <table className="sga-table">
-                <thead>
-                  <tr>
-                    <th>Categoría</th>
-                    <th>Descripción</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+          <input
+            className="equipos-search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar categoría..."
+          />
+
+          <div className="table-wrap categorias-table-wrap">
+            <table className="sga-table categorias-table">
+              <thead>
+                <tr>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {categoriasPaginadas.map((categoria) => (
+                  <tr key={categoria.id}>
+                    <td>
+                      <strong className="equipo-title">
+                        {categoria.nombre}
+                      </strong>
+                    </td>
+
+                    <td>{categoria.descripcion || "Sin descripción"}</td>
+
+                    <td>
+                      <span
+                        className={
+                          categoria.activo ? "badge active" : "badge inactive"
+                        }
+                      >
+                        {categoria.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          className="icon-btn"
+                          onClick={() => editarCategoria(categoria)}
+                          title="Editar categoría"
+                        >
+                          <Pencil size={16} />
+                        </button>
+
+                        <button
+                          className="icon-btn danger"
+                          onClick={() => eliminarCategoria(categoria.id)}
+                          title="Eliminar categoría"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
+                ))}
 
-                <tbody>
-                  {categorias.map((categoria) => (
-                    <tr key={categoria.id}>
-                      <td>
-                        <strong>{categoria.nombre}</strong>
-                      </td>
+                {categoriasPaginadas.length === 0 && (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: "center", padding: 30 }}>
+                      No hay categorías registradas.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-                      <td>{categoria.descripcion || "Sin descripción"}</td>
+          {/* =================================================
+              PAGINACIÓN
+          ================================================= */}
+          <div className="pagination">
+            <button
+              className="btn-secondary"
+              disabled={pagina === 1}
+              onClick={() => setPagina(pagina - 1)}
+            >
+              Anterior
+            </button>
 
-                      <td>
-                        <span className={categoria.activo ? "badge active" : "badge inactive"}>
-                          {categoria.activo ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
+            <span>
+              Página {pagina} de {totalPaginas}
+            </span>
 
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            className="icon-btn"
-                            onClick={() => editarCategoria(categoria)}
-                            title="Editar"
-                          >
-                            <Pencil size={16} />
-                          </button>
-
-                          <button
-                            className="icon-btn danger"
-                            onClick={() => eliminarCategoria(categoria.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {categorias.length === 0 && (
-                    <tr>
-                      <td colSpan="4" style={{ textAlign: "center", padding: 30 }}>
-                        No hay categorías registradas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+            <button
+              className="btn-secondary"
+              disabled={pagina === totalPaginas}
+              onClick={() => setPagina(pagina + 1)}
+            >
+              Siguiente
+            </button>
+          </div>
         </section>
       </div>
     </AdminLayout>

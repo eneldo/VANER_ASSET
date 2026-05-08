@@ -1,6 +1,11 @@
 // =========================================================
 // SIDEBAR PRO SGA
-// Menú lateral institucional con navegación por rol
+// Menú lateral institucional con navegación por rol.
+//
+// Mejora:
+// - Si user viene vacío desde props, intenta leer localStorage.user.
+// - ADMIN y COORDINADOR ven menú administrativo.
+// - TECNICO conserva acceso técnico.
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -25,21 +30,46 @@ export default function Sidebar({ user, onLogout }) {
   const navigate = useNavigate();
 
   // =======================================================
+  // USUARIO SEGURO
+  // Si por alguna razón AuthContext no entrega user,
+  // usamos localStorage para evitar que el menú desaparezca.
+  // =======================================================
+  let userSeguro = user;
+
+  if (!userSeguro) {
+    try {
+      userSeguro = JSON.parse(localStorage.getItem("user"));
+    } catch {
+      userSeguro = null;
+    }
+  }
+
+  const rol = userSeguro?.rol;
+  const esAdmin = rol === "ADMIN" || rol === "COORDINADOR";
+  const esTecnico = rol === "TECNICO";
+
+  // =======================================================
   // CERRAR SESIÓN
-  // Limpia sesión y redirige al login
   // =======================================================
   const handleLogout = () => {
-    onLogout();
+    if (typeof onLogout === "function") {
+      onLogout();
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+
     navigate("/");
   };
 
   return (
     <aside className="sga-sidebar">
       {/* ===================================================
-          LOGO / MARCA DEL SISTEMA
-          =================================================== */}
+          MARCA
+      =================================================== */}
       <div className="sga-brand">
         <div className="sga-logo">SGA</div>
+
         <div>
           <h2>SGA PRO</h2>
           <p>Gestión de Activos</p>
@@ -48,12 +78,10 @@ export default function Sidebar({ user, onLogout }) {
 
       <p className="sga-menu-title">MÓDULO PRINCIPAL</p>
 
-      {/* ===================================================
-          MENÚ PRINCIPAL
-          =================================================== */}
       <nav className="sga-menu">
+        {/* Dashboard según rol */}
         <NavLink
-          to={user?.rol === "ADMIN" ? "/admin" : "/tecnico"}
+          to={esTecnico ? "/tecnico" : "/admin"}
           className={({ isActive }) =>
             isActive ? "sga-menu-item active" : "sga-menu-item"
           }
@@ -62,8 +90,8 @@ export default function Sidebar({ user, onLogout }) {
           Dashboard
         </NavLink>
 
-        {/* Menú exclusivo para ADMIN */}
-        {user?.rol === "ADMIN" && (
+        {/* Menú ADMIN / COORDINADOR */}
+        {esAdmin && (
           <>
             <NavLink
               to="/admin/empresas"
@@ -117,6 +145,7 @@ export default function Sidebar({ user, onLogout }) {
           </>
         )}
 
+        {/* Opciones operativas */}
         <NavLink
           to="/admin/equipos"
           className={({ isActive }) =>
@@ -157,7 +186,7 @@ export default function Sidebar({ user, onLogout }) {
           Reportes
         </NavLink>
 
-        {user?.rol === "ADMIN" && (
+        {esAdmin && (
           <NavLink
             to="/admin/configuracion"
             className={({ isActive }) =>
@@ -170,23 +199,18 @@ export default function Sidebar({ user, onLogout }) {
         )}
       </nav>
 
-      {/* ===================================================
-          CARD DEL USUARIO ACTIVO
-          =================================================== */}
+      {/* Usuario */}
       <div className="sga-user-card">
         <div className="sga-user-avatar">
-          {user?.nombre_completo?.substring(0, 2).toUpperCase() || "US"}
+          {userSeguro?.nombre_completo?.substring(0, 2).toUpperCase() || "US"}
         </div>
 
         <div>
-          <strong>{user?.nombre_completo || "Usuario"}</strong>
-          <span>{user?.rol}</span>
+          <strong>{userSeguro?.nombre_completo || "Usuario"}</strong>
+          <span>{rol || "SIN ROL"}</span>
         </div>
       </div>
 
-      {/* ===================================================
-          BOTÓN CERRAR SESIÓN
-          =================================================== */}
       <button className="sga-logout" onClick={handleLogout}>
         <LogOut size={18} />
         Cerrar sesión

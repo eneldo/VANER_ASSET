@@ -1,31 +1,39 @@
 // =========================================================
 // PÁGINA ADMIN - SEDES
 // CRUD completo de sedes conectado al backend FastAPI
-// Endpoints:
-// - GET    /sedes/
-// - POST   /sedes/
-// - PUT    /sedes/{id}
-// - DELETE /sedes/{id}
-// - GET    /empresas/
+// Mantiene el diseño original + agrega:
+// - búsqueda
+// - paginación
+// - scroll interno elegante
+// - responsive
 // =========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
-import { MapPin, Plus, Save, Trash2, Pencil, X } from "lucide-react";
+import {
+  MapPin,
+  Plus,
+  Save,
+  Trash2,
+  Pencil,
+  X,
+  RefreshCcw,
+} from "lucide-react";
+
+import "../../styles/sidebar.css";
 
 export default function SedesPage() {
-  // =======================================================
-  // ESTADOS PRINCIPALES
-  // =======================================================
   const [sedes, setSedes] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [editandoId, setEditandoId] = useState(null);
   const [cargando, setCargando] = useState(false);
 
-  // =======================================================
-  // FORMULARIO
-  // =======================================================
+  // Búsqueda y paginación
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 6;
+
   const [form, setForm] = useState({
     empresa_id: "",
     nombre: "",
@@ -35,16 +43,14 @@ export default function SedesPage() {
     activo: true,
   });
 
-  // =======================================================
-  // CARGA INICIAL
-  // =======================================================
   useEffect(() => {
     cargarDatos();
   }, []);
 
-  // =======================================================
-  // CARGAR EMPRESAS Y SEDES
-  // =======================================================
+  useEffect(() => {
+    setPagina(1);
+  }, [busqueda]);
+
   const cargarDatos = async () => {
     try {
       setCargando(true);
@@ -54,8 +60,8 @@ export default function SedesPage() {
         API.get("/sedes/"),
       ]);
 
-      setEmpresas(resEmpresas.data);
-      setSedes(resSedes.data);
+      setEmpresas(Array.isArray(resEmpresas.data) ? resEmpresas.data : []);
+      setSedes(Array.isArray(resSedes.data) ? resSedes.data : []);
     } catch (error) {
       console.error(error);
       alert("Error cargando datos de sedes");
@@ -64,17 +70,39 @@ export default function SedesPage() {
     }
   };
 
-  // =======================================================
-  // OBTENER NOMBRE DE EMPRESA POR ID
-  // =======================================================
   const getNombreEmpresa = (empresaId) => {
     const empresa = empresas.find((e) => e.id === empresaId);
     return empresa ? empresa.nombre : "Empresa no encontrada";
   };
 
-  // =======================================================
-  // MANEJAR CAMBIOS FORMULARIO
-  // =======================================================
+  const sedesFiltradas = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+
+    if (!texto) return sedes;
+
+    return sedes.filter((sede) => {
+      const contenido = [
+        sede.nombre,
+        sede.direccion,
+        sede.telefono,
+        sede.responsable,
+        getNombreEmpresa(sede.empresa_id),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return contenido.includes(texto);
+    });
+  }, [sedes, busqueda, empresas]);
+
+  const totalPaginas = Math.ceil(sedesFiltradas.length / porPagina) || 1;
+
+  const sedesPaginadas = sedesFiltradas.slice(
+    (pagina - 1) * porPagina,
+    pagina * porPagina
+  );
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -84,9 +112,6 @@ export default function SedesPage() {
     });
   };
 
-  // =======================================================
-  // LIMPIAR FORMULARIO
-  // =======================================================
   const limpiarFormulario = () => {
     setForm({
       empresa_id: "",
@@ -100,9 +125,6 @@ export default function SedesPage() {
     setEditandoId(null);
   };
 
-  // =======================================================
-  // CREAR O ACTUALIZAR SEDE
-  // =======================================================
   const guardarSede = async (e) => {
     e.preventDefault();
 
@@ -118,11 +140,9 @@ export default function SedesPage() {
 
     try {
       if (editandoId) {
-        // Actualizar sede existente
         await API.put(`/sedes/${editandoId}`, form);
         alert("Sede actualizada correctamente");
       } else {
-        // Crear nueva sede
         await API.post("/sedes/", form);
         alert("Sede creada correctamente");
       }
@@ -135,9 +155,6 @@ export default function SedesPage() {
     }
   };
 
-  // =======================================================
-  // CARGAR SEDE AL FORMULARIO PARA EDITAR
-  // =======================================================
   const editarSede = (sede) => {
     setEditandoId(sede.id);
 
@@ -147,18 +164,12 @@ export default function SedesPage() {
       direccion: sede.direccion || "",
       telefono: sede.telefono || "",
       responsable: sede.responsable || "",
-      activo: sede.activo,
+      activo: sede.activo ?? true,
     });
   };
 
-  // =======================================================
-  // ELIMINAR SEDE
-  // =======================================================
   const eliminarSede = async (sedeId) => {
-    const confirmar = confirm(
-      "¿Seguro que deseas eliminar esta sede? Esta acción puede afectar equipos asociados."
-    );
-
+    const confirmar = confirm("¿Seguro que deseas eliminar esta sede?");
     if (!confirmar) return;
 
     try {
@@ -173,9 +184,6 @@ export default function SedesPage() {
 
   return (
     <AdminLayout>
-      {/* ===================================================
-          ENCABEZADO
-          =================================================== */}
       <div className="page-header">
         <div className="page-icon">
           <MapPin size={26} />
@@ -188,9 +196,7 @@ export default function SedesPage() {
       </div>
 
       <div className="crud-grid">
-        {/* =================================================
-            FORMULARIO SEDE
-            ================================================= */}
+        {/* FORMULARIO ORIGINAL */}
         <section className="page-card">
           <h2>{editandoId ? "Editar sede" : "Crear sede"}</h2>
 
@@ -263,7 +269,11 @@ export default function SedesPage() {
             </label>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={limpiarFormulario}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={limpiarFormulario}
+              >
                 <X size={17} />
                 Limpiar
               </button>
@@ -276,88 +286,129 @@ export default function SedesPage() {
           </form>
         </section>
 
-        {/* =================================================
-            LISTADO SEDES
-            ================================================= */}
-        <section className="page-card">
+        {/* LISTADO ORIGINAL + BÚSQUEDA + SCROLL + PAGINACIÓN */}
+        <section className="page-card sedes-list-card">
           <div className="list-header">
             <div>
               <h2>Sedes registradas</h2>
-              <p>{sedes.length} registros encontrados</p>
+              <p>
+                {sedesFiltradas.length} registros encontrados
+                {busqueda ? ` de ${sedes.length} sedes` : ""}
+              </p>
             </div>
 
-            <button className="btn-secondary" onClick={cargarDatos}>
-              Recargar
+            <button
+              className="btn-secondary"
+              onClick={cargarDatos}
+              disabled={cargando}
+            >
+              <RefreshCcw size={16} />
+              {cargando ? "Cargando..." : "Recargar"}
             </button>
           </div>
+
+          <input
+            className="equipos-search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar sede, empresa, teléfono, responsable o dirección..."
+          />
 
           {cargando ? (
             <p>Cargando sedes...</p>
           ) : (
-            <div className="table-wrap">
-              <table className="sga-table">
-                <thead>
-                  <tr>
-                    <th>Sede</th>
-                    <th>Empresa</th>
-                    <th>Teléfono</th>
-                    <th>Responsable</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {sedes.map((sede) => (
-                    <tr key={sede.id}>
-                      <td>
-                        <strong>{sede.nombre}</strong>
-                        <br />
-                        <small>{sede.direccion || "Sin dirección"}</small>
-                      </td>
-
-                      <td>{getNombreEmpresa(sede.empresa_id)}</td>
-                      <td>{sede.telefono || "N/A"}</td>
-                      <td>{sede.responsable || "N/A"}</td>
-
-                      <td>
-                        <span className={sede.activo ? "badge active" : "badge inactive"}>
-                          {sede.activo ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            className="icon-btn"
-                            onClick={() => editarSede(sede)}
-                            title="Editar"
-                          >
-                            <Pencil size={16} />
-                          </button>
-
-                          <button
-                            className="icon-btn danger"
-                            onClick={() => eliminarSede(sede.id)}
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {sedes.length === 0 && (
+            <>
+              <div className="table-wrap sedes-table-wrap">
+                <table className="sga-table sedes-table">
+                  <thead>
                     <tr>
-                      <td colSpan="6" style={{ textAlign: "center", padding: 30 }}>
-                        No hay sedes registradas.
-                      </td>
+                      <th>Sede</th>
+                      <th>Empresa</th>
+                      <th>Teléfono</th>
+                      <th>Responsable</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+
+                  <tbody>
+                    {sedesPaginadas.map((sede) => (
+                      <tr key={sede.id}>
+                        <td>
+                          <strong>{sede.nombre}</strong>
+                          <br />
+                          <small>{sede.direccion || "Sin dirección"}</small>
+                        </td>
+
+                        <td>{getNombreEmpresa(sede.empresa_id)}</td>
+                        <td>{sede.telefono || "N/A"}</td>
+                        <td>{sede.responsable || "N/A"}</td>
+
+                        <td>
+                          <span
+                            className={
+                              sede.activo ? "badge active" : "badge inactive"
+                            }
+                          >
+                            {sede.activo ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              className="icon-btn"
+                              onClick={() => editarSede(sede)}
+                              title="Editar"
+                            >
+                              <Pencil size={16} />
+                            </button>
+
+                            <button
+                              className="icon-btn danger"
+                              onClick={() => eliminarSede(sede.id)}
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {sedesPaginadas.length === 0 && (
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: "center", padding: 30 }}>
+                          No hay sedes registradas.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pagination">
+                <button
+                  className="btn-secondary"
+                  disabled={pagina === 1}
+                  onClick={() => setPagina(pagina - 1)}
+                >
+                  Anterior
+                </button>
+
+                <span>
+                  Página {pagina} de {totalPaginas}
+                </span>
+
+                <button
+                  className="btn-secondary"
+                  disabled={pagina === totalPaginas}
+                  onClick={() => setPagina(pagina + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
+            </>
           )}
         </section>
       </div>
