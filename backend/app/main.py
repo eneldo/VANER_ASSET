@@ -28,6 +28,8 @@ from app.routers import evidencias
 from app.routers import dashboard_tecnico
 from app.routers import permisos
 from app.routers import cliente 
+from app.routers import reportes, auditoria
+from app.routers import auditoria
 
 
 # =========================================================
@@ -98,6 +100,8 @@ app.include_router(evidencias.router)
 app.include_router(dashboard_tecnico.router)
 app.include_router(permisos.router)
 app.include_router(cliente.router)
+app.include_router(reportes.router)
+app.include_router(auditoria.router)    
 
 
 

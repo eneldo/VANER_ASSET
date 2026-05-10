@@ -1684,3 +1684,13 @@ select {
     min-width: 900px;
   }
 }
+{
+  label: "Reportes",
+  path: "/admin/reportes",
+  icon: <BarChart3 size={20} />,
+},
+{
+  label: "Auditoría",
+  path: "/admin/auditoria",
+  icon: <ShieldCheck size={20} />,
+},

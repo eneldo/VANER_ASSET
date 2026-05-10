@@ -1,0 +1,163 @@
+/* ============================================================
+   FASE 26 - REPORTES PRO
+   Proyecto: SGA PRO
+   ============================================================ */
+
+.reportes-page {
+  width: 100%;
+  height: calc(100vh - 20px);
+  overflow-y: auto;
+  padding: 24px;
+  background: #f4f7fb;
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.reportes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.reportes-header h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 32px;
+}
+
+.reportes-header p {
+  margin-top: 6px;
+  color: #64748b;
+}
+
+.reportes-header button {
+  background: #0f4c81;
+  color: #fff;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 76, 129, 0.22);
+}
+
+.reportes-cards {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.reporte-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.reporte-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #e0f2fe;
+  color: #075985;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reporte-card h3 {
+  margin: 0;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.reporte-card p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.reportes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.reporte-panel {
+  background: #fff;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.reporte-panel h2 {
+  margin-top: 0;
+  color: #0f172a;
+}
+
+.reportes-table-wrap {
+  max-height: 330px;
+  overflow: auto;
+  border-radius: 16px;
+}
+
+.reportes-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.reportes-table-wrap th {
+  position: sticky;
+  top: 0;
+  background: #0f4c81;
+  color: #fff;
+  text-align: left;
+  padding: 12px;
+}
+
+.reportes-table-wrap td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #334155;
+}
+
+.badge-accion {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+@media (max-width: 1200px) {
+  .reportes-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .reportes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .reportes-page {
+    padding: 14px;
+  }
+
+  .reportes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .reportes-cards {
+    grid-template-columns: 1fr;
+  }
+}

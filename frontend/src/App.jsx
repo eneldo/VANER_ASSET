@@ -21,6 +21,7 @@ import HojaVidaEquipoPage from "./pages/admin/HojaVidaEquipoPage";
 import MantenimientosPage from "./pages/admin/MantenimientosPage";
 import EvidenciasPage from "./pages/admin/EvidenciasPage";
 import ReportesPage from "./pages/admin/ReportesPage";
+import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
 
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -187,11 +188,22 @@ function App() {
           }
         />
 
+        {/* FASE 26 - REPORTES PRO */}
         <Route
           path="/admin/reportes"
           element={
             <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
               <ReportesPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* FASE 26 - AUDITORÍA DEL SISTEMA */}
+        <Route
+          path="/admin/auditoria"
+          element={
+            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
+              <AuditoriaPage />
             </RoleRoute>
           }
         />
@@ -258,7 +270,6 @@ function AdminShell({ children }) {
           // =====================================================
           // SCROLL VERTICAL PROFESIONAL
           // =====================================================
-
           height: "100vh",
           overflowY: "auto",
           paddingBottom: "120px",
