@@ -10,6 +10,7 @@ import {
   MonitorCog,
   Wrench,
   CalendarDays,
+  Bell,
   LogOut,
 } from "lucide-react";
 import "./cliente.css";
@@ -64,6 +65,12 @@ export default function ClienteLayout() {
           <NavLink className="cliente-link" to="/cliente/cronograma">
             <CalendarDays size={18} />
             Cronograma
+          </NavLink>
+
+          {/* FASE 29 - NOTIFICACIONES DEL CLIENTE */}
+          <NavLink className="cliente-link" to="/cliente/notificaciones">
+            <Bell size={18} />
+            Notificaciones
           </NavLink>
         </nav>
 

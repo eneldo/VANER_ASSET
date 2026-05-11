@@ -22,6 +22,7 @@ import {
   LogOut,
   Tags,
   UserCog,
+  Bell,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -131,6 +132,18 @@ export default function Sidebar({ user, onLogout }) {
             >
               <UserCog size={18} />
               Técnicos
+            </NavLink>
+
+
+            {/* FASE 29 - CENTRO DE NOTIFICACIONES */}
+            <NavLink
+              to="/admin/notificaciones"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Bell size={18} />
+              Notificaciones
             </NavLink>
 
             <NavLink

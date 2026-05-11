@@ -23,12 +23,14 @@ import EvidenciasPage from "./pages/admin/EvidenciasPage";
 import ReportesPage from "./pages/admin/ReportesPage";
 import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
+import NotificacionesPage from "./pages/admin/NotificacionesPage";
 
 import ClienteLayout from "./pages/cliente/ClienteLayout";
 import ClienteDashboard from "./pages/cliente/ClienteDashboard";
 import ClienteSedes from "./pages/cliente/ClienteSedes";
 import ClienteEquipos from "./pages/cliente/ClienteEquipos";
 import ClienteMantenimientos from "./pages/cliente/ClienteMantenimientos";
+import ClienteNotificaciones from "./pages/cliente/ClienteNotificaciones";
 
 import Sidebar from "./components/Sidebar";
 import { AuthContext } from "./context/AuthContext";
@@ -208,6 +210,17 @@ function App() {
           }
         />
 
+
+        {/* FASE 29 - NOTIFICACIONES Y ALERTAS PRO */}
+        <Route
+          path="/admin/notificaciones"
+          element={
+            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
+              <NotificacionesPage />
+            </RoleRoute>
+          }
+        />
+
         <Route
           path="/admin/configuracion"
           element={
@@ -241,6 +254,8 @@ function App() {
           <Route path="equipos" element={<ClienteEquipos />} />
           <Route path="mantenimientos" element={<ClienteMantenimientos />} />
           <Route path="cronograma" element={<ClienteMantenimientos />} />
+          {/* FASE 29 - NOTIFICACIONES CLIENTE */}
+          <Route path="notificaciones" element={<ClienteNotificaciones />} />
         </Route>
 
         {/* Cualquier ruta no encontrada */}

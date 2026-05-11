@@ -29,6 +29,7 @@ from app.routers import dashboard_tecnico
 from app.routers import permisos
 from app.routers import cliente 
 from app.routers import reportes, auditoria
+from app.routers import notificaciones
 from app.routers import auditoria
 
 
@@ -101,7 +102,8 @@ app.include_router(dashboard_tecnico.router)
 app.include_router(permisos.router)
 app.include_router(cliente.router)
 app.include_router(reportes.router)
-app.include_router(auditoria.router)    
+app.include_router(auditoria.router)
+app.include_router(notificaciones.router)    
 
 
 
@@ -118,5 +120,5 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "SGA PRO - Evidencias y mantenimiento"
+        "fase": "SGA PRO - Fase 29 Notificaciones y Alertas PRO"
     }
