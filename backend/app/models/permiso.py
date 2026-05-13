@@ -1,59 +1,66 @@
-# ============================================================
-# MODELOS: Roles, Permisos y relaciones
-# Archivo: app/models/permiso.py
-# ============================================================
+# ================================================================
+# SGA PRO - FASE 31.2
+# Archivo: backend/app/models/permiso.py
+# Objetivo:
+#   Modelos SQLAlchemy para roles, permisos y asignaciones.
+#   No elimina el campo rol existente en usuarios; lo complementa.
+# ================================================================
 
-from sqlalchemy import Column, Integer, String, Boolean, Text, ForeignKey, DateTime
+import uuid
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, Text, func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 
 from app.database import Base
 
 
-class Rol(Base):
-    __tablename__ = "roles"
+roles_permisos = Table(
+    "roles_permisos",
+    Base.metadata,
+    Column("rol_id", UUID(as_uuid=True), ForeignKey("roles_sistema.id", ondelete="CASCADE"), primary_key=True),
+    Column("permiso_id", UUID(as_uuid=True), ForeignKey("permisos_sistema.id", ondelete="CASCADE"), primary_key=True),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+)
 
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(50), unique=True, nullable=False)
+
+class RolSistema(Base):
+    """Catálogo oficial de roles del sistema."""
+
+    __tablename__ = "roles_sistema"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    codigo = Column(String(40), unique=True, nullable=False, index=True)
+    nombre = Column(String(100), nullable=False)
     descripcion = Column(Text, nullable=True)
-    activo = Column(Boolean, default=True)
-    creado_en = Column(DateTime, server_default=func.now())
+    activo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
-    permisos = relationship(
-        "RolPermiso",
-        back_populates="rol",
-        cascade="all, delete-orphan"
-    )
+    permisos = relationship("PermisoSistema", secondary=roles_permisos, back_populates="roles")
 
 
-class Permiso(Base):
-    __tablename__ = "permisos"
+class PermisoSistema(Base):
+    """Permiso granular por módulo y acción."""
 
-    id = Column(Integer, primary_key=True, index=True)
+    __tablename__ = "permisos_sistema"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     codigo = Column(String(80), unique=True, nullable=False, index=True)
+    modulo = Column(String(60), nullable=False, index=True)
+    accion = Column(String(40), nullable=False)
     nombre = Column(String(120), nullable=False)
     descripcion = Column(Text, nullable=True)
-    modulo = Column(String(80), nullable=True)
-    activo = Column(Boolean, default=True)
-    creado_en = Column(DateTime, server_default=func.now())
+    activo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
-
-class RolPermiso(Base):
-    __tablename__ = "roles_permisos"
-
-    id = Column(Integer, primary_key=True, index=True)
-    rol_id = Column(Integer, ForeignKey("roles.id", ondelete="CASCADE"), nullable=False)
-    permiso_id = Column(Integer, ForeignKey("permisos.id", ondelete="CASCADE"), nullable=False)
-
-    rol = relationship("Rol", back_populates="permisos")
-    permiso = relationship("Permiso")
+    roles = relationship("RolSistema", secondary=roles_permisos, back_populates="permisos")
 
 
 class UsuarioPermiso(Base):
+    """Permisos directos por usuario para excepciones puntuales."""
+
     __tablename__ = "usuarios_permisos"
 
-    id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(String, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
-    permiso_id = Column(Integer, ForeignKey("permisos.id", ondelete="CASCADE"), nullable=False)
-
-    permiso = relationship("Permiso")
+    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True)
+    permiso_id = Column(UUID(as_uuid=True), ForeignKey("permisos_sistema.id", ondelete="CASCADE"), primary_key=True)
+    permitido = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)

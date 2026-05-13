@@ -1,0 +1,56 @@
+/*
+===========================================================
+SEGURIDAD VISUAL EVIDENCIAS
+===========================================================
+*/
+
+.secure-upload-box {
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 20px;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+
+    width: 100%;
+}
+
+.secure-upload-box h3 {
+
+    margin-bottom: 15px;
+
+    color: #1e3a8a;
+}
+
+.secure-upload-box input {
+
+    margin-bottom: 15px;
+}
+
+.file-preview {
+
+    background: #f1f5f9;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    margin-bottom: 15px;
+}
+
+.secure-upload-box button {
+
+    background: #2563eb;
+
+    color: white;
+
+    border: none;
+
+    padding: 10px 20px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+}

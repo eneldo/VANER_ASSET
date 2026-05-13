@@ -1,6 +1,11 @@
 # =========================================================
 # MAIN BACKEND SGA PRO
-# Punto principal de entrada de FastAPI
+# Archivo: backend/app/main.py
+# =========================================================
+# Fase 31.5:
+# - registra router auditoria_pro,
+# - activa AuditMiddleware para trazabilidad automática,
+# - conserva routers existentes del proyecto.
 # =========================================================
 
 import os
@@ -10,6 +15,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
+from app.middleware.audit_middleware import AuditMiddleware
+
+from app.middleware.rate_limit import (
+    InMemoryRateLimitMiddleware as RateLimitMiddleware
+)
+
+from app.middleware.request_id import RequestIDMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+
 
 # =========================================================
 # ROUTERS DEL SISTEMA
@@ -27,10 +41,12 @@ from app.routers import mantenimientos
 from app.routers import evidencias
 from app.routers import dashboard_tecnico
 from app.routers import permisos
-from app.routers import cliente 
-from app.routers import reportes, auditoria
-from app.routers import notificaciones
+from app.routers import cliente
+from app.routers import reportes
 from app.routers import auditoria
+from app.routers import auditoria_pro
+from app.routers import password_recovery  
+
 
 
 # =========================================================
@@ -39,12 +55,14 @@ from app.routers import auditoria
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
 # =========================================================
-# CORS PARA FRONTEND REACT
+# MIDDLEWARES DE SEGURIDAD
+# IMPORTANTE:
+#   El orden se conserva estable para evitar romper CORS.
 # =========================================================
 
 app.add_middleware(
@@ -55,20 +73,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Si estos middlewares ya existen desde Fase 31.3, se mantienen activos.
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RequestIDMiddleware)
+
+# Fase 31.5 - Auditoría automática HTTP.
+app.add_middleware(AuditMiddleware)
+
 
 # =========================================================
 # ARCHIVOS ESTÁTICOS / UPLOADS
-# Objetivo:
-#   Permitir visualizar archivos cargados, como:
-#   - Evidencias de mantenimiento
-#   - Imágenes
-#   - PDFs
-#
-# URL pública:
-#   http://127.0.0.1:8000/uploads/evidencias/archivo.png
-#
-# Carpeta física:
-#   backend/app/uploads/
 # =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -80,7 +95,7 @@ os.makedirs(os.path.join(UPLOADS_DIR, "evidencias"), exist_ok=True)
 app.mount(
     "/uploads",
     StaticFiles(directory=UPLOADS_DIR),
-    name="uploads"
+    name="uploads",
 )
 
 
@@ -103,9 +118,10 @@ app.include_router(permisos.router)
 app.include_router(cliente.router)
 app.include_router(reportes.router)
 app.include_router(auditoria.router)
-app.include_router(notificaciones.router)    
+app.include_router(password_recovery.router)
 
-
+# Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
+app.include_router(auditoria_pro.router)
 
 
 # =========================================================
@@ -114,11 +130,9 @@ app.include_router(notificaciones.router)
 
 @app.get("/")
 def root():
-    """
-    Ruta inicial para comprobar que el backend está activo.
-    """
+    """Ruta inicial para comprobar que el backend está activo."""
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "SGA PRO - Fase 29 Notificaciones y Alertas PRO"
+        "fase": "31.5 - Auditoría y Monitoreo PRO SaaS",
     }

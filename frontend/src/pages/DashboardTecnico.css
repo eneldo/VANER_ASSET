@@ -1,40 +1,204 @@
 /* =========================================================
-   DASHBOARD ADMIN INTELIGENTE - SGA PRO
-   Estilo SaaS profesional + scroll interno
+   DASHBOARD TÉCNICO PRO - SGA PRO
+   Archivo: frontend/src/pages/DashboardTecnico.css
+   Compatible con DashboardTecnico.jsx usando clases tec-*
 ========================================================= */
 
-.dash-shell {
-  display: flex;
-  height: 100vh;
-  background: #f5f8ff;
-  overflow: hidden;
+* {
+  box-sizing: border-box;
 }
 
-.dash-main {
+body {
+  margin: 0;
+  background: #f3f7fb;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.tec-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  color: #1e3a8a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   LAYOUT PRINCIPAL
+========================================================= */
+
+.tec-shell {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: #f3f7fb;
+  color: #0f172a;
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.tec-sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100vh;
+  padding: 22px 18px;
+  background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 55%, #0f172a 100%);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 12px 0 35px rgba(15, 23, 42, 0.18);
+  z-index: 20;
+}
+
+.tec-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.tec-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  box-shadow: 0 14px 30px rgba(56, 189, 248, 0.28);
+}
+
+.tec-brand h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.tec-brand p {
+  margin: 5px 0 0;
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tec-user-card {
+  margin: 22px 0;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+}
+
+.tec-user-card strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.tec-user-card span {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.tec-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tec-nav button,
+.tec-logout {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 850;
+  transition: all 0.22s ease;
+}
+
+.tec-nav button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0f2fe;
+}
+
+.tec-nav button.active,
+.tec-nav button:hover {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  transform: translateX(3px);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
+}
+
+.tec-logout {
+  margin-top: auto;
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.tec-logout:hover {
+  background: #ef4444;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.tec-main {
   flex: 1;
   height: 100vh;
-  padding: 24px 28px 80px;
+  padding: 26px 30px 90px;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #f5f8ff;
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 32%),
+    linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
 }
 
-/* Scroll PRO */
-.dash-main::-webkit-scrollbar {
+.tec-main::-webkit-scrollbar {
   width: 10px;
 }
 
-.dash-main::-webkit-scrollbar-track {
+.tec-main::-webkit-scrollbar-track {
   background: #eaf2ff;
   border-radius: 20px;
 }
 
-.dash-main::-webkit-scrollbar-thumb {
+.tec-main::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #2563eb, #06b6d4);
   border-radius: 20px;
 }
 
-.dash-main::-webkit-scrollbar-thumb:hover {
+.tec-main::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #1d4ed8, #0891b2);
 }
 
@@ -42,430 +206,714 @@
    HEADER
 ========================================================= */
 
-.dash-header {
+.tec-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 18px;
   gap: 18px;
+  margin-bottom: 20px;
 }
 
-.dash-kicker {
-  margin: 0 0 4px;
+.tec-kicker {
+  margin: 0 0 6px;
   color: #2563eb;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
 }
 
-.dash-header h1 {
+.tec-header h1 {
   margin: 0;
   color: #0f172a;
-  font-size: 29px;
-  line-height: 1.05;
-  font-weight: 900;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.04em;
 }
 
-.dash-header p {
-  margin: 7px 0 0;
+.tec-header p {
+  margin: 8px 0 0;
   color: #64748b;
   font-size: 14px;
-}
-
-.dash-refresh,
-.dash-clear {
-  border: 1px solid #dbeafe;
-  background: white;
-  color: #1e40af;
-  border-radius: 14px;
-  padding: 10px 14px;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.2s ease;
-}
-
-.dash-refresh:hover,
-.dash-clear:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.14);
+  font-weight: 650;
 }
 
 /* =========================================================
-   CARDS PRINCIPALES COMPACTAS
+   BOTONES
 ========================================================= */
 
-.dash-cards {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(130px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+.tec-btn-primary,
+.tec-btn-secondary {
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 900;
+  transition: all 0.22s ease;
+  white-space: nowrap;
 }
 
-.dash-card {
-  border: 1px solid #e5eef8;
-  background: white;
-  border-radius: 20px;
-  padding: 13px 14px;
-  min-height: 78px;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
-  cursor: pointer;
-  text-align: left;
+.tec-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.20);
+}
+
+.tec-btn-secondary {
+  background: #ffffff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.tec-btn-primary:hover,
+.tec-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.18);
+}
+
+/* =========================================================
+   KPI CARDS
+========================================================= */
+
+.tec-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.tec-card {
+  min-height: 96px;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: all 0.2s ease;
+  gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s ease;
 }
 
-.dash-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.11);
+.tec-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 46px rgba(15, 23, 42, 0.12);
+  border-color: #bfdbfe;
 }
 
-.dash-card-icon {
-  width: 43px;
-  height: 43px;
-  border-radius: 15px;
+.tec-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: white;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.dash-card-icon svg {
-  width: 22px;
-  height: 22px;
+.tec-card-icon svg {
+  width: 23px;
+  height: 23px;
 }
 
-.dash-card span {
+.tec-card span {
   display: block;
   color: #64748b;
   font-size: 12px;
   font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.dash-card strong {
+.tec-card strong {
   display: block;
-  margin-top: 3px;
+  margin-top: 5px;
   color: #0f172a;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
-  font-weight: 900;
+  font-weight: 950;
 }
 
 /* =========================================================
-   ALERTAS
+   TOOLBAR
 ========================================================= */
 
-.dash-alerts {
+.tec-toolbar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-template-columns: 1fr 230px;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.dash-alert-card {
-  border: 1px solid #e5eef8;
-  background: white;
-  border-radius: 19px;
-  padding: 13px 14px;
-  min-height: 70px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-align: left;
+.tec-toolbar input,
+.tec-toolbar select,
+.tec-observation textarea,
+.tec-form input,
+.tec-form select,
+.tec-form textarea {
+  width: 100%;
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
   transition: all 0.2s ease;
 }
 
-.dash-alert-card:hover {
-  transform: translateY(-3px);
+.tec-toolbar input:focus,
+.tec-toolbar select:focus,
+.tec-observation textarea:focus,
+.tec-form input:focus,
+.tec-form select:focus,
+.tec-form textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
 }
 
-.dash-alert-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+/* =========================================================
+   OBSERVACIÓN
+========================================================= */
+
+.tec-observation {
+  margin-bottom: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
+}
+
+.tec-observation label {
+  display: block;
+  margin-bottom: 8px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tec-observation textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+/* =========================================================
+   PANEL
+========================================================= */
+
+.tec-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 20px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.tec-panel-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
-.dash-alert-card span {
+.tec-panel-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+}
+
+.tec-panel-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+/* =========================================================
+   CARDS MANTENIMIENTOS
+========================================================= */
+
+.tec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.tec-maint-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 18px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.065);
+  transition: all 0.22s ease;
+}
+
+.tec-maint-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.11);
+  border-color: #bfdbfe;
+}
+
+.tec-maint-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tec-maint-top h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.tec-maint-top p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.tec-maint-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tec-maint-info div {
+  background: #f1f7ff;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 11px;
+  min-width: 0;
+}
+
+.tec-maint-info span {
   display: block;
   color: #64748b;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
-.dash-alert-card strong {
+.tec-maint-info strong {
   display: block;
+  margin-top: 5px;
   color: #0f172a;
-  font-size: 24px;
-  line-height: 1;
-  margin-top: 4px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
 }
 
-.dash-alert-card.warning .dash-alert-icon {
+/* =========================================================
+   ESTADOS
+========================================================= */
+
+.tec-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 106px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.tec-status.progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tec-status.warning {
   background: #fef3c7;
   color: #92400e;
 }
 
-.dash-alert-card.danger .dash-alert-icon {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.dash-alert-card.success .dash-alert-icon {
+.tec-status.ok {
   background: #dcfce7;
   color: #166534;
 }
 
 /* =========================================================
-   GRÁFICAS
+   ACCIONES
 ========================================================= */
 
-.dash-charts {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 16px;
-  margin-bottom: 16px;
+.tec-actions,
+.tec-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
 }
 
-.dash-chart-card,
-.dash-detail-card {
-  background: white;
-  border: 1px solid #e5eef8;
-  border-radius: 22px;
-  padding: 18px;
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.065);
+.tec-actions {
+  margin-bottom: 10px;
 }
 
-.dash-full-chart {
-  margin-bottom: 16px;
-}
-
-.dash-chart-card h2,
-.dash-detail-header h2 {
-  margin: 0 0 12px;
-  color: #0f172a;
-  font-size: 18px;
+.tec-actions button,
+.tec-state-actions button {
+  min-height: 38px;
+  border-radius: 13px;
+  padding: 9px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
   font-weight: 900;
+  transition: all 0.2s ease;
 }
 
-.recharts-tooltip-wrapper {
+.tec-state-actions button {
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+  color: #1e40af;
+}
+
+.tec-state-actions button:hover {
+  background: #eff6ff;
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   VACÍO Y PAGINACIÓN
+========================================================= */
+
+.tec-empty {
+  padding: 26px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  text-align: center;
+  font-weight: 850;
+}
+
+.tec-pagination {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+
+.tec-pagination button {
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+  color: #1e40af;
+  border-radius: 13px;
+  padding: 10px 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tec-pagination button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.15);
+}
+
+.tec-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tec-pagination span {
+  color: #475569;
+  font-weight: 900;
   font-size: 13px;
+}
+
+/* =========================================================
+   MODALES
+========================================================= */
+
+.tec-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 999;
+}
+
+.tec-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 28px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+  padding: 22px;
+}
+
+.tec-modal-large {
+  max-width: 920px;
+}
+
+.tec-modal::-webkit-scrollbar {
+  width: 9px;
+}
+
+.tec-modal::-webkit-scrollbar-track {
+  background: #eaf2ff;
+  border-radius: 20px;
+}
+
+.tec-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 20px;
+}
+
+.tec-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tec-modal-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.tec-modal-header button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 13px;
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tec-form {
+  display: grid;
+  gap: 10px;
+}
+
+.tec-form label {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.tec-form textarea {
+  min-height: 95px;
+  resize: vertical;
 }
 
 /* =========================================================
    DETALLE
 ========================================================= */
 
-.dash-detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  gap: 14px;
-}
-
-.dash-detail-header h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.dash-detail-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.dash-empty {
-  padding: 28px;
-  text-align: center;
-  color: #64748b;
-  background: #f8fafc;
-  border-radius: 18px;
-  font-weight: 800;
-}
-
-/* =========================================================
-   SEDES EN TARJETAS
-========================================================= */
-
-.dash-sedes-grid {
+.tec-detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-.dash-sede-card {
-  border: 1px solid #e2e8f0;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  border-radius: 20px;
-  padding: 16px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+.tec-info {
+  padding: 13px;
+  border-radius: 16px;
+  background: #f1f7ff;
+  border: 1px solid #dbeafe;
+}
+
+.tec-info span {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.tec-info strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.tec-modal h3 {
+  margin: 20px 0 12px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.tec-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.tec-evidence-card {
+  text-decoration: none;
+  padding: 15px;
+  border-radius: 18px;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
   transition: all 0.2s ease;
 }
 
-.dash-sede-card:hover {
+.tec-evidence-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.14);
 }
 
-.dash-sede-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.dash-sede-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.dash-sede-top span {
-  font-size: 11px;
+.tec-evidence-card svg {
   color: #2563eb;
-  font-weight: 900;
-  text-transform: uppercase;
 }
 
-.dash-sede-card h3 {
-  margin: 0 0 10px;
-  color: #0f172a;
-  font-size: 17px;
-  font-weight: 900;
-}
-
-.dash-sede-card p {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 7px 0;
-  color: #475569;
+.tec-evidence-card strong {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 950;
 }
 
-.dash-sede-card p svg {
-  color: #2563eb;
-  flex-shrink: 0;
-}
-
-.dash-sede-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.dash-sede-stats div {
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
-  border-radius: 14px;
-  padding: 10px;
-}
-
-.dash-sede-stats small {
-  display: block;
+.tec-evidence-card span {
   color: #64748b;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.dash-sede-stats strong {
-  display: block;
-  margin-top: 4px;
-  color: #1d4ed8;
-  font-size: 20px;
-  font-weight: 900;
-}
-
-/* =========================================================
-   TABLA
-========================================================= */
-
-.dash-table-wrap {
-  overflow-x: auto;
-  border-radius: 16px;
-}
-
-.dash-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.dash-table th {
-  text-align: left;
-  padding: 12px 11px;
-  color: #475569;
-  text-transform: uppercase;
-  font-size: 11px;
-  border-bottom: 1px solid #e5e7eb;
-  white-space: nowrap;
-}
-
-.dash-table td {
-  padding: 12px 11px;
-  border-bottom: 1px solid #eef2f7;
-  color: #0f172a;
-  white-space: nowrap;
-}
-
-.dash-table tr:hover {
-  background: #f8fbff;
+  font-size: 12px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
-@media (max-width: 1500px) {
-  .dash-cards {
+@media (max-width: 1200px) {
+  .tec-cards {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .dash-alerts {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .dash-charts {
-    grid-template-columns: 1fr;
+  .tec-grid {
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  .dash-main {
-    padding: 20px 18px 70px;
-  }
-
-  .dash-header {
+  .tec-shell {
     flex-direction: column;
-    align-items: flex-start;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
-  .dash-cards,
-  .dash-alerts,
-  .dash-sedes-grid {
+  .tec-sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    padding: 16px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .tec-brand {
+    padding-bottom: 14px;
+  }
+
+  .tec-user-card {
+    margin: 14px 0;
+  }
+
+  .tec-main {
+    height: auto;
+    min-height: calc(100vh - 240px);
+    padding: 20px 16px 70px;
+    overflow: visible;
+  }
+
+  .tec-header {
+    flex-direction: column;
+  }
+
+  .tec-cards {
     grid-template-columns: 1fr;
+  }
+
+  .tec-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .tec-header h1 {
+    font-size: 28px;
+  }
+
+  .tec-panel {
+    padding: 15px;
+    border-radius: 22px;
+  }
+
+  .tec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-maint-info {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-actions,
+  .tec-state-actions {
+    flex-direction: column;
+  }
+
+  .tec-actions button,
+  .tec-state-actions button,
+  .tec-btn-secondary,
+  .tec-btn-primary {
+    width: 100%;
+  }
+
+  .tec-modal-backdrop {
+    padding: 12px;
+  }
+
+  .tec-modal {
+    border-radius: 22px;
+    padding: 18px;
   }
 }

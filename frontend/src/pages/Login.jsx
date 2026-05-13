@@ -1,16 +1,25 @@
 // ============================================================
 // LOGIN ULTRA PRO - SGA PRO
-// Login empresarial SaaS con redirección por roles
+// Archivo: frontend/src/pages/Login.jsx
+// ============================================================
+// Login empresarial SaaS:
+// - usa AuthContext.login()
+// - evita doble petición al backend
+// - guarda access_token / refresh_token desde AuthContext
+// - redirecciona por rol
 // ============================================================
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
-import API from "../api/axios";
+
+import { useAuth } from "../context/AuthContext";
+
 import "../styles/login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [form, setForm] = useState({
     username: "",
@@ -32,7 +41,7 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    if (!form.username || !form.password) {
+    if (!form.username.trim() || !form.password.trim()) {
       setError("Ingresa usuario/correo y contraseña.");
       return;
     }
@@ -40,35 +49,28 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const res = await API.post("/auth/login", {
-        username: form.username,
+      // ======================================================
+      // Login centralizado desde AuthContext
+      // Evita doble POST /auth/login
+      // ======================================================
+      const user = await login({
+        username: form.username.trim(),
         password: form.password,
       });
 
-      const data = res.data;
+      const rol = user?.rol?.toUpperCase();
 
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          usuario_id: data.usuario_id,
-          nombre_completo: data.nombre_completo,
-          rol: data.rol,
-          empresa_id: data.empresa_id || null,
-        })
-      );
-
-      if (data.rol === "ADMIN" || data.rol === "COORDINADOR") {
-        navigate("/admin");
-      } else if (data.rol === "EMPRESA" || data.rol === "CLIENTE") {
-        navigate("/cliente/dashboard");
-      } else if (data.rol === "TECNICO") {
-        navigate("/tecnico");
+      if (rol === "ADMIN" || rol === "COORDINADOR") {
+        navigate("/admin", { replace: true });
+      } else if (rol === "EMPRESA" || rol === "CLIENTE") {
+        navigate("/cliente/dashboard", { replace: true });
+      } else if (rol === "TECNICO") {
+        navigate("/tecnico", { replace: true });
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error login:", err);
       setError(err.response?.data?.detail || "Usuario o contraseña incorrectos.");
     } finally {
       setLoading(false);
@@ -90,9 +92,7 @@ export default function Login() {
             </div>
           </div>
 
-          <h1>
-            Plataforma SaaS para gestión de activos y mantenimiento.
-          </h1>
+          <h1>Plataforma SaaS para gestión de activos y mantenimiento.</h1>
 
           <p>
             Administra empresas, sedes, inventario, técnicos, mantenimientos,

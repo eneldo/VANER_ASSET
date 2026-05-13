@@ -1,163 +1,162 @@
-# ============================================================
-# ROUTER: Permisos PRO
-# Archivo: app/routers/permisos.py
-# ============================================================
+# ================================================================
+# SGA PRO - FASE 31.2
+# Archivo: backend/app/routers/permisos.py
+# Objetivo:
+#   API PRO para roles, permisos y permisos directos por usuario.
+#   Pensado para integrarse con Fase 31.1 JWT.
+# ================================================================
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from typing import List
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models.permiso import Rol, Permiso, RolPermiso, UsuarioPermiso
-from app.models.usuario import Usuario
-from app.schemas.permisos import (
+from app.models.permiso import PermisoSistema, RolSistema, UsuarioPermiso
+from app.schemas.permiso_schema import (
     PermisoOut,
     RolOut,
-    AsignarPermisosUsuarioRequest,
+    RolPermisosUpdate,
     UsuarioPermisosOut,
-    RolPermisosOut,
+    UsuarioPermisosUpdate,
 )
+from app.core.permissions import normalizar_rol, obtener_permisos_usuario, require_permission
+
+# Ajusta este import si tu modelo Usuario está en otra ruta.
+from app.models.usuario import Usuario
 
 router = APIRouter(prefix="/permisos", tags=["Permisos PRO"])
 
 
-# ============================================================
-# GET /permisos
-# Lista todos los permisos activos
-# ============================================================
 
-@router.get("/", response_model=list[PermisoOut])
-def listar_permisos(db: Session = Depends(get_db)):
+
+@router.get("/", response_model=List[PermisoOut])
+def listar_permisos_compatibilidad(
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
+):
+    """
+    Endpoint de compatibilidad para frontend anterior.
+    Antes UsuariosPage llamaba GET /permisos/.
+    Se conserva para evitar errores mientras migramos a /permisos/catalogo.
+    """
     return (
-        db.query(Permiso)
-        .filter(Permiso.activo == True)
-        .order_by(Permiso.modulo.asc(), Permiso.nombre.asc())
+        db.query(PermisoSistema)
+        .filter(PermisoSistema.activo.is_(True))
+        .order_by(PermisoSistema.modulo, PermisoSistema.codigo)
         .all()
     )
 
 
-# ============================================================
-# GET /permisos/roles
-# Lista roles del sistema
-# ============================================================
+@router.get("/catalogo", response_model=List[PermisoOut])
+def listar_catalogo_permisos(
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
+):
+    """Lista todos los permisos disponibles agrupables en frontend por módulo."""
+    return db.query(PermisoSistema).filter(PermisoSistema.activo.is_(True)).order_by(PermisoSistema.modulo, PermisoSistema.codigo).all()
 
-@router.get("/roles", response_model=list[RolOut])
-def listar_roles(db: Session = Depends(get_db)):
+
+@router.get("/roles", response_model=List[RolOut])
+def listar_roles(
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
+):
+    """Lista roles oficiales con sus permisos actuales."""
     return (
-        db.query(Rol)
-        .filter(Rol.activo == True)
-        .order_by(Rol.nombre.asc())
+        db.query(RolSistema)
+        .options(joinedload(RolSistema.permisos))
+        .filter(RolSistema.activo.is_(True))
+        .order_by(RolSistema.codigo)
         .all()
     )
 
 
-# ============================================================
-# GET /permisos/roles/{rol_id}
-# Permisos asignados a un rol
-# ============================================================
-
-@router.get("/roles/{rol_id}", response_model=RolPermisosOut)
-def permisos_por_rol(rol_id: int, db: Session = Depends(get_db)):
-    rol = db.query(Rol).filter(Rol.id == rol_id).first()
-
+@router.put("/roles/{rol_id}/permisos", response_model=RolOut)
+def actualizar_permisos_rol(
+    rol_id: UUID,
+    payload: RolPermisosUpdate,
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
+):
+    """Reemplaza la matriz de permisos de un rol."""
+    rol = db.query(RolSistema).options(joinedload(RolSistema.permisos)).filter(RolSistema.id == rol_id).first()
     if not rol:
-        raise HTTPException(status_code=404, detail="Rol no encontrado.")
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
 
-    permisos = (
-        db.query(Permiso.codigo)
-        .join(RolPermiso, RolPermiso.permiso_id == Permiso.id)
-        .filter(RolPermiso.rol_id == rol_id)
-        .all()
-    )
+    permisos = db.query(PermisoSistema).filter(PermisoSistema.id.in_(payload.permiso_ids)).all() if payload.permiso_ids else []
+    rol.permisos = permisos
+    db.commit()
+    db.refresh(rol)
+    return rol
 
-    return {
-        "rol_id": rol.id,
-        "rol": rol.nombre,
-        "permisos": [p[0] for p in permisos],
-    }
-
-
-# ============================================================
-# GET /permisos/usuario/{usuario_id}
-# Retorna permisos efectivos del usuario:
-#   - permisos del rol
-#   - permisos directos del usuario
-# ============================================================
 
 @router.get("/usuario/{usuario_id}", response_model=UsuarioPermisosOut)
-def permisos_usuario(usuario_id: str, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
-
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-
-    permisos_set = set()
-
-    # Permisos del rol
-    if getattr(usuario, "rol_id", None):
-        permisos_rol = (
-            db.query(Permiso.codigo)
-            .join(RolPermiso, RolPermiso.permiso_id == Permiso.id)
-            .filter(RolPermiso.rol_id == usuario.rol_id)
-            .all()
-        )
-
-        for p in permisos_rol:
-            permisos_set.add(p[0])
-
-    # Permisos directos del usuario
-    permisos_directos = (
-        db.query(Permiso.codigo)
-        .join(UsuarioPermiso, UsuarioPermiso.permiso_id == Permiso.id)
-        .filter(UsuarioPermiso.usuario_id == usuario_id)
-        .all()
-    )
-
-    for p in permisos_directos:
-        permisos_set.add(p[0])
-
-    return {
-        "usuario_id": usuario_id,
-        "permisos": sorted(list(permisos_set)),
-    }
-
-
-# ============================================================
-# POST /permisos/usuario/asignar
-# Reemplaza los permisos directos de un usuario
-# ============================================================
-
-@router.post("/usuario/asignar", response_model=UsuarioPermisosOut)
-def asignar_permisos_usuario(
-    payload: AsignarPermisosUsuarioRequest,
-    db: Session = Depends(get_db)
+def obtener_permisos_de_usuario(
+    usuario_id: UUID,
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
 ):
-    usuario = db.query(Usuario).filter(Usuario.id == payload.usuario_id).first()
-
+    """Retorna permisos por rol, directos y finales de un usuario."""
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
     if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # Eliminar permisos directos actuales
-    db.query(UsuarioPermiso).filter(
-        UsuarioPermiso.usuario_id == payload.usuario_id
-    ).delete()
+    rol_codigo = normalizar_rol(getattr(usuario, "rol", None))
+    rol = db.query(RolSistema).options(joinedload(RolSistema.permisos)).filter(RolSistema.codigo == rol_codigo).first()
+    permisos_rol = [p.codigo for p in rol.permisos] if rol else []
 
-    permisos = (
-        db.query(Permiso)
-        .filter(Permiso.codigo.in_(payload.permisos))
+    directos = (
+        db.query(PermisoSistema.codigo)
+        .join(UsuarioPermiso, UsuarioPermiso.permiso_id == PermisoSistema.id)
+        .filter(UsuarioPermiso.usuario_id == usuario.id, UsuarioPermiso.permitido.is_(True))
         .all()
     )
+    permisos_directos = [p[0] for p in directos]
+    finales = sorted(obtener_permisos_usuario(db, usuario))
 
-    for permiso in permisos:
-        db.add(
-            UsuarioPermiso(
-                usuario_id=payload.usuario_id,
-                permiso_id=permiso.id
-            )
-        )
+    return UsuarioPermisosOut(
+        usuario_id=usuario.id,
+        rol=rol_codigo,
+        permisos_rol=sorted(permisos_rol),
+        permisos_directos=sorted(permisos_directos),
+        permisos_finales=finales,
+    )
+
+
+@router.put("/usuario/{usuario_id}/directos", response_model=UsuarioPermisosOut)
+def actualizar_permisos_directos_usuario(
+    usuario_id: UUID,
+    payload: UsuarioPermisosUpdate,
+    db: Session = Depends(get_db),
+    _usuario=Depends(require_permission("PERMISOS_GESTIONAR")),
+):
+    """Reemplaza permisos directos permitidos de un usuario."""
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    db.query(UsuarioPermiso).filter(UsuarioPermiso.usuario_id == usuario.id).delete()
+    for permiso_id in payload.permiso_ids:
+        existe = db.query(PermisoSistema).filter(PermisoSistema.id == permiso_id).first()
+        if existe:
+            db.add(UsuarioPermiso(usuario_id=usuario.id, permiso_id=permiso_id, permitido=True))
 
     db.commit()
+    return obtener_permisos_de_usuario(usuario_id, db, _usuario)
 
-    return {
-        "usuario_id": payload.usuario_id,
-        "permisos": payload.permisos,
-    }
+
+@router.get("/me", response_model=UsuarioPermisosOut)
+def mis_permisos(db: Session = Depends(get_db), usuario=Depends(require_permission("DASHBOARD_VER"))):
+    """Endpoint usado por React para construir Sidebar dinámico y guards."""
+    rol_codigo = normalizar_rol(getattr(usuario, "rol", None))
+    rol = db.query(RolSistema).options(joinedload(RolSistema.permisos)).filter(RolSistema.codigo == rol_codigo).first()
+    permisos_rol = [p.codigo for p in rol.permisos] if rol else []
+    finales = sorted(obtener_permisos_usuario(db, usuario))
+    return UsuarioPermisosOut(
+        usuario_id=usuario.id,
+        rol=rol_codigo,
+        permisos_rol=sorted(permisos_rol),
+        permisos_directos=[],
+        permisos_finales=finales,
+    )

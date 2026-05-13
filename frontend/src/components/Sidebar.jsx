@@ -1,11 +1,10 @@
 // =========================================================
 // SIDEBAR PRO SGA
+// Archivo: frontend/src/components/Sidebar.jsx
+// =========================================================
 // Menú lateral institucional con navegación por rol.
-//
-// Mejora:
-// - Si user viene vacío desde props, intenta leer localStorage.user.
-// - ADMIN y COORDINADOR ven menú administrativo.
-// - TECNICO conserva acceso técnico.
+// Fase 31.5:
+// - agrega acceso a Auditoría y Monitoreo PRO SaaS.
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -22,7 +21,7 @@ import {
   LogOut,
   Tags,
   UserCog,
-  Bell,
+  ShieldCheck,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -32,8 +31,7 @@ export default function Sidebar({ user, onLogout }) {
 
   // =======================================================
   // USUARIO SEGURO
-  // Si por alguna razón AuthContext no entrega user,
-  // usamos localStorage para evitar que el menú desaparezca.
+  // Si AuthContext no entrega user, usamos localStorage.
   // =======================================================
   let userSeguro = user;
 
@@ -57,6 +55,8 @@ export default function Sidebar({ user, onLogout }) {
       onLogout();
     } else {
       localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
     }
 
@@ -65,9 +65,6 @@ export default function Sidebar({ user, onLogout }) {
 
   return (
     <aside className="sga-sidebar">
-      {/* ===================================================
-          MARCA
-      =================================================== */}
       <div className="sga-brand">
         <div className="sga-logo">SGA</div>
 
@@ -80,7 +77,6 @@ export default function Sidebar({ user, onLogout }) {
       <p className="sga-menu-title">MÓDULO PRINCIPAL</p>
 
       <nav className="sga-menu">
-        {/* Dashboard según rol */}
         <NavLink
           to={esTecnico ? "/tecnico" : "/admin"}
           className={({ isActive }) =>
@@ -91,7 +87,6 @@ export default function Sidebar({ user, onLogout }) {
           Dashboard
         </NavLink>
 
-        {/* Menú ADMIN / COORDINADOR */}
         {esAdmin && (
           <>
             <NavLink
@@ -134,18 +129,6 @@ export default function Sidebar({ user, onLogout }) {
               Técnicos
             </NavLink>
 
-
-            {/* FASE 29 - CENTRO DE NOTIFICACIONES */}
-            <NavLink
-              to="/admin/notificaciones"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
-              <Bell size={18} />
-              Notificaciones
-            </NavLink>
-
             <NavLink
               to="/admin/usuarios"
               className={({ isActive }) =>
@@ -158,7 +141,6 @@ export default function Sidebar({ user, onLogout }) {
           </>
         )}
 
-        {/* Opciones operativas */}
         <NavLink
           to="/admin/equipos"
           className={({ isActive }) =>
@@ -200,19 +182,30 @@ export default function Sidebar({ user, onLogout }) {
         </NavLink>
 
         {esAdmin && (
-          <NavLink
-            to="/admin/configuracion"
-            className={({ isActive }) =>
-              isActive ? "sga-menu-item active" : "sga-menu-item"
-            }
-          >
-            <Settings size={18} />
-            Configuración
-          </NavLink>
+          <>
+            <NavLink
+              to="/admin/auditoria"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <ShieldCheck size={18} />
+              Auditoría PRO
+            </NavLink>
+
+            <NavLink
+              to="/admin/configuracion"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Settings size={18} />
+              Configuración
+            </NavLink>
+          </>
         )}
       </nav>
 
-      {/* Usuario */}
       <div className="sga-user-card">
         <div className="sga-user-avatar">
           {userSeguro?.nombre_completo?.substring(0, 2).toUpperCase() || "US"}

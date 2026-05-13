@@ -1,45 +1,36 @@
-/* ============================================================
-   LOGIN ULTRA PRO — SGA PRO
-   Estilo SaaS empresarial nivel PRO
-============================================================ */
+/* =========================================================
+   LOGIN ULTRA PRO - SGA HOLDING SAS
+   Archivo: frontend/src/styles/login.css
+========================================================= */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
-
-/* ============================================================
-   RESET
-============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
-/* ============================================================
-   BODY
-============================================================ */
-
 body {
+  margin: 0;
   font-family: "Inter", sans-serif;
-  background: #f1f5f9;
-  overflow: hidden;
+  background: #f4f7fb;
 }
 
-/* ============================================================
-   CONTENEDOR PRINCIPAL
-============================================================ */
+/* =========================================================
+   CONTENEDOR GENERAL
+========================================================= */
 
 .login-ultra {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: grid;
-  grid-template-columns: 58% 42%;
+  grid-template-columns: 1.2fr 0.8fr;
   overflow: hidden;
+  background: #f4f7fb;
 }
 
-/* ============================================================
-   PANEL IZQUIERDO
-============================================================ */
+/* =========================================================
+   HERO IZQUIERDO
+========================================================= */
 
 .login-hero {
   position: relative;
@@ -49,331 +40,278 @@ body {
   align-items: center;
   justify-content: center;
 
-  padding: 70px;
+  padding: 60px;
 
   background:
-    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(135deg, #0f4c9a 0%, #1d4ed8 45%, #38bdf8 100%);
+    linear-gradient(
+      135deg,
+      #0b2d89 0%,
+      #1c4fe0 45%,
+      #16b3e6 100%
+    );
 
-  background-size: 40px 40px, 40px 40px, cover;
+  color: white;
 }
 
-/* ============================================================
-   EFECTOS LUZ
-============================================================ */
+/* Grid elegante */
+.login-hero::before {
+  content: "";
 
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+
+  background-size: 40px 40px;
+}
+
+/* Glow */
 .login-glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(70px);
+  filter: blur(90px);
   opacity: 0.45;
 }
 
 .login-glow-one {
-  width: 320px;
-  height: 320px;
-  background: #06b6d4;
-  top: 40px;
-  left: -60px;
+  width: 350px;
+  height: 350px;
+  background: #00d4ff;
+  top: -80px;
+  left: -80px;
 }
 
 .login-glow-two {
   width: 420px;
   height: 420px;
-  background: #38bdf8;
-  bottom: -140px;
-  right: -120px;
+  background: #4c6fff;
+  right: -100px;
+  bottom: -100px;
 }
 
-/* ============================================================
+/* =========================================================
    CONTENIDO HERO
-============================================================ */
+========================================================= */
 
 .hero-content {
   position: relative;
-  z-index: 5;
-  max-width: 920px;
+  z-index: 2;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  text-align: center;
+  max-width: 760px;
+  width: 100%;
 }
 
-/* ============================================================
-   BRAND CHIP
-============================================================ */
-
 .brand-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 
-  background: rgba(255,255,255,0.12);
+  padding: 18px 24px;
 
-  border: 1px solid rgba(255,255,255,0.2);
-
-  backdrop-filter: blur(16px);
-
-  padding: 14px 22px;
   border-radius: 24px;
 
-  margin-bottom: 34px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
 
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  backdrop-filter: blur(14px);
+
+  margin-bottom: 40px;
 }
 
 .brand-chip img {
-  width: 86px;
-  height: 60px;
+  width: 82px;
+  height: 82px;
   object-fit: contain;
-  border-radius: 14px;
 }
 
 .brand-chip strong {
   display: block;
-  color: #d9ff4d;
-  font-size: 28px;
+  font-size: 2rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  color: #f3ff63;
 }
 
 .brand-chip span {
-  color: rgba(255,255,255,0.9);
-  font-size: 20px;
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.95);
 }
-
-/* ============================================================
-   TITULO PRINCIPAL
-============================================================ */
 
 .hero-content h1 {
-  font-size: 38px;
-  line-height: 1.02;
-  font-weight: 850;
-  color: #ffffff;
-
-  margin: 0 auto 24px auto;
-
-  max-width: 760px;
-
-  letter-spacing: -1.5px;
-  text-align: center;
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  line-height: 1.08;
+  margin: 0 0 28px;
+  font-weight: 800;
 }
-
-/* ============================================================
-   DESCRIPCIÓN
-============================================================ */
 
 .hero-content p {
-  font-size: 22px;
-  line-height: 1.7;
-  color: rgba(255,255,255,0.92);
-
-  max-width: 760px;
-
-  margin-bottom: 34px;
+  font-size: 1.35rem;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.94);
+  max-width: 720px;
 }
 
-/* ============================================================
+/* =========================================================
    BADGES
-============================================================ */
+========================================================= */
 
 .hero-badges {
   display: flex;
-  gap: 14px;
   flex-wrap: wrap;
-  justify-content: center;
+  gap: 16px;
+  margin-top: 38px;
 }
 
 .hero-badges span {
-  background: rgba(255,255,255,0.12);
-
-  border: 1px solid rgba(255,255,255,0.2);
-
-  color: #ffffff;
-
-  padding: 12px 18px;
-
+  padding: 14px 22px;
   border-radius: 999px;
 
-  font-size: 15px;
-  font-weight: 700;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.18);
 
-  backdrop-filter: blur(12px);
+  font-weight: 600;
+  font-size: 1rem;
 
-  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  backdrop-filter: blur(10px);
 }
 
-/* ============================================================
+/* =========================================================
    PANEL DERECHO
-============================================================ */
+========================================================= */
 
 .login-panel {
-  background: #f8fafc;
-
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 50px;
+  padding: 40px;
+  background: #f4f7fb;
 }
 
-/* ============================================================
+/* =========================================================
    CARD LOGIN
-============================================================ */
+========================================================= */
 
 .login-card-pro {
   width: 100%;
   max-width: 470px;
 
-  background: rgba(255,255,255,0.95);
+  background: white;
 
-  border: 1px solid rgba(226,232,240,0.9);
+  border-radius: 34px;
 
-  border-radius: 36px;
-
-  padding: 54px;
+  padding: 54px 46px;
 
   box-shadow:
-    0 20px 60px rgba(15,23,42,0.08),
-    0 2px 12px rgba(15,23,42,0.04);
+    0 30px 80px rgba(15, 23, 42, 0.12);
 
-  backdrop-filter: blur(16px);
-}
-
-/* ============================================================
-   LOGO LOGIN CENTRADO
-============================================================ */
-
-.login-logo-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 26px;
+  border: 1px solid rgba(15,23,42,0.05);
 }
 
 .login-logo-wrap {
-  width: 104px;
-  height: 76px;
-
-  border-radius: 22px;
-
-  background: #071d49;
-
   display: flex;
-  align-items: center;
   justify-content: center;
-
-  margin: 0 auto;
-
-  box-shadow: 0 18px 35px rgba(29, 78, 216, 0.22);
+  margin-bottom: 22px;
 }
 
 .login-logo-wrap img {
-  width: 88px;
-  max-height: 58px;
+  width: 120px;
   object-fit: contain;
 }
 
-/* ============================================================
-   TITULO LOGIN
-============================================================ */
-
 .login-title {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .login-title h2 {
-  font-size: 24px;
-  line-height: 1.05;
+  margin: 0;
+  font-size: 2.2rem;
+  color: #101828;
   font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 10px;
 }
 
 .login-title p {
-  font-size: 10px;
-  color: #64748b;
+  margin-top: 10px;
+  color: #667085;
+  font-size: 1rem;
 }
 
-/* ============================================================
-   LABELS
-============================================================ */
+/* =========================================================
+   ERROR
+========================================================= */
+
+.login-error {
+  margin-bottom: 18px;
+
+  background: #fee2e2;
+  color: #b91c1c;
+
+  padding: 14px 18px;
+  border-radius: 14px;
+
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* =========================================================
+   INPUTS
+========================================================= */
 
 .login-card-pro label {
   display: block;
-
   margin-bottom: 10px;
   margin-top: 18px;
 
-  font-size: 15px;
+  color: #1f2937;
   font-weight: 700;
-
-  color: #0f172a;
+  font-size: 0.96rem;
 }
 
-/* ============================================================
-   INPUT GROUP
-============================================================ */
-
 .login-input-group {
-  position: relative;
-
   display: flex;
   align-items: center;
+  gap: 12px;
 
-  background: #ffffff;
+  background: #f8fafc;
 
-  border: 1px solid #cbd5e1;
-
+  border: 1px solid #dbe3ee;
   border-radius: 18px;
 
-  padding: 0 16px;
+  padding: 0 18px;
 
-  transition: all 0.2s ease;
+  height: 64px;
+
+  transition: all 0.25s ease;
 }
 
 .login-input-group:focus-within {
   border-color: #2563eb;
+  background: white;
 
-  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,0.12);
 }
 
 .login-input-group svg {
   color: #64748b;
-  flex-shrink: 0;
 }
 
 .login-input-group input {
-  width: 100%;
+  flex: 1;
 
   border: none;
+  background: transparent;
   outline: none;
 
-  background: transparent;
-
-  padding: 18px 14px;
-
-  font-size: 16px;
-  font-weight: 600;
-
-  color: #0f172a;
+  font-size: 1rem;
+  color: #111827;
 }
-
-/* ============================================================
-   ICONO VER PASSWORD
-============================================================ */
 
 .password-eye {
   border: none;
   background: transparent;
-
   cursor: pointer;
 
   display: flex;
@@ -383,43 +321,50 @@ body {
   color: #64748b;
 }
 
-/* ============================================================
-   BOTON LOGIN
-============================================================ */
+/* =========================================================
+   BOTÓN LOGIN
+========================================================= */
 
 .login-submit {
   width: 100%;
-
   margin-top: 34px;
+
+  height: 62px;
 
   border: none;
   border-radius: 18px;
 
-  background: linear-gradient(90deg, #1d4ed8, #06b6d4);
+  background:
+    linear-gradient(
+      90deg,
+      #1d4ed8,
+      #06b6d4
+    );
 
-  color: #ffffff;
-
-  font-size: 20px;
+  color: white;
+  font-size: 1.08rem;
   font-weight: 800;
-
-  padding: 18px;
 
   cursor: pointer;
 
-  transition: all 0.25s ease;
-
-  box-shadow: 0 18px 35px rgba(37,99,235,0.25);
+  transition: all 0.28s ease;
 }
 
 .login-submit:hover {
   transform: translateY(-2px);
 
-  box-shadow: 0 22px 45px rgba(37,99,235,0.35);
+  box-shadow:
+    0 18px 40px rgba(37,99,235,0.28);
 }
 
-/* ============================================================
+.login-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* =========================================================
    FOOTER LOGIN
-============================================================ */
+========================================================= */
 
 .secure-note {
   margin-top: 26px;
@@ -427,43 +372,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 
-  color: #94a3b8;
-
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* ============================================================
-   ERROR
-============================================================ */
-
-.login-error {
-  margin-top: 10px;
-
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-
-  color: #b91c1c;
-
-  padding: 14px 16px;
-
-  border-radius: 14px;
-
-  font-size: 14px;
+  color: #64748b;
+  font-size: 0.92rem;
   font-weight: 600;
 }
 
-/* ============================================================
+/* =========================================================
    RESPONSIVE
-============================================================ */
-
-@media (max-width: 1400px) {
-  .hero-content h1 {
-    font-size: 58px;
-  }
-}
+========================================================= */
 
 @media (max-width: 1200px) {
   .login-ultra {
@@ -471,29 +389,28 @@ body {
   }
 
   .login-hero {
-    display: none;
-  }
-
-  .login-panel {
-    padding: 30px;
-  }
-
-  .login-card-pro {
-    max-width: 520px;
+    min-height: 55vh;
   }
 }
 
 @media (max-width: 768px) {
+  .login-hero {
+    padding: 40px 24px;
+  }
+
+  .hero-content h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-content p {
+    font-size: 1.05rem;
+  }
+
+  .login-panel {
+    padding: 24px;
+  }
+
   .login-card-pro {
-    padding: 34px 26px;
-    border-radius: 28px;
-  }
-
-  .login-title h2 {
-    font-size: 34px;
-  }
-
-  .login-submit {
-    font-size: 18px;
+    padding: 40px 28px;
   }
 }

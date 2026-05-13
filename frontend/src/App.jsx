@@ -1,11 +1,17 @@
 // =========================================================
-// APP PRINCIPAL SGA PRO
-// Rutas protegidas por rol
-// ADMIN / COORDINADOR / EMPRESA / TECNICO separados
+// APP PRINCIPAL SGA PRO - CORRECCIÓN FASES 27 A 31.2
+// Archivo: frontend/src/App.jsx
+//
+// Objetivo de esta versión:
+// - Restaurar rutas administrativas faltantes: Notificaciones,
+//   Cronograma y Exportaciones.
+// - Restaurar rutas del portal Cliente con layout anidado.
+// - Evitar que un clic en Notificaciones caiga en path="*" y
+//   devuelva al login.
+// - Mantener ProtectedRoute basado en AuthContext/JWT.
 // =========================================================
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useContext } from "react";
 
 import Login from "./pages/Login";
 import DashboardTecnico from "./pages/DashboardTecnico";
@@ -23,6 +29,8 @@ import EvidenciasPage from "./pages/admin/EvidenciasPage";
 import ReportesPage from "./pages/admin/ReportesPage";
 import AuditoriaPage from "./pages/admin/AuditoriaPage";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
+import ExportacionesPage from "./pages/admin/ExportacionesPage";
+import CronogramaPage from "./pages/admin/CronogramaPage";
 import NotificacionesPage from "./pages/admin/NotificacionesPage";
 
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -30,272 +38,107 @@ import ClienteDashboard from "./pages/cliente/ClienteDashboard";
 import ClienteSedes from "./pages/cliente/ClienteSedes";
 import ClienteEquipos from "./pages/cliente/ClienteEquipos";
 import ClienteMantenimientos from "./pages/cliente/ClienteMantenimientos";
+import ClienteCronograma from "./pages/cliente/ClienteCronograma";
 import ClienteNotificaciones from "./pages/cliente/ClienteNotificaciones";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
-import Sidebar from "./components/Sidebar";
-import { AuthContext } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/sidebar.css";
 
-// =========================================================
-// Obtener usuario actual desde localStorage
-// =========================================================
-
-function getCurrentUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user"));
-  } catch {
-    return null;
-  }
-}
-
-// =========================================================
-// Redirección automática según rol
-// =========================================================
-
-function redirectByRole(rol) {
-  if (rol === "ADMIN" || rol === "COORDINADOR") return "/admin";
-  if (rol === "TECNICO") return "/tecnico";
-  if (rol === "EMPRESA" || rol === "CLIENTE") return "/cliente/dashboard";
-  return "/";
-}
-
-// =========================================================
-// Ruta protegida por rol
-// =========================================================
-
-function RoleRoute({ allowedRoles, children }) {
-  const user = getCurrentUser();
-
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (!allowedRoles.includes(user.rol)) {
-    return <Navigate to={redirectByRole(user.rol)} replace />;
-  }
-
-  return children;
-}
+const ADMIN_ROLES = ["ADMIN", "COORDINADOR"];
+const CLIENTE_ROLES = ["EMPRESA", "CLIENTE"];
+const TECNICO_ROLES = ["TECNICO"];
 
 // =========================================================
 // APP
 // =========================================================
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Login */}
         <Route path="/" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* ADMIN / COORDINADOR */}
+        {/* =================================================
+            ADMIN / COORDINADOR
+        ================================================= */}
         <Route
           path="/admin"
           element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
               <DashboardAdmin />
-            </RoleRoute>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/admin/dashboard"
           element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
+            <ProtectedRoute allowedRoles={ADMIN_ROLES}>
               <DashboardAdmin />
-            </RoleRoute>
+            </ProtectedRoute>
           }
         />
 
-        <Route
-          path="/admin/empresas"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <EmpresasPage />
-            </RoleRoute>
-          }
-        />
+        <Route path="/admin/empresas" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EmpresasPage /></ProtectedRoute>} />
+        <Route path="/admin/sedes" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><SedesPage /></ProtectedRoute>} />
+        <Route path="/admin/categorias" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CategoriasPage /></ProtectedRoute>} />
+        <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UsuariosPage /></ProtectedRoute>} />
+        <Route path="/admin/tecnicos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><TecnicosPage /></ProtectedRoute>} />
+        <Route path="/admin/equipos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EquiposPage /></ProtectedRoute>} />
+        <Route path="/admin/equipos/:equipoId/hoja-vida" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><HojaVidaEquipoPage /></ProtectedRoute>} />
+        <Route path="/admin/mantenimientos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><MantenimientosPage /></ProtectedRoute>} />
+        <Route path="/admin/evidencias" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EvidenciasPage /></ProtectedRoute>} />
+        <Route path="/admin/reportes" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ReportesPage /></ProtectedRoute>} />
+        <Route path="/admin/auditoria" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AuditoriaPage /></ProtectedRoute>} />
+        <Route path="/admin/configuracion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ConfiguracionPage /></ProtectedRoute>} />
 
-        <Route
-          path="/admin/sedes"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <SedesPage />
-            </RoleRoute>
-          }
-        />
+        {/* Fases recientes: estas rutas estaban faltando y causaban regreso al login */}
+        <Route path="/admin/exportaciones" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ExportacionesPage /></ProtectedRoute>} />
+        <Route path="/admin/cronograma" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CronogramaPage /></ProtectedRoute>} />
+        <Route path="/admin/notificaciones" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><NotificacionesPage /></ProtectedRoute>} />
 
-        <Route
-          path="/admin/categorias"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <CategoriasPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/usuarios"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <UsuariosPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/tecnicos"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <TecnicosPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/equipos"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <EquiposPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/equipos/:equipoId/hoja-vida"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <HojaVidaEquipoPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/mantenimientos"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <AdminShell>
-                <MantenimientosPage />
-              </AdminShell>
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/evidencias"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <EvidenciasPage />
-            </RoleRoute>
-          }
-        />
-
-        {/* FASE 26 - REPORTES PRO */}
-        <Route
-          path="/admin/reportes"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <ReportesPage />
-            </RoleRoute>
-          }
-        />
-
-        {/* FASE 26 - AUDITORÍA DEL SISTEMA */}
-        <Route
-          path="/admin/auditoria"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <AuditoriaPage />
-            </RoleRoute>
-          }
-        />
-
-
-        {/* FASE 29 - NOTIFICACIONES Y ALERTAS PRO */}
-        <Route
-          path="/admin/notificaciones"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <NotificacionesPage />
-            </RoleRoute>
-          }
-        />
-
-        <Route
-          path="/admin/configuracion"
-          element={
-            <RoleRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
-              <ConfiguracionPage />
-            </RoleRoute>
-          }
-        />
-
-        {/* TECNICO */}
+        {/* =================================================
+            TÉCNICO
+        ================================================= */}
         <Route
           path="/tecnico"
           element={
-            <RoleRoute allowedRoles={["TECNICO"]}>
+            <ProtectedRoute allowedRoles={TECNICO_ROLES}>
               <DashboardTecnico />
-            </RoleRoute>
+            </ProtectedRoute>
           }
         />
 
-        {/* CLIENTE / EMPRESA */}
+        {/* =================================================
+            PORTAL CLIENTE / EMPRESA
+            Layout con rutas anidadas para que el sidebar del cliente
+            permanezca fijo y solo cambie el contenido.
+        ================================================= */}
         <Route
           path="/cliente"
           element={
-            <RoleRoute allowedRoles={["EMPRESA", "CLIENTE"]}>
+            <ProtectedRoute allowedRoles={CLIENTE_ROLES}>
               <ClienteLayout />
-            </RoleRoute>
+            </ProtectedRoute>
           }
         >
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ClienteDashboard />} />
           <Route path="sedes" element={<ClienteSedes />} />
           <Route path="equipos" element={<ClienteEquipos />} />
           <Route path="mantenimientos" element={<ClienteMantenimientos />} />
-          <Route path="cronograma" element={<ClienteMantenimientos />} />
-          {/* FASE 29 - NOTIFICACIONES CLIENTE */}
+          <Route path="cronograma" element={<ClienteCronograma />} />
           <Route path="notificaciones" element={<ClienteNotificaciones />} />
         </Route>
 
-        {/* Cualquier ruta no encontrada */}
+        {/* Cualquier ruta desconocida vuelve al login */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-// =========================================================
-// Layout para páginas admin sin sidebar propio
-// =========================================================
-
-function AdminShell({ children }) {
-  const { user, logout } = useContext(AuthContext);
-
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f5f8ff" }}>
-      <Sidebar user={user} onLogout={logout} />
-
-      <main
-        style={{
-          flex: 1,
-          padding: "32px",
-          overflowX: "hidden",
-
-          // =====================================================
-          // SCROLL VERTICAL PROFESIONAL
-          // =====================================================
-          height: "100vh",
-          overflowY: "auto",
-          paddingBottom: "120px",
-
-          // Fondo institucional
-          background: "#f5f8ff",
-        }}
-      >
-        {children}
-      </main>
-    </div>
   );
 }
 

@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
+import SecureFileUploader from "../../components/SecureFileUploader";
 import {
   Image,
   Search,

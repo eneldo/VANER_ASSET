@@ -58,7 +58,7 @@ export default function UsuariosPage() {
       const [resUsuarios, resEmpresas, resPermisos] = await Promise.all([
         API.get("/usuarios/"),
         API.get("/empresas/"),
-        API.get("/permisos/"),
+        API.get("/permisos/catalogo"),
       ]);
 
       setUsuarios(resUsuarios.data || []);
@@ -284,7 +284,7 @@ export default function UsuariosPage() {
 
       const res = await API.get(`/permisos/usuario/${usuario.id}`);
 
-      setPermisosUsuario(res.data?.permisos || []);
+      setPermisosUsuario(res.data?.permisos_directos || res.data?.permisos_finales || []);
     } catch (error) {
       console.error(error);
       alert("Error cargando permisos del usuario");
@@ -308,9 +308,14 @@ export default function UsuariosPage() {
     }
 
     try {
-      await API.post("/permisos/usuario/asignar", {
-        usuario_id: usuarioPermisos.id,
-        permisos: permisosUsuario,
+      // El backend PRO 31.2 guarda permisos directos por UUID.
+      // En la UI manejamos códigos legibles; aquí convertimos código -> id.
+      const permisoIds = permisos
+        .filter((permiso) => permisosUsuario.includes(permiso.codigo))
+        .map((permiso) => permiso.id);
+
+      await API.put(`/permisos/usuario/${usuarioPermisos.id}/directos`, {
+        permiso_ids: permisoIds,
       });
 
       alert("Permisos guardados correctamente");
