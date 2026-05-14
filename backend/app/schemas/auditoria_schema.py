@@ -1,65 +1,109 @@
 # ============================================================
-# FASE 30 - SCHEMAS PYDANTIC: AUDITORÍA PRO
+# SCHEMAS AUDITORÍA / AUDITORÍA PRO
 # Archivo: backend/app/schemas/auditoria_schema.py
-# Objetivo:
-#   Definir los modelos de entrada/salida para los endpoints
-#   de auditoría avanzada.
+#
+# Compatible con:
+# - app/routers/auditoria.py
+# - app/routers/auditoria_pro.py
+# - FastAPI Pydantic v2
 # ============================================================
 
 from datetime import datetime
-from typing import Any, Dict, Optional, List
+from typing import Optional, Any
 from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict
 
 
-class AuditoriaEventoCreate(BaseModel):
-    """Payload para registrar manualmente un evento de auditoría."""
+# ============================================================
+# BASE
+# ============================================================
 
+class AuditoriaEventoBase(BaseModel):
     usuario_id: Optional[UUID] = None
+    usuario_email: Optional[str] = None
     usuario_nombre: Optional[str] = None
-    usuario_rol: Optional[str] = None
+    rol: Optional[str] = None
     empresa_id: Optional[UUID] = None
-    modulo: str = Field(..., min_length=2, max_length=80)
-    accion: str = Field(..., min_length=2, max_length=80)
-    entidad: Optional[str] = None
-    entidad_id: Optional[str] = None
-    descripcion: Optional[str] = None
+
+    modulo: Optional[str] = None
+    accion: Optional[str] = None
+
+    recurso_tipo: Optional[str] = None
+    recurso_id: Optional[str] = None
+
+    metodo: Optional[str] = None
+    ruta: Optional[str] = None
+
+    status_code: Optional[int] = None
+
     ip_origen: Optional[str] = None
     user_agent: Optional[str] = None
-    nivel: str = "INFO"
-    metadata: Optional[Dict[str, Any]] = None
+    request_id: Optional[str] = None
+
+    permitido: Optional[bool] = True
+    severidad: Optional[str] = "INFO"
+
+    detalle: Optional[str] = None
+    datos_extra: Optional[Any] = None
 
 
-class AuditoriaEventoOut(BaseModel):
-    """Respuesta completa de un evento de auditoría."""
+# ============================================================
+# CREATE
+# ============================================================
+
+class AuditoriaEventoCreate(AuditoriaEventoBase):
+    pass
+
+
+# ============================================================
+# UPDATE
+# ============================================================
+
+class AuditoriaEventoUpdate(BaseModel):
+    detalle: Optional[str] = None
+    severidad: Optional[str] = None
+    permitido: Optional[bool] = None
+    datos_extra: Optional[Any] = None
+
+
+# ============================================================
+# RESPONSE / OUT
+# ============================================================
+
+class AuditoriaEventoOut(AuditoriaEventoBase):
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    usuario_id: Optional[UUID] = None
-    usuario_nombre: Optional[str] = None
-    usuario_rol: Optional[str] = None
-    empresa_id: Optional[UUID] = None
-    modulo: str
-    accion: str
-    entidad: Optional[str] = None
-    entidad_id: Optional[str] = None
-    descripcion: Optional[str] = None
-    ip_origen: Optional[str] = None
-    user_agent: Optional[str] = None
-    nivel: str
-    metadata: Optional[Dict[str, Any]] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+    creado_en: Optional[datetime] = None
 
 
-class AuditoriaResumenOut(BaseModel):
-    """Métricas rápidas para el dashboard de auditoría."""
+# ============================================================
+# RESPUESTA PAGINADA
+# ============================================================
 
+class AuditoriaEventosResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    eventos: list[AuditoriaEventoOut]
+
+
+# ============================================================
+# RESUMEN
+# ============================================================
+
+class AuditoriaResumenResponse(BaseModel):
     total_eventos: int
-    eventos_hoy: int
-    eventos_warning: int
-    eventos_error: int
-    eventos_security: int
-    modulos: List[dict]
-    acciones: List[dict]
+    permitidos: int
+    denegados: int
+    errores: int
+
+
+# ============================================================
+# ALIAS DE COMPATIBILIDAD
+# Compatibles con routers antiguos
+# ============================================================
+
+AuditoriaEventoResponse = AuditoriaEventoOut
+AuditoriaResumenOut = AuditoriaResumenResponse

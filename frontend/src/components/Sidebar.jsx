@@ -1,10 +1,8 @@
 // =========================================================
 // SIDEBAR PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// =========================================================
-// Menú lateral institucional con navegación por rol.
-// Fase 31.5:
-// - agrega acceso a Auditoría y Monitoreo PRO SaaS.
+// Menú lateral institucional SOLO para ADMIN / TECNICO.
+// COORDINADOR NO debe heredar módulos ADMIN.
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -29,10 +27,6 @@ import "../styles/sidebar.css";
 export default function Sidebar({ user, onLogout }) {
   const navigate = useNavigate();
 
-  // =======================================================
-  // USUARIO SEGURO
-  // Si AuthContext no entrega user, usamos localStorage.
-  // =======================================================
   let userSeguro = user;
 
   if (!userSeguro) {
@@ -44,12 +38,11 @@ export default function Sidebar({ user, onLogout }) {
   }
 
   const rol = userSeguro?.rol;
-  const esAdmin = rol === "ADMIN" || rol === "COORDINADOR";
-  const esTecnico = rol === "TECNICO";
 
-  // =======================================================
-  // CERRAR SESIÓN
-  // =======================================================
+  const esAdmin = rol === "ADMIN";
+  const esTecnico = rol === "TECNICO";
+  const esCoordinador = rol === "COORDINADOR";
+
   const handleLogout = () => {
     if (typeof onLogout === "function") {
       onLogout();
@@ -62,6 +55,13 @@ export default function Sidebar({ user, onLogout }) {
 
     navigate("/");
   };
+
+  // Seguridad visual:
+  // Si un coordinador cae aquí por error, lo enviamos a su layout real.
+  if (esCoordinador) {
+    navigate("/coordinador/dashboard");
+    return null;
+  }
 
   return (
     <aside className="sga-sidebar">
@@ -138,51 +138,52 @@ export default function Sidebar({ user, onLogout }) {
               <Users size={18} />
               Usuarios y Permisos
             </NavLink>
-          </>
-        )}
 
-        <NavLink
-          to="/admin/equipos"
-          className={({ isActive }) =>
-            isActive ? "sga-menu-item active" : "sga-menu-item"
-          }
-        >
-          <MonitorCog size={18} />
-          Equipos
-        </NavLink>
+            <NavLink
+              to="/admin/equipos"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <MonitorCog size={18} />
+              Equipos
+            </NavLink>
 
-        <NavLink
-          to="/admin/mantenimientos"
-          className={({ isActive }) =>
-            isActive ? "sga-menu-item active" : "sga-menu-item"
-          }
-        >
-          <Wrench size={18} />
-          Mantenimientos
-        </NavLink>
+            <NavLink
+              to="/admin/mantenimientos"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Wrench size={18} />
+              Mantenimientos
+            </NavLink>
 
-        <NavLink
-          to="/admin/evidencias"
-          className={({ isActive }) =>
-            isActive ? "sga-menu-item active" : "sga-menu-item"
-          }
-        >
-          <Image size={18} />
-          Evidencias
-        </NavLink>
+            <NavLink
+              to="/admin/evidencias"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Image size={18} />
+              Evidencias
+            </NavLink>
 
-        <NavLink
-          to="/admin/reportes"
-          className={({ isActive }) =>
-            isActive ? "sga-menu-item active" : "sga-menu-item"
-          }
-        >
-          <FileText size={18} />
-          Reportes
-        </NavLink>
+            {/* =====================================================
+                LINK NUEVO / ACTUALIZADO: Reportes PRO
+                Ruta conectada con App.jsx:
+                /admin/reportes
+            ===================================================== */}
+            <NavLink
+              to="/admin/reportes"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <FileText size={18} />
+              Reportes PRO
+            </NavLink>
 
-        {esAdmin && (
-          <>
             <NavLink
               to="/admin/auditoria"
               className={({ isActive }) =>
@@ -201,6 +202,30 @@ export default function Sidebar({ user, onLogout }) {
             >
               <Settings size={18} />
               Configuración
+            </NavLink>
+          </>
+        )}
+
+        {esTecnico && (
+          <>
+            <NavLink
+              to="/tecnico/mantenimientos"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Wrench size={18} />
+              Mis mantenimientos
+            </NavLink>
+
+            <NavLink
+              to="/tecnico/evidencias"
+              className={({ isActive }) =>
+                isActive ? "sga-menu-item active" : "sga-menu-item"
+              }
+            >
+              <Image size={18} />
+              Evidencias
             </NavLink>
           </>
         )}

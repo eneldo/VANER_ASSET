@@ -1,6 +1,13 @@
 # =========================================================
-# ROUTER AUTH - FASE 31.3 HARDENING BACKEND PRO
+# ROUTER AUTH - FASE 31.4 HARDENING BACKEND PRO
 # Archivo: backend/app/routers/auth.py
+#
+# Incluye:
+# - Login seguro
+# - JWT access token
+# - JWT refresh token
+# - Endpoint /auth/refresh
+# - Usuario actual
 # =========================================================
 
 from datetime import datetime, timedelta
@@ -8,6 +15,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from pydantic import BaseModel
 from sqlalchemy import or_, text
 from sqlalchemy.orm import Session
 
@@ -20,12 +28,20 @@ from app.services.security_logger import registrar_evento_seguridad, get_client_
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-# =========================================================
-# CONFIGURACIÓN JWT / USUARIO ACTUAL
-# =========================================================
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
+# =========================================================
+# SCHEMA REFRESH TOKEN
+# =========================================================
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+# =========================================================
+# CONFIG JWT
+# =========================================================
 
 def _jwt_secret_key():
     return getattr(settings, "SECRET_KEY", None) or getattr(settings, "secret_key", None)
@@ -35,13 +51,28 @@ def _jwt_algorithm():
     return getattr(settings, "ALGORITHM", None) or getattr(settings, "algorithm", "HS256")
 
 
+def _crear_payload_usuario(usuario: Usuario, tipo: str = "access"):
+    empresa_id = str(usuario.empresa_id) if usuario.empresa_id else None
+
+    return {
+        "sub": str(usuario.id),
+        "email": usuario.email,
+        "username": usuario.username,
+        "nombre_completo": usuario.nombre_completo,
+        "rol": usuario.rol,
+        "empresa_id": empresa_id,
+        "type": tipo,
+    }
+
+
+# =========================================================
+# USUARIO ACTUAL
+# =========================================================
+
 def obtener_usuario_actual(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    """
-    Valida el Access Token JWT y retorna el usuario autenticado.
-    """
     credenciales_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No autenticado o token inválido",
@@ -54,9 +85,14 @@ def obtener_usuario_actual(
             _jwt_secret_key(),
             algorithms=[_jwt_algorithm()],
         )
+
         usuario_id = payload.get("sub")
+        tipo = payload.get("type")
 
         if not usuario_id:
+            raise credenciales_error
+
+        if tipo and tipo != "access":
             raise credenciales_error
 
     except JWTError:
@@ -70,13 +106,12 @@ def obtener_usuario_actual(
     return usuario
 
 
-# Alias de compatibilidad para permisos.py y otras fases
 get_current_user = obtener_usuario_actual
 get_usuario_actual = obtener_usuario_actual
 
 
 # =========================================================
-# CONFIGURACIÓN DE BLOQUEO
+# CONFIGURACIÓN BLOQUEO LOGIN
 # =========================================================
 
 MAX_LOGIN_FALLIDOS = 5
@@ -85,7 +120,6 @@ VENTANA_MINUTOS = 15
 
 
 def _request_id(request: Request):
-    """Obtiene request_id creado por RequestIDMiddleware."""
     return getattr(request.state, "request_id", None)
 
 
@@ -99,10 +133,6 @@ def _registrar_intento_login(
     intentos_fallidos: int = 0,
     bloqueado_hasta=None,
 ):
-    """
-    Inserta un registro en login_intentos.
-    Usa SQL directo para evitar romper el proyecto si el modelo no está importado.
-    """
     db.execute(
         text(
             """
@@ -129,7 +159,6 @@ def _registrar_intento_login(
 
 
 def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> int:
-    """Cuenta fallos recientes por usuario o IP."""
     desde = datetime.utcnow() - timedelta(minutes=VENTANA_MINUTOS)
 
     total = db.execute(
@@ -153,7 +182,6 @@ def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> in
 
 
 def _bloqueo_activo(db: Session, username: str, ip_origen: str):
-    """Retorna fecha de bloqueo si existe bloqueo activo."""
     bloqueo = db.execute(
         text(
             """
@@ -173,21 +201,14 @@ def _bloqueo_activo(db: Session, username: str, ip_origen: str):
     return bloqueo
 
 
+# =========================================================
+# LOGIN
+# =========================================================
+
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    """
-    Login seguro:
-    - valida usuario/correo y contraseña,
-    - bloquea por intentos fallidos,
-    - registra auditoría de seguridad,
-    - retorna access_token + refresh_token.
-    """
     username = data.username.strip()
     ip_origen = get_client_ip(request)
-
-    # =====================================================
-    # 1) Verificar bloqueo activo
-    # =====================================================
 
     bloqueo = _bloqueo_activo(db, username, ip_origen)
 
@@ -207,10 +228,6 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
             detail=f"Demasiados intentos fallidos. Intenta nuevamente después de {bloqueo}.",
         )
 
-    # =====================================================
-    # 2) Buscar usuario por username o email
-    # =====================================================
-
     usuario = (
         db.query(Usuario)
         .filter(
@@ -221,10 +238,6 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         )
         .first()
     )
-
-    # =====================================================
-    # 3) Usuario no existe
-    # =====================================================
 
     if not usuario:
         fallidos = _contar_fallidos_recientes(db, username, ip_origen) + 1
@@ -261,10 +274,6 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
             detail="Usuario o contraseña incorrectos",
         )
 
-    # =====================================================
-    # 4) Usuario inactivo
-    # =====================================================
-
     if not usuario.activo:
         _registrar_intento_login(
             db,
@@ -291,10 +300,6 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario inactivo",
         )
-
-    # =====================================================
-    # 5) Contraseña incorrecta
-    # =====================================================
 
     if not verify_password(data.password, usuario.password_hash):
         fallidos = _contar_fallidos_recientes(db, username, ip_origen) + 1
@@ -337,34 +342,14 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
             detail="Usuario o contraseña incorrectos",
         )
 
-    # =====================================================
-    # 6) Crear tokens
-    # =====================================================
-
-    empresa_id = str(usuario.empresa_id) if usuario.empresa_id else None
-
     access_token = create_access_token(
-        {
-            "sub": str(usuario.id),
-            "rol": usuario.rol,
-            "empresa_id": empresa_id,
-            "type": "access",
-        }
+        _crear_payload_usuario(usuario, tipo="access")
     )
 
     refresh_token = create_access_token(
-        {
-            "sub": str(usuario.id),
-            "rol": usuario.rol,
-            "empresa_id": empresa_id,
-            "type": "refresh",
-        },
+        _crear_payload_usuario(usuario, tipo="refresh"),
         expires_delta=timedelta(days=7),
     )
-
-    # =====================================================
-    # 7) Registrar login exitoso
-    # =====================================================
 
     _registrar_intento_login(
         db,
@@ -388,9 +373,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         detalle="Ingreso exitoso al sistema",
     )
 
-    # =====================================================
-    # 8) Respuesta compatible con TokenResponse Fase 31.1
-    # =====================================================
+    empresa_id = str(usuario.empresa_id) if usuario.empresa_id else None
 
     return TokenResponse(
         access_token=access_token,
@@ -402,3 +385,77 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         rol=usuario.rol,
         empresa_id=empresa_id,
     )
+
+
+# =========================================================
+# REFRESH TOKEN
+# =========================================================
+
+@router.post("/refresh")
+def refresh_token(
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+):
+    credenciales_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Refresh token inválido o expirado",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(
+            data.refresh_token,
+            _jwt_secret_key(),
+            algorithms=[_jwt_algorithm()],
+        )
+
+        usuario_id = payload.get("sub")
+        tipo = payload.get("type")
+
+        if not usuario_id or tipo != "refresh":
+            raise credenciales_error
+
+    except JWTError:
+        raise credenciales_error
+
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
+    if not usuario or not usuario.activo:
+        raise credenciales_error
+
+    nuevo_access_token = create_access_token(
+        _crear_payload_usuario(usuario, tipo="access")
+    )
+
+    nuevo_refresh_token = create_access_token(
+        _crear_payload_usuario(usuario, tipo="refresh"),
+        expires_delta=timedelta(days=7),
+    )
+
+    return {
+        "access_token": nuevo_access_token,
+        "refresh_token": nuevo_refresh_token,
+        "token_type": "bearer",
+        "expires_in": 3600,
+        "usuario_id": str(usuario.id),
+        "nombre_completo": usuario.nombre_completo,
+        "rol": usuario.rol,
+        "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
+    }
+
+
+# =========================================================
+# PERFIL AUTENTICADO
+# =========================================================
+
+@router.get("/me")
+def auth_me(usuario: Usuario = Depends(obtener_usuario_actual)):
+    return {
+        "usuario_id": str(usuario.id),
+        "nombre_completo": usuario.nombre_completo,
+        "username": usuario.username,
+        "email": usuario.email,
+        "rol": usuario.rol,
+        "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
+        "activo": usuario.activo,
+    }

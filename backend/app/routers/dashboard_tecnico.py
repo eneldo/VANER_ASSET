@@ -1,19 +1,22 @@
 # =========================================================
 # ROUTER DASHBOARD TÉCNICO PRO - SGA PRO
-# Fase 25 - Portal Técnico operativo
+# Archivo: backend/app/routers/dashboard_tecnico.py
 #
-# Objetivo:
-# - El técnico solo ve sus mantenimientos asignados.
-# - Puede cambiar estado: EN_PROCESO, PAUSADO, FINALIZADO.
-# - Puede subir evidencias.
-# - Evita errores por columnas faltantes usando getattr().
+# Funciones:
+# - Dashboard del técnico.
+# - Detalle del mantenimiento.
+# - Cambio de estado.
+# - Guardar avance técnico.
+# - Subir evidencias.
+# - Histórico de mantenimientos finalizados del técnico.
 # =========================================================
 
 import os
 import uuid
 from uuid import UUID
+from datetime import datetime, date
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -41,7 +44,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 # =========================================================
-# HELPERS SEGUROS
+# HELPERS
 # =========================================================
 
 def safe_str(value):
@@ -53,11 +56,6 @@ def safe_get(obj, attr, default=None):
 
 
 def get_fecha_fin(mantenimiento):
-    """
-    Tu modelo actual usa fecha_finalizacion.
-    Algunos códigos anteriores usaban fecha_fin.
-    Este helper soporta ambos nombres sin romper.
-    """
     return (
         getattr(mantenimiento, "fecha_fin", None)
         or getattr(mantenimiento, "fecha_finalizacion", None)
@@ -65,10 +63,6 @@ def get_fecha_fin(mantenimiento):
 
 
 def parse_mantenimiento_id(value: str):
-    """
-    Soporta mantenimientos con ID entero o UUID.
-    Así evitamos errores si la tabla está en int o uuid.
-    """
     try:
         return int(value)
     except Exception:
@@ -123,11 +117,35 @@ def serializar_hoja_vida(hoja):
         return None
 
     data = {}
+
     for col in hoja.__table__.columns:
         value = getattr(hoja, col.name)
         data[col.name] = safe_str(value)
 
     return data
+
+
+def aplicar_estado_operativo(mantenimiento, nuevo_estado: str):
+    estados_validos = ["ASIGNADO", "PROGRAMADO", "EN_PROCESO", "PAUSADO", "FINALIZADO"]
+
+    if nuevo_estado not in estados_validos:
+        raise HTTPException(status_code=400, detail="Estado no permitido")
+
+    mantenimiento.estado = nuevo_estado
+
+    if nuevo_estado == "EN_PROCESO":
+        if hasattr(mantenimiento, "fecha_inicio") and not mantenimiento.fecha_inicio:
+            mantenimiento.fecha_inicio = datetime.now()
+
+    if nuevo_estado == "PAUSADO":
+        if hasattr(mantenimiento, "fecha_pausa"):
+            mantenimiento.fecha_pausa = datetime.now()
+
+    if nuevo_estado == "FINALIZADO":
+        if hasattr(mantenimiento, "fecha_finalizacion"):
+            mantenimiento.fecha_finalizacion = datetime.now()
+        if hasattr(mantenimiento, "fecha_fin"):
+            mantenimiento.fecha_fin = datetime.now()
 
 
 # =========================================================
@@ -168,6 +186,79 @@ def dashboard_por_usuario(usuario_id: UUID, db: Session = Depends(get_db)):
         "mantenimientos": [
             construir_card_mantenimiento(m, db) for m in mantenimientos
         ],
+    }
+
+
+# =========================================================
+# HISTÓRICO DEL TÉCNICO
+# =========================================================
+
+@router.get("/usuario/{usuario_id}/historico")
+def historico_tecnico(
+    usuario_id: UUID,
+    desde: date | None = Query(default=None),
+    hasta: date | None = Query(default=None),
+    empresa: str | None = Query(default=None),
+    sede: str | None = Query(default=None),
+    equipo: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    """
+    Devuelve mantenimientos FINALIZADOS del técnico.
+    Permite filtros por fechas, empresa, sede y equipo.
+    """
+
+    usuario, tecnico = validar_usuario_tecnico(usuario_id, db)
+
+    query = db.query(Mantenimiento).filter(
+        Mantenimiento.tecnico_id == tecnico.id,
+        Mantenimiento.estado == "FINALIZADO"
+    )
+
+    if desde:
+        query = query.filter(Mantenimiento.fecha_finalizacion >= desde)
+
+    if hasta:
+        query = query.filter(Mantenimiento.fecha_finalizacion <= hasta)
+
+    mantenimientos = query.order_by(
+        Mantenimiento.fecha_finalizacion.desc()
+    ).all()
+
+    resultado = []
+
+    for m in mantenimientos:
+        item = construir_card_mantenimiento(m, db)
+
+        empresa_nombre = (item.get("empresa") or {}).get("nombre") or ""
+        sede_nombre = (item.get("sede") or {}).get("nombre") or ""
+        equipo_nombre = ((item.get("equipo") or {}).get("nombre") or "")
+
+        if empresa and empresa.lower() not in empresa_nombre.lower():
+            continue
+
+        if sede and sede.lower() not in sede_nombre.lower():
+            continue
+
+        if equipo and equipo.lower() not in equipo_nombre.lower():
+            continue
+
+        resultado.append(item)
+
+    return {
+        "usuario": {
+            "id": str(usuario.id),
+            "nombre_completo": usuario.nombre_completo,
+            "rol": usuario.rol,
+        },
+        "tecnico": {
+            "id": str(tecnico.id),
+            "documento": tecnico.documento,
+            "cargo": tecnico.cargo,
+            "especialidad": tecnico.especialidad,
+        },
+        "total": len(resultado),
+        "historico": resultado,
     }
 
 
@@ -227,6 +318,7 @@ def detalle_mantenimiento_tecnico(
             "fecha_fin": safe_str(fecha_fin),
             "fecha_finalizacion": safe_str(fecha_fin),
             "estado_inicial": safe_get(mantenimiento, "estado_inicial"),
+            "estado_inicial_equipo": safe_get(mantenimiento, "estado_inicial_equipo"),
             "acciones_realizadas": safe_get(mantenimiento, "acciones_realizadas"),
             "resultado_final": safe_get(mantenimiento, "resultado_final"),
             "observaciones": safe_get(mantenimiento, "observaciones"),
@@ -277,25 +369,7 @@ def cambiar_estado_mantenimiento(
         usuario_id, mantenimiento_id, db
     )
 
-    estados_validos = ["ASIGNADO", "EN_PROCESO", "PAUSADO", "FINALIZADO"]
-
-    if nuevo_estado not in estados_validos:
-        raise HTTPException(status_code=400, detail="Estado no permitido")
-
-    mantenimiento.estado = nuevo_estado
-
-    if nuevo_estado == "EN_PROCESO" and hasattr(mantenimiento, "fecha_inicio"):
-        from datetime import datetime
-        if not mantenimiento.fecha_inicio:
-            mantenimiento.fecha_inicio = datetime.now()
-
-    if nuevo_estado == "PAUSADO" and hasattr(mantenimiento, "fecha_pausa"):
-        from datetime import datetime
-        mantenimiento.fecha_pausa = datetime.now()
-
-    if nuevo_estado == "FINALIZADO" and hasattr(mantenimiento, "fecha_finalizacion"):
-        from datetime import datetime
-        mantenimiento.fecha_finalizacion = datetime.now()
+    aplicar_estado_operativo(mantenimiento, nuevo_estado)
 
     if observacion:
         mantenimiento.observaciones = observacion
@@ -305,6 +379,62 @@ def cambiar_estado_mantenimiento(
     return {
         "message": "Estado actualizado correctamente",
         "estado": nuevo_estado,
+    }
+
+
+# =========================================================
+# GUARDAR AVANCE TÉCNICO
+# =========================================================
+
+@router.patch("/mantenimiento/{mantenimiento_id}/avance")
+def guardar_avance_tecnico(
+    mantenimiento_id: str,
+    usuario_id: UUID = Form(...),
+    estado_inicial: str = Form(""),
+    acciones_realizadas: str = Form(""),
+    resultado_final: str = Form(""),
+    observaciones: str = Form(""),
+    nuevo_estado: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    _, _, mantenimiento = validar_mantenimiento_del_tecnico(
+        usuario_id, mantenimiento_id, db
+    )
+
+    if hasattr(mantenimiento, "estado_inicial"):
+        mantenimiento.estado_inicial = estado_inicial
+
+    if hasattr(mantenimiento, "estado_inicial_equipo"):
+        mantenimiento.estado_inicial_equipo = estado_inicial
+
+    if hasattr(mantenimiento, "acciones_realizadas"):
+        mantenimiento.acciones_realizadas = acciones_realizadas
+
+    if hasattr(mantenimiento, "resultado_final"):
+        mantenimiento.resultado_final = resultado_final
+
+    if hasattr(mantenimiento, "observaciones"):
+        mantenimiento.observaciones = observaciones
+
+    if nuevo_estado:
+        aplicar_estado_operativo(mantenimiento, nuevo_estado)
+
+    db.commit()
+    db.refresh(mantenimiento)
+
+    return {
+        "message": "Avance técnico guardado correctamente",
+        "mantenimiento": {
+            "id": str(mantenimiento.id),
+            "estado": mantenimiento.estado,
+            "estado_inicial": safe_get(mantenimiento, "estado_inicial"),
+            "acciones_realizadas": safe_get(mantenimiento, "acciones_realizadas"),
+            "resultado_final": safe_get(mantenimiento, "resultado_final"),
+            "observaciones": safe_get(mantenimiento, "observaciones"),
+            "fecha_inicio": safe_str(safe_get(mantenimiento, "fecha_inicio")),
+            "fecha_pausa": safe_str(safe_get(mantenimiento, "fecha_pausa")),
+            "fecha_finalizacion": safe_str(safe_get(mantenimiento, "fecha_finalizacion")),
+        }
     }
 
 
@@ -383,6 +513,9 @@ def construir_card_mantenimiento(mantenimiento: Mantenimiento, db: Session):
         "fecha_inicio": safe_str(safe_get(mantenimiento, "fecha_inicio")),
         "fecha_fin": safe_str(fecha_fin),
         "fecha_finalizacion": safe_str(fecha_fin),
+        "estado_inicial": safe_get(mantenimiento, "estado_inicial"),
+        "acciones_realizadas": safe_get(mantenimiento, "acciones_realizadas"),
+        "resultado_final": safe_get(mantenimiento, "resultado_final"),
         "observaciones": safe_get(mantenimiento, "observaciones"),
         "observacion_estado": safe_get(mantenimiento, "observacion_estado"),
         "equipo": {

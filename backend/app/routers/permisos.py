@@ -21,6 +21,7 @@ from app.schemas.permiso_schema import (
     UsuarioPermisosUpdate,
 )
 from app.core.permissions import normalizar_rol, obtener_permisos_usuario, require_permission
+from app.routers.auth import obtener_usuario_actual
 
 # Ajusta este import si tu modelo Usuario está en otra ruta.
 from app.models.usuario import Usuario
@@ -147,16 +148,43 @@ def actualizar_permisos_directos_usuario(
 
 
 @router.get("/me", response_model=UsuarioPermisosOut)
-def mis_permisos(db: Session = Depends(get_db), usuario=Depends(require_permission("DASHBOARD_VER"))):
-    """Endpoint usado por React para construir Sidebar dinámico y guards."""
+def mis_permisos(
+    db: Session = Depends(get_db),
+    usuario=Depends(obtener_usuario_actual),
+):
+    """
+    Endpoint usado por React para construir menús dinámicos.
+    No debe exigir DASHBOARD_VER, porque primero necesita consultar
+    qué permisos tiene el usuario autenticado.
+    """
     rol_codigo = normalizar_rol(getattr(usuario, "rol", None))
-    rol = db.query(RolSistema).options(joinedload(RolSistema.permisos)).filter(RolSistema.codigo == rol_codigo).first()
+
+    rol = (
+        db.query(RolSistema)
+        .options(joinedload(RolSistema.permisos))
+        .filter(RolSistema.codigo == rol_codigo)
+        .first()
+    )
+
     permisos_rol = [p.codigo for p in rol.permisos] if rol else []
     finales = sorted(obtener_permisos_usuario(db, usuario))
+
+    directos = (
+        db.query(PermisoSistema.codigo)
+        .join(UsuarioPermiso, UsuarioPermiso.permiso_id == PermisoSistema.id)
+        .filter(
+            UsuarioPermiso.usuario_id == usuario.id,
+            UsuarioPermiso.permitido.is_(True),
+        )
+        .all()
+    )
+
+    permisos_directos = [p[0] for p in directos]
+
     return UsuarioPermisosOut(
         usuario_id=usuario.id,
         rol=rol_codigo,
         permisos_rol=sorted(permisos_rol),
-        permisos_directos=[],
+        permisos_directos=sorted(permisos_directos),
         permisos_finales=finales,
     )

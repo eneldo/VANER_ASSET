@@ -1,0 +1,413 @@
+/* ============================================================
+   ESTILOS: Formato de Mantenimiento
+   Archivo: frontend/src/styles/formatoMantenimiento.css
+   ============================================================ */
+
+.formato-page {
+  min-height: 100vh;
+  background: #eef3f8;
+  padding: 24px;
+  font-family: "Times New Roman", serif;
+  color: #111827;
+}
+
+.formato-topbar {
+  max-width: 1100px;
+  margin: 0 auto 18px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.formato-topbar h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #0f172a;
+}
+
+.formato-topbar p {
+  margin: 4px 0 0 0;
+  color: #64748b;
+}
+
+.formato-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-principal,
+.btn-secundario,
+.btn-imprimir,
+.btn-agregar {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-principal {
+  background: #0f62fe;
+  color: white;
+}
+
+.btn-secundario {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-imprimir {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-agregar {
+  margin-top: 10px;
+  background: #0f172a;
+  color: white;
+}
+
+.formato-hoja {
+  max-width: 1100px;
+  margin: auto;
+  background: white;
+  border: 2px solid #111;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.formato-header {
+  display: grid;
+  grid-template-columns: 220px 1fr 190px;
+  border-bottom: 2px solid #111;
+}
+
+.formato-logo,
+.formato-title,
+.formato-code {
+  padding: 8px;
+  border-right: 2px solid #111;
+}
+
+.formato-code {
+  border-right: none;
+}
+
+.formato-logo {
+  text-align: center;
+}
+
+.formato-logo strong {
+  display: block;
+  color: #2563eb;
+  font-size: 42px;
+  line-height: 38px;
+}
+
+.formato-logo span {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.formato-logo small {
+  font-size: 10px;
+  color: #475569;
+}
+
+.formato-title {
+  text-align: center;
+  font-weight: 900;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formato-code p {
+  margin: 0;
+  font-size: 13px;
+  border-bottom: 1px solid #111;
+  padding: 2px;
+}
+
+.formato-code p:last-child {
+  border-bottom: none;
+}
+
+.grid-form {
+  display: grid;
+  border-bottom: 1px solid #111;
+}
+
+.grid-form.tres {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.grid-form.dos {
+  grid-template-columns: 1fr 1fr;
+}
+
+.grid-form label,
+.campo-full {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  border-right: 1px solid #111;
+}
+
+.grid-form label:last-child {
+  border-right: none;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  padding: 6px;
+  font-family: "Times New Roman", serif;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+textarea {
+  min-height: 55px;
+  resize: vertical;
+}
+
+h3 {
+  margin: 0;
+  padding: 5px;
+  text-align: center;
+  font-size: 14px;
+  background: #f8fafc;
+  border-top: 1px solid #111;
+  border-bottom: 1px solid #111;
+}
+
+.tipo-equipos {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid #111;
+}
+
+.tipo-equipos label {
+  padding: 6px;
+  border-right: 1px solid #111;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.tipo-equipos label:last-child {
+  border-right: none;
+}
+
+.trabajos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.trabajos-grid label {
+  padding: 5px;
+  border-right: 1px solid #111;
+  border-bottom: 1px solid #111;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.tabla-funcionamiento {
+  padding: 0;
+}
+
+.func-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  border-bottom: 1px solid #111;
+}
+
+.func-row span,
+.func-row input {
+  border-right: 1px solid #111;
+  padding: 5px;
+  margin: 0;
+  border-radius: 0;
+  border-top: none;
+  border-left: none;
+  border-bottom: none;
+}
+
+.presiones {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.presiones input {
+  border-radius: 0;
+  margin: 0;
+  border: none;
+  border-right: 1px solid #111;
+  border-bottom: 1px solid #111;
+}
+
+.repuestos {
+  display: flex;
+  flex-direction: column;
+}
+
+.repuesto-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  border-bottom: 1px solid #111;
+}
+
+.repuesto-row input {
+  margin: 0;
+  border: none;
+  border-right: 1px solid #111;
+  border-radius: 0;
+}
+
+.firmas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  min-height: 90px;
+  border-top: 2px solid #111;
+}
+
+.firmas label {
+  padding: 20px 8px 8px 8px;
+  border-right: 2px solid #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-align: center;
+  font-weight: 900;
+}
+
+.firmas label:last-child {
+  border-right: none;
+}
+
+/* =======================
+   Vista imprimible
+   ======================= */
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #111;
+  padding: 4px 6px;
+}
+
+.print-options {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid #111;
+}
+
+.print-options span {
+  padding: 5px;
+  border-right: 1px solid #111;
+  font-size: 12px;
+}
+
+.print-observaciones {
+  border: 1px solid #111;
+  padding: 8px;
+  min-height: 60px;
+}
+
+.print-firmas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  height: 90px;
+  border: 1px solid #111;
+}
+
+.print-firmas div {
+  border-right: 1px solid #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-align: center;
+  padding: 8px;
+}
+
+.print-firmas div:last-child {
+  border-right: none;
+}
+
+.print-firmas span {
+  min-height: 30px;
+  display: block;
+}
+
+@media print {
+  body {
+    margin: 0;
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .formato-page {
+    background: white;
+    padding: 0;
+  }
+
+  .formato-hoja {
+    box-shadow: none;
+    border: 2px solid #111;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  @page {
+    size: letter;
+    margin: 8mm;
+  }
+}
+
+@media (max-width: 900px) {
+  .formato-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formato-actions {
+    flex-wrap: wrap;
+  }
+
+  .formato-header {
+    grid-template-columns: 1fr;
+  }
+
+  .formato-logo,
+  .formato-title,
+  .formato-code {
+    border-right: none;
+    border-bottom: 1px solid #111;
+  }
+
+  .grid-form.tres,
+  .grid-form.dos,
+  .tipo-equipos,
+  .trabajos-grid,
+  .presiones,
+  .firmas,
+  .print-options {
+    grid-template-columns: 1fr;
+  }
+}

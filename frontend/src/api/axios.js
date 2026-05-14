@@ -1,12 +1,12 @@
 // ============================================================
 // AXIOS PRO CON REFRESH TOKEN AUTOMÁTICO
 // Archivo: frontend/src/api/axios.js
-// ============================================================
-// Maneja:
-// - Base URL centralizada.
-// - Authorization Bearer automático.
-// - Renovación automática con refresh_token.
-// - Logout seguro si el refresh falla.
+//
+// Corrige:
+// - Compatible con token/access_token.
+// - Compatible con refresh_token.
+// - Evita redirigir a /login si tu login está en /.
+// - Usa /auth/refresh, ahora existente en backend.
 // ============================================================
 
 import axios from "axios";
@@ -25,7 +25,6 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Controla múltiples errores 401 simultáneos.
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -41,14 +40,51 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+const leerAccessTokenSeguro = () => {
+  return (
+    getAccessToken?.() ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token")
+  );
+};
+
+const leerRefreshTokenSeguro = () => {
+  return getRefreshToken?.() || localStorage.getItem("refresh_token");
+};
+
+const guardarAccessTokenSeguro = (token) => {
+  if (!token) return;
+
+  updateAccessToken?.(token);
+  localStorage.setItem("access_token", token);
+  localStorage.setItem("token", token);
+};
+
+const guardarRefreshTokenSeguro = (token) => {
+  if (!token) return;
+
+  updateRefreshToken?.(token);
+  localStorage.setItem("refresh_token", token);
+};
+
+const cerrarSesionSegura = () => {
+  clearSession?.();
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("user");
+
+  window.location.href = "/";
+};
+
 // ============================================================
 // REQUEST INTERCEPTOR
-// Agrega el access token automáticamente.
 // ============================================================
 
 api.interceptors.request.use(
   (config) => {
-    const token = getAccessToken();
+    const token = leerAccessTokenSeguro();
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -63,7 +99,6 @@ api.interceptors.request.use(
 
 // ============================================================
 // RESPONSE INTERCEPTOR
-// Si recibe 401, intenta renovar sesión usando refresh_token.
 // ============================================================
 
 api.interceptors.response.use(
@@ -77,20 +112,20 @@ api.interceptors.response.use(
 
     const status = error.response.status;
 
-    // Evita bucles infinitos con login/refresh/logout.
+    const url = originalRequest?.url || "";
+
     const isAuthEndpoint =
-      originalRequest?.url?.includes("/auth/login") ||
-      originalRequest?.url?.includes("/auth/refresh") ||
-      originalRequest?.url?.includes("/auth/logout");
+      url.includes("/auth/login") ||
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/logout");
 
     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
-      const refreshToken = getRefreshToken();
+      const refreshToken = leerRefreshTokenSeguro();
 
       if (!refreshToken) {
-        clearSession();
-        window.location.href = "/login";
+        cerrarSesionSegura();
         return Promise.reject(error);
       }
 
@@ -115,20 +150,17 @@ api.interceptors.response.use(
         const newAccessToken = response.data.access_token;
         const newRefreshToken = response.data.refresh_token;
 
-        updateAccessToken(newAccessToken);
-
-        if (newRefreshToken) {
-          updateRefreshToken(newRefreshToken);
-        }
+        guardarAccessTokenSeguro(newAccessToken);
+        guardarRefreshTokenSeguro(newRefreshToken);
 
         processQueue(null, newAccessToken);
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        clearSession();
-        window.location.href = "/login";
+        cerrarSesionSegura();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

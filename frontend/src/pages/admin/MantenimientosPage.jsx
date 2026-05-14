@@ -1,18 +1,16 @@
 // ============================================================
 // MANTENIMIENTOS PRO - BITÁCORA PROFESIONAL
 // Archivo: frontend/src/pages/admin/MantenimientosPage.jsx
-// Proyecto: SGA PRO
 //
-// Mejoras aplicadas:
-// - Técnico responsable muestra nombre real del usuario técnico.
-// - Tabla muestra técnico, empresa y sede correctamente.
-// - Botón Eliminar funciona con DELETE /mantenimientos/{id}.
-// - Edición conserva selección dependiente empresa/sede/equipo.
-// - Diseño conserva clases visuales actuales del módulo.
+// Ajustes aplicados:
+// - Usa AdminLayout para conservar sidebar y estructura Admin PRO.
+// - Usa API global con interceptor de token.
+// - Formulario y tabla quedan en layout tipo Equipos.
+// - Scroll interno elegante en historial.
+// - Edición conserva empresa/sede/equipo.
 // ============================================================
 
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import {
   ArrowLeft,
   Wrench,
@@ -27,34 +25,9 @@ import {
   X,
 } from "lucide-react";
 
+import AdminLayout from "./AdminLayout";
+import API from "../../api/axios";
 import "./MantenimientosPage.css";
-
-const API_BASE = "http://127.0.0.1:8000";
-
-const api = axios.create({
-  baseURL: API_BASE,
-});
-
-// ============================================================
-// Interceptor para enviar token si existe
-// ============================================================
-
-api.interceptors.request.use((config) => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("sga_token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-// ============================================================
-// Estados visuales
-// ============================================================
 
 const ESTADOS = {
   PROGRAMADO: { label: "Programado", className: "badge-blue" },
@@ -64,10 +37,6 @@ const ESTADOS = {
   FINALIZADO: { label: "Finalizado", className: "badge-green" },
   ANULADO: { label: "Anulado", className: "badge-red" },
 };
-
-// ============================================================
-// Formulario inicial
-// ============================================================
 
 const formInicial = {
   id: null,
@@ -104,10 +73,6 @@ export default function MantenimientosPage() {
   const [loading, setLoading] = useState(false);
   const [detalle, setDetalle] = useState(null);
 
-  // ============================================================
-  // Carga inicial
-  // ============================================================
-
   useEffect(() => {
     cargarTodo();
   }, []);
@@ -118,11 +83,11 @@ export default function MantenimientosPage() {
 
       const [resMant, resEmp, resSedes, resEquipos, resTec] =
         await Promise.all([
-          api.get("/mantenimientos/"),
-          api.get("/empresas/"),
-          api.get("/sedes/"),
-          api.get("/equipos/"),
-          api.get("/tecnicos/"),
+          API.get("/mantenimientos/"),
+          API.get("/empresas/"),
+          API.get("/sedes/"),
+          API.get("/equipos/"),
+          API.get("/tecnicos/"),
         ]);
 
       setMantenimientos(resMant.data || []);
@@ -138,10 +103,6 @@ export default function MantenimientosPage() {
     }
   };
 
-  // ============================================================
-  // Filtros dependientes
-  // ============================================================
-
   const sedesFiltradas = useMemo(() => {
     if (!form.empresa_id) return [];
     return sedes.filter((s) => String(s.empresa_id) === String(form.empresa_id));
@@ -151,10 +112,6 @@ export default function MantenimientosPage() {
     if (!form.sede_id) return [];
     return equipos.filter((e) => String(e.sede_id) === String(form.sede_id));
   }, [equipos, form.sede_id]);
-
-  // ============================================================
-  // Helpers para mostrar nombres
-  // ============================================================
 
   const getEmpresa = (id) => {
     const empresa = empresas.find((e) => String(e.id) === String(id));
@@ -190,11 +147,8 @@ export default function MantenimientosPage() {
     return getTecnicoNombre(tecnico);
   };
 
-  const getEstado = (estado) => ESTADOS[estado] || { label: estado || "—", className: "badge-blue" };
-
-  // ============================================================
-  // Utilidades de fechas
-  // ============================================================
+  const getEstado = (estado) =>
+    ESTADOS[estado] || { label: estado || "—", className: "badge-blue" };
 
   const convertirFechaInput = (value) => {
     if (!value) return "";
@@ -210,17 +164,9 @@ export default function MantenimientosPage() {
     return d.toLocaleString();
   };
 
-  // ============================================================
-  // Limpiar formulario
-  // ============================================================
-
   const limpiarFormulario = () => {
     setForm(formInicial);
   };
-
-  // ============================================================
-  // Guardar o actualizar mantenimiento
-  // ============================================================
 
   const guardarMantenimiento = async () => {
     if (!form.empresa_id) return alert("Seleccione empresa.");
@@ -242,10 +188,10 @@ export default function MantenimientosPage() {
 
     try {
       if (form.id) {
-        await api.put(`/mantenimientos/${form.id}`, payload);
+        await API.put(`/mantenimientos/${form.id}`, payload);
 
         if (form.tecnico_id) {
-          await api.patch(`/mantenimientos/${form.id}/asignar-tecnico`, {
+          await API.patch(`/mantenimientos/${form.id}/asignar-tecnico`, {
             tecnico_id: form.tecnico_id,
             observacion: "Técnico actualizado desde bitácora profesional.",
             creado_por: "Administrador SGA",
@@ -254,10 +200,10 @@ export default function MantenimientosPage() {
 
         alert("Mantenimiento actualizado correctamente.");
       } else {
-        const creado = await api.post("/mantenimientos/", payload);
+        const creado = await API.post("/mantenimientos/", payload);
 
         if (form.tecnico_id && creado?.data?.id) {
-          await api.patch(`/mantenimientos/${creado.data.id}/asignar-tecnico`, {
+          await API.patch(`/mantenimientos/${creado.data.id}/asignar-tecnico`, {
             tecnico_id: form.tecnico_id,
             observacion: "Técnico asignado desde bitácora profesional.",
             creado_por: "Administrador SGA",
@@ -274,10 +220,6 @@ export default function MantenimientosPage() {
       alert(error?.response?.data?.detail || "No se pudo guardar.");
     }
   };
-
-  // ============================================================
-  // Editar mantenimiento
-  // ============================================================
 
   const editarMantenimiento = (m) => {
     const equipo = equipos.find((eq) => String(eq.id) === String(m.equipo_id));
@@ -306,10 +248,6 @@ export default function MantenimientosPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ============================================================
-  // Eliminar mantenimiento definitivamente
-  // ============================================================
-
   const eliminarMantenimiento = async (m) => {
     const ok = window.confirm(
       `¿Deseas eliminar definitivamente el mantenimiento #${m.id}?\n\nEsta acción quitará el registro del historial de mantenimientos.`
@@ -318,7 +256,7 @@ export default function MantenimientosPage() {
     if (!ok) return;
 
     try {
-      await api.delete(`/mantenimientos/${m.id}`);
+      await API.delete(`/mantenimientos/${m.id}`);
       alert("Mantenimiento eliminado correctamente.");
 
       const nuevaCantidad = mantenimientosFiltrados.length - 1;
@@ -331,10 +269,6 @@ export default function MantenimientosPage() {
       alert(error?.response?.data?.detail || "No se pudo eliminar el mantenimiento.");
     }
   };
-
-  // ============================================================
-  // Búsqueda y paginación
-  // ============================================================
 
   const mantenimientosFiltrados = useMemo(() => {
     const q = busqueda.toLowerCase();
@@ -355,319 +289,409 @@ export default function MantenimientosPage() {
     });
   }, [mantenimientos, busqueda, empresas, sedes, equipos, tecnicos]);
 
-  const totalPaginas = Math.max(1, Math.ceil(mantenimientosFiltrados.length / porPagina));
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(mantenimientosFiltrados.length / porPagina)
+  );
 
   const visibles = mantenimientosFiltrados.slice(
     (pagina - 1) * porPagina,
     pagina * porPagina
   );
 
-  // ============================================================
-  // Render
-  // ============================================================
-
   return (
-    <div className="mant-page">
-      <div className="mant-header">
-        <div className="mant-header-icon">
-          <Wrench size={26} />
-        </div>
-
-        <div>
-          <h1 className="mant-title">Mantenimientos</h1>
-          <p className="mant-subtitle">
-            Registra programación, asignación, ejecución y trazabilidad técnica.
-          </p>
-        </div>
-
-        <button
-          className="mant-dashboard-btn"
-          onClick={() => (window.location.href = "/admin/dashboard")}
-        >
-          <ArrowLeft size={16} />
-          Dashboard
-        </button>
-      </div>
-
-      <section className="mant-card">
-        <div className="mant-section-header">
-          <div>
-            <h2>{form.id ? "Editar mantenimiento" : "Crear mantenimiento"}</h2>
-            <p>Formulario técnico para mantenimiento preventivo o correctivo.</p>
+    <AdminLayout>
+      <div className="mant-page">
+        <div className="mant-header">
+          <div className="mant-header-icon">
+            <Wrench size={26} />
           </div>
 
-          <button className="mant-reload-btn" onClick={cargarTodo}>
-            <RefreshCw size={16} />
-            Actualizar
-          </button>
-        </div>
-
-        <div className="mant-grid-3">
-          <Field label="Empresa">
-            <select
-              value={form.empresa_id}
-              onChange={(e) =>
-                setForm({ ...form, empresa_id: e.target.value, sede_id: "", equipo_id: "" })
-              }
-            >
-              <option value="">Seleccione empresa *</option>
-              {empresas.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nombre || e.razon_social || `Empresa ${e.id}`}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Sede">
-            <select
-              value={form.sede_id}
-              onChange={(e) => setForm({ ...form, sede_id: e.target.value, equipo_id: "" })}
-              disabled={!form.empresa_id}
-            >
-              <option value="">
-                {form.empresa_id ? "Seleccione sede *" : "Primero seleccione empresa"}
-              </option>
-              {sedesFiltradas.map((s) => (
-                <option key={s.id} value={s.id}>{s.nombre}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Equipo">
-            <select
-              value={form.equipo_id}
-              onChange={(e) => setForm({ ...form, equipo_id: e.target.value })}
-              disabled={!form.sede_id}
-            >
-              <option value="">
-                {form.sede_id ? "Seleccione equipo *" : "Primero seleccione sede"}
-              </option>
-              {equiposFiltrados.map((eq) => (
-                <option key={eq.id} value={eq.id}>
-                  {eq.nombre || eq.codigo_id || eq.codigo || `Equipo ${eq.id}`}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Técnico responsable">
-            <select
-              value={form.tecnico_id}
-              onChange={(e) => setForm({ ...form, tecnico_id: e.target.value })}
-            >
-              <option value="">Seleccione técnico responsable *</option>
-              {tecnicos.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {getTecnicoNombre(t)}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Tipo de mantenimiento">
-            <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-              <option value="PREVENTIVO">Preventivo</option>
-              <option value="CORRECTIVO">Correctivo</option>
-              <option value="CALIBRACION">Calibración</option>
-              <option value="INSPECCION">Inspección</option>
-            </select>
-          </Field>
-
-          <Field label="Estado">
-            <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
-              <option value="PROGRAMADO">Programado</option>
-              <option value="ASIGNADO">Asignado</option>
-              <option value="EN_PROCESO">En proceso</option>
-              <option value="PAUSADO">Pausado</option>
-              <option value="FINALIZADO">Finalizado</option>
-              <option value="ANULADO">Anulado</option>
-            </select>
-          </Field>
-
-          <Field label="Fecha programada">
-            <input
-              type="datetime-local"
-              value={form.fecha_programada}
-              onChange={(e) => setForm({ ...form, fecha_programada: e.target.value })}
-            />
-          </Field>
-
-          <Field label="Fecha y hora inicio">
-            <input
-              type="datetime-local"
-              value={form.fecha_inicio_programada}
-              onChange={(e) => setForm({ ...form, fecha_inicio_programada: e.target.value })}
-            />
-          </Field>
-
-          <Field label="Fecha y hora fin">
-            <input
-              type="datetime-local"
-              value={form.fecha_fin_programada}
-              onChange={(e) => setForm({ ...form, fecha_fin_programada: e.target.value })}
-            />
-          </Field>
-
-          <Field label="Latitud">
-            <input placeholder="Latitud" value={form.latitud} onChange={(e) => setForm({ ...form, latitud: e.target.value })} />
-          </Field>
-
-          <Field label="Longitud">
-            <input placeholder="Longitud" value={form.longitud} onChange={(e) => setForm({ ...form, longitud: e.target.value })} />
-          </Field>
-
-          <Field label="Costo">
-            <input type="number" placeholder="0" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} />
-          </Field>
-        </div>
-
-        <div className="mant-grid-3 mant-textarea-row">
-          <Field label="Estado inicial del equipo / cómo se encontró">
-            <textarea value={form.estado_inicial_equipo} onChange={(e) => setForm({ ...form, estado_inicial_equipo: e.target.value })} />
-          </Field>
-
-          <Field label="Acciones realizadas">
-            <textarea value={form.acciones_realizadas} onChange={(e) => setForm({ ...form, acciones_realizadas: e.target.value })} />
-          </Field>
-
-          <Field label="Resultado final">
-            <textarea value={form.resultado_final} onChange={(e) => setForm({ ...form, resultado_final: e.target.value })} />
-          </Field>
-        </div>
-
-        <Field label="Observaciones">
-          <textarea value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} />
-        </Field>
-
-        <div className="mant-form-actions">
-          <button className="mant-save-btn" onClick={guardarMantenimiento} disabled={loading}>
-            <Save size={16} />
-            {form.id ? "Actualizar mantenimiento" : "Guardar mantenimiento"}
-          </button>
-
-          <button className="mant-clean-btn" onClick={limpiarFormulario}>
-            Limpiar
-          </button>
-        </div>
-      </section>
-
-      <section className="mant-card mant-history-card">
-        <div className="mant-section-header">
           <div>
-            <h2>Historial de mantenimientos</h2>
-            <p>Consulta, búsqueda, edición y eliminación segura.</p>
+            <h1 className="mant-title">Mantenimientos</h1>
+            <p className="mant-subtitle">
+              Registra programación, asignación, ejecución y trazabilidad técnica.
+            </p>
           </div>
 
-          <span className="mant-counter">{mantenimientosFiltrados.length} registros</span>
+          <button
+            className="mant-dashboard-btn"
+            onClick={() => (window.location.href = "/admin/dashboard")}
+          >
+            <ArrowLeft size={16} />
+            Dashboard
+          </button>
         </div>
 
-        <div className="mant-search-box">
-          <Search size={16} />
-          <input
-            placeholder="Buscar por empresa, sede, equipo, técnico, tipo o resultado"
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              setPagina(1);
-            }}
-          />
-        </div>
+        <div className="mant-pro-layout">
+          <section className="mant-card mant-form-card">
+            <div className="mant-section-header">
+              <div>
+                <h2>{form.id ? "Editar mantenimiento" : "Crear mantenimiento"}</h2>
+                <p>Formulario técnico para mantenimiento preventivo o correctivo.</p>
+              </div>
 
-        <div className="mant-table-wrap">
-          <table className="mant-table">
-            <thead>
-              <tr>
-                <th>Empresa</th>
-                <th>Sede</th>
-                <th>Equipo</th>
-                <th>Técnico</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Resultado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
+              <button className="mant-reload-btn" onClick={cargarTodo}>
+                <RefreshCw size={16} />
+                Actualizar
+              </button>
+            </div>
 
-            <tbody>
-              {visibles.map((m) => {
-                const estado = getEstado(m.estado);
-                return (
-                  <tr key={m.id}>
-                    <td>{m.empresa_nombre || getEmpresa(m.empresa_id)}</td>
-                    <td>{m.sede_nombre || getSede(m.sede_id)}</td>
-                    <td>{m.equipo_nombre || getEquipo(m.equipo_id)}</td>
-                    <td>{m.tecnico_nombre || getTecnico(m.tecnico_id)}</td>
-                    <td><span className="badge-blue">{m.tipo}</span></td>
-                    <td><span className={estado.className}>{estado.label}</span></td>
-                    <td>{formatearFecha(m.fecha_inicio || m.fecha_programada)}</td>
-                    <td>{formatearFecha(m.fecha_finalizacion)}</td>
-                    <td>{m.resultado_final || m.observacion_estado || "—"}</td>
-                    <td>
-                      <div className="mant-actions">
-                        <button className="mant-view-btn" onClick={() => setDetalle(m)}>
-                          <Eye size={14} /> Ver
-                        </button>
-                        <button className="mant-edit-btn" onClick={() => editarMantenimiento(m)}>
-                          <Edit size={14} /> Editar
-                        </button>
-                        <button className="mant-delete-btn" onClick={() => eliminarMantenimiento(m)}>
-                          <Trash2 size={14} /> Eliminar
-                        </button>
-                      </div>
-                    </td>
+            <div className="mant-grid-3">
+              <Field label="Empresa">
+                <select
+                  value={form.empresa_id}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      empresa_id: e.target.value,
+                      sede_id: "",
+                      equipo_id: "",
+                    })
+                  }
+                >
+                  <option value="">Seleccione empresa *</option>
+                  {empresas.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.nombre || e.razon_social || `Empresa ${e.id}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Sede">
+                <select
+                  value={form.sede_id}
+                  onChange={(e) =>
+                    setForm({ ...form, sede_id: e.target.value, equipo_id: "" })
+                  }
+                  disabled={!form.empresa_id}
+                >
+                  <option value="">
+                    {form.empresa_id ? "Seleccione sede *" : "Primero seleccione empresa"}
+                  </option>
+                  {sedesFiltradas.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Equipo">
+                <select
+                  value={form.equipo_id}
+                  onChange={(e) => setForm({ ...form, equipo_id: e.target.value })}
+                  disabled={!form.sede_id}
+                >
+                  <option value="">
+                    {form.sede_id ? "Seleccione equipo *" : "Primero seleccione sede"}
+                  </option>
+                  {equiposFiltrados.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre || eq.codigo_id || eq.codigo || `Equipo ${eq.id}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Técnico responsable">
+                <select
+                  value={form.tecnico_id}
+                  onChange={(e) => setForm({ ...form, tecnico_id: e.target.value })}
+                >
+                  <option value="">Seleccione técnico responsable *</option>
+                  {tecnicos.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {getTecnicoNombre(t)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Tipo de mantenimiento">
+                <select
+                  value={form.tipo}
+                  onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                >
+                  <option value="PREVENTIVO">Preventivo</option>
+                  <option value="CORRECTIVO">Correctivo</option>
+                  <option value="CALIBRACION">Calibración</option>
+                  <option value="INSPECCION">Inspección</option>
+                </select>
+              </Field>
+
+              <Field label="Estado">
+                <select
+                  value={form.estado}
+                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
+                >
+                  <option value="PROGRAMADO">Programado</option>
+                  <option value="ASIGNADO">Asignado</option>
+                  <option value="EN_PROCESO">En proceso</option>
+                  <option value="PAUSADO">Pausado</option>
+                  <option value="FINALIZADO">Finalizado</option>
+                  <option value="ANULADO">Anulado</option>
+                </select>
+              </Field>
+
+              <Field label="Fecha programada">
+                <input
+                  type="datetime-local"
+                  value={form.fecha_programada}
+                  onChange={(e) =>
+                    setForm({ ...form, fecha_programada: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Fecha y hora inicio">
+                <input
+                  type="datetime-local"
+                  value={form.fecha_inicio_programada}
+                  onChange={(e) =>
+                    setForm({ ...form, fecha_inicio_programada: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Fecha y hora fin">
+                <input
+                  type="datetime-local"
+                  value={form.fecha_fin_programada}
+                  onChange={(e) =>
+                    setForm({ ...form, fecha_fin_programada: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Latitud">
+                <input
+                  placeholder="Latitud"
+                  value={form.latitud}
+                  onChange={(e) => setForm({ ...form, latitud: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Longitud">
+                <input
+                  placeholder="Longitud"
+                  value={form.longitud}
+                  onChange={(e) => setForm({ ...form, longitud: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Costo">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.costo}
+                  onChange={(e) => setForm({ ...form, costo: e.target.value })}
+                />
+              </Field>
+            </div>
+
+            <div className="mant-grid-3 mant-textarea-row">
+              <Field label="Estado inicial del equipo / cómo se encontró">
+                <textarea
+                  value={form.estado_inicial_equipo}
+                  onChange={(e) =>
+                    setForm({ ...form, estado_inicial_equipo: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Acciones realizadas">
+                <textarea
+                  value={form.acciones_realizadas}
+                  onChange={(e) =>
+                    setForm({ ...form, acciones_realizadas: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Resultado final">
+                <textarea
+                  value={form.resultado_final}
+                  onChange={(e) =>
+                    setForm({ ...form, resultado_final: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="mant-textarea-row">
+              <Field label="Observaciones">
+                <textarea
+                  value={form.observaciones}
+                  onChange={(e) =>
+                    setForm({ ...form, observaciones: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="mant-form-actions">
+              <button
+                className="mant-save-btn"
+                onClick={guardarMantenimiento}
+                disabled={loading}
+              >
+                <Save size={16} />
+                {form.id ? "Actualizar mantenimiento" : "Guardar mantenimiento"}
+              </button>
+
+              <button className="mant-clear-btn" onClick={limpiarFormulario}>
+                Limpiar
+              </button>
+            </div>
+          </section>
+
+          <section className="mant-card mant-list-card">
+            <div className="mant-section-header">
+              <div>
+                <h2>Historial de mantenimientos</h2>
+                <p>Consulta, búsqueda, edición y eliminación segura.</p>
+              </div>
+
+              <span className="mant-counter">
+                {mantenimientosFiltrados.length} registros
+              </span>
+            </div>
+
+            <div className="mant-search-box">
+              <Search size={16} />
+              <input
+                placeholder="Buscar por empresa, sede, equipo, técnico, tipo o resultado"
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value);
+                  setPagina(1);
+                }}
+              />
+            </div>
+
+            <div className="mant-table-wrap">
+              <table className="mant-table">
+                <thead>
+                  <tr>
+                    <th>Empresa</th>
+                    <th>Sede</th>
+                    <th>Equipo</th>
+                    <th>Técnico</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Resultado</th>
+                    <th>Acciones</th>
                   </tr>
-                );
-              })}
+                </thead>
 
-              {visibles.length === 0 && (
-                <tr>
-                  <td colSpan="10" style={{ textAlign: "center", padding: 30 }}>
-                    No hay mantenimientos registrados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                <tbody>
+                  {visibles.map((m) => {
+                    const estado = getEstado(m.estado);
 
-        <div className="mant-pagination">
-          <button disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>
-            <ChevronLeft size={16} /> Anterior
-          </button>
+                    return (
+                      <tr key={m.id}>
+                        <td>{m.empresa_nombre || getEmpresa(m.empresa_id)}</td>
+                        <td>{m.sede_nombre || getSede(m.sede_id)}</td>
+                        <td>{m.equipo_nombre || getEquipo(m.equipo_id)}</td>
+                        <td>{m.tecnico_nombre || getTecnico(m.tecnico_id)}</td>
+                        <td>
+                          <span className="mant-type-badge">{m.tipo}</span>
+                        </td>
+                        <td>
+                          <span className={`mant-badge ${estado.className}`}>
+                            {estado.label}
+                          </span>
+                        </td>
+                        <td>{formatearFecha(m.fecha_inicio || m.fecha_programada)}</td>
+                        <td>{formatearFecha(m.fecha_finalizacion)}</td>
+                        <td>{m.resultado_final || m.observacion_estado || "—"}</td>
+                        <td>
+                          <div className="mant-actions">
+                            <button
+                              className="mant-view-btn"
+                              onClick={() => setDetalle(m)}
+                            >
+                              <Eye size={14} /> Ver
+                            </button>
 
-          <span>Página {pagina} de {totalPaginas}</span>
+                            <button
+                              className="mant-edit-btn"
+                              onClick={() => editarMantenimiento(m)}
+                            >
+                              <Edit size={14} /> Editar
+                            </button>
 
-          <button disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>
-            Siguiente <ChevronRight size={16} />
-          </button>
-        </div>
-      </section>
+                            <button
+                              className="mant-delete-btn"
+                              onClick={() => eliminarMantenimiento(m)}
+                            >
+                              <Trash2 size={14} /> Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
 
-      {detalle && (
-        <div className="mant-modal-backdrop">
-          <div className="mant-modal">
-            <div className="mant-modal-header">
-              <h2>Detalle del mantenimiento</h2>
-              <button onClick={() => setDetalle(null)}><X size={18} /></button>
+                  {visibles.length === 0 && (
+                    <tr>
+                      <td colSpan="10" className="mant-empty">
+                        No hay mantenimientos registrados.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
-            <div className="mant-detail-grid">
-              <Detail label="Empresa" value={detalle.empresa_nombre || getEmpresa(detalle.empresa_id)} />
-              <Detail label="Sede" value={detalle.sede_nombre || getSede(detalle.sede_id)} />
-              <Detail label="Equipo" value={detalle.equipo_nombre || getEquipo(detalle.equipo_id)} />
-              <Detail label="Técnico" value={detalle.tecnico_nombre || getTecnico(detalle.tecnico_id)} />
-              <Detail label="Tipo" value={detalle.tipo} />
-              <Detail label="Estado" value={detalle.estado} />
-              <Detail label="Fecha programada" value={formatearFecha(detalle.fecha_programada)} />
-              <Detail label="Observaciones" value={detalle.observaciones} />
+            <div className="mant-pagination">
+              <button disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>
+                <ChevronLeft size={16} /> Anterior
+              </button>
+
+              <span>
+                Página {pagina} de {totalPaginas}
+              </span>
+
+              <button
+                disabled={pagina === totalPaginas}
+                onClick={() => setPagina(pagina + 1)}
+              >
+                Siguiente <ChevronRight size={16} />
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {detalle && (
+          <div className="mant-overlay">
+            <div className="mant-modal">
+              <div className="mant-modal-header">
+                <h2>Detalle del mantenimiento</h2>
+                <button onClick={() => setDetalle(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="mant-detail-grid">
+                <Detail label="Empresa" value={detalle.empresa_nombre || getEmpresa(detalle.empresa_id)} />
+                <Detail label="Sede" value={detalle.sede_nombre || getSede(detalle.sede_id)} />
+                <Detail label="Equipo" value={detalle.equipo_nombre || getEquipo(detalle.equipo_id)} />
+                <Detail label="Técnico" value={detalle.tecnico_nombre || getTecnico(detalle.tecnico_id)} />
+                <Detail label="Tipo" value={detalle.tipo} />
+                <Detail label="Estado" value={detalle.estado} />
+                <Detail label="Fecha programada" value={formatearFecha(detalle.fecha_programada)} />
+                <Detail label="Observaciones" value={detalle.observaciones} />
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 }
 
@@ -682,7 +706,7 @@ function Field({ label, children }) {
 
 function Detail({ label, value }) {
   return (
-    <div className="mant-detail-item">
+    <div className="mant-detail">
       <span>{label}</span>
       <strong>{value || "—"}</strong>
     </div>

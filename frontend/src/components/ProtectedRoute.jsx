@@ -1,5 +1,6 @@
 // =========================================================
-// PROTECTED ROUTE - FASE 31.1 JWT PRO
+// PROTECTED ROUTE - SGA PRO
+// Archivo: frontend/src/components/ProtectedRoute.jsx
 // Protege rutas por autenticación y roles.
 // =========================================================
 
@@ -8,7 +9,8 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 function redirectByRole(rol) {
-  if (rol === "ADMIN" || rol === "COORDINADOR") return "/admin";
+  if (rol === "ADMIN") return "/admin";
+  if (rol === "COORDINADOR") return "/coordinador/dashboard";
   if (rol === "TECNICO") return "/tecnico";
   if (rol === "EMPRESA" || rol === "CLIENTE") return "/cliente/dashboard";
   return "/";

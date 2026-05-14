@@ -1,16 +1,23 @@
 // =========================================================
 // DASHBOARD TÉCNICO PRO - SGA PRO
-// Técnico solo ve mantenimientos asignados
-// Cards clicables + acciones + paginación
+// Archivo: frontend/src/pages/DashboardTecnico.jsx
+//
+// Fase A + B:
+// - Bandeja compacta inteligente.
+// - Tabs por estado.
+// - Modal de ejecución técnica.
+// - Histórico de mantenimientos finalizados.
 // =========================================================
 
 import { useEffect, useMemo, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
+import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
+
 import {
   Wrench,
   Play,
-  Pause,
   CheckCircle,
   UploadCloud,
   Eye,
@@ -19,26 +26,37 @@ import {
   FileText,
   Clock,
   LogOut,
+  ClipboardList,
+  Activity,
+  History,
+  Search,
+  CalendarDays,
+  Building2,
+  MapPin,
 } from "lucide-react";
 
 import "./DashboardTecnico.css";
 
 export default function DashboardTecnico() {
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [data, setData] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
-  const [observacion, setObservacion] = useState("");
+  const [tabActivo, setTabActivo] = useState("ACTIVOS");
+
   const [detalle, setDetalle] = useState(null);
   const [modalEvidencia, setModalEvidencia] = useState(null);
+  const [modalEjecucion, setModalEjecucion] = useState(null);
+  const [modalHistorico, setModalHistorico] = useState(false);
 
   const [archivo, setArchivo] = useState(null);
   const [tipoEvidencia, setTipoEvidencia] = useState("ANTES");
   const [descripcionEvidencia, setDescripcionEvidencia] = useState("");
 
   const [pagina, setPagina] = useState(1);
-  const porPagina = 6;
+  const porPagina = 8;
 
   const usuarioId = user?.usuario_id || user?.id;
 
@@ -63,19 +81,50 @@ export default function DashboardTecnico() {
     const q = busqueda.toLowerCase();
 
     return mantenimientos.filter((m) => {
+      const estado = String(m.estado || "").toUpperCase();
+
       const texto = `
         ${m.equipo?.nombre || ""}
         ${m.empresa?.nombre || ""}
         ${m.sede?.nombre || ""}
         ${m.tipo || ""}
         ${m.estado || ""}
+        ${m.equipo?.codigo_id || ""}
+        ${m.equipo?.serie || ""}
       `.toLowerCase();
 
-      const estadoOk = filtroEstado ? m.estado === filtroEstado : true;
+      const textoOk = texto.includes(q);
+      const estadoOk = filtroEstado ? estado === filtroEstado : true;
 
-      return texto.includes(q) && estadoOk;
+      let tabOk = true;
+
+      if (tabActivo === "ACTIVOS") {
+        tabOk = ["PROGRAMADO", "ASIGNADO", "EN_PROCESO", "PAUSADO"].includes(estado);
+      }
+
+      if (tabActivo === "PROGRAMADOS") {
+        tabOk = ["PROGRAMADO", "ASIGNADO"].includes(estado);
+      }
+
+      if (tabActivo === "EN_PROCESO") {
+        tabOk = estado === "EN_PROCESO";
+      }
+
+      if (tabActivo === "PAUSADOS") {
+        tabOk = estado === "PAUSADO";
+      }
+
+      if (tabActivo === "FINALIZADOS") {
+        tabOk = estado === "FINALIZADO";
+      }
+
+      if (tabActivo === "TODOS") {
+        tabOk = true;
+      }
+
+      return textoOk && estadoOk && tabOk;
     });
-  }, [mantenimientos, busqueda, filtroEstado]);
+  }, [mantenimientos, busqueda, filtroEstado, tabActivo]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
 
@@ -84,30 +133,27 @@ export default function DashboardTecnico() {
     pagina * porPagina
   );
 
-  const filtrarPorCard = (estado) => {
-    setFiltroEstado(estado);
+  const cambiarTab = (tab) => {
+    setTabActivo(tab);
+    setFiltroEstado("");
     setPagina(1);
   };
 
-  const cambiarEstado = async (mantenimiento, nuevoEstado) => {
-    try {
-      const formData = new FormData();
-      formData.append("usuario_id", usuarioId);
-      formData.append("nuevo_estado", nuevoEstado);
-      formData.append("observacion", observacion || "");
+  const filtrarPorCard = (estado) => {
+    setFiltroEstado(estado);
+    setTabActivo("TODOS");
+    setPagina(1);
+  };
 
-      await API.patch(
-        `/dashboard-tecnico/mantenimiento/${mantenimiento.mantenimiento_id}/estado`,
-        formData
-      );
+  const abrirFormato = (mantenimiento) => {
+    const id = mantenimiento.mantenimiento_id || mantenimiento.id;
 
-      setObservacion("");
-      await cargarDashboardTecnico();
-      alert("Estado actualizado correctamente.");
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "No se pudo cambiar el estado.");
+    if (!id) {
+      alert("No se encontró el ID del mantenimiento.");
+      return;
     }
+
+    navigate(`/tecnico/formato-mantenimiento/${id}`);
   };
 
   const verDetalle = async (mantenimiento) => {
@@ -122,7 +168,32 @@ export default function DashboardTecnico() {
     }
   };
 
-  const subirEvidencia = async () => {
+  const abrirEjecucionTecnica = async (mantenimiento) => {
+    try {
+      const res = await API.get(
+        `/dashboard-tecnico/mantenimiento/${mantenimiento.mantenimiento_id}/detalle`
+      );
+
+      setModalEjecucion(res.data);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo abrir la ejecución técnica.");
+    }
+  };
+
+  const refrescarDetalleEjecucion = async (mantenimientoId) => {
+    try {
+      const res = await API.get(
+        `/dashboard-tecnico/mantenimiento/${mantenimientoId}/detalle`
+      );
+
+      setModalEjecucion(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const subirEvidenciaRapida = async () => {
     if (!archivo || !modalEvidencia) {
       alert("Selecciona un archivo.");
       return;
@@ -177,6 +248,11 @@ export default function DashboardTecnico() {
             <Wrench size={17} />
             Mis mantenimientos
           </button>
+
+          <button onClick={() => setModalHistorico(true)}>
+            <History size={17} />
+            Histórico
+          </button>
         </nav>
 
         <button className="tec-logout" onClick={logout}>
@@ -199,70 +275,108 @@ export default function DashboardTecnico() {
           </button>
         </div>
 
+        <section className="tec-hero">
+          <div>
+            <span>MÓDULO OPERATIVO</span>
+            <h2>Bitácora técnica en tiempo real</h2>
+            <p>Inicia, documenta, pausa y finaliza mantenimientos asignados con trazabilidad automática.</p>
+          </div>
+
+          <div className="tec-hero-badge">
+            <Activity size={18} />
+            <div>
+              <strong>Sesión técnica activa</strong>
+              <small>{user?.nombre_completo || "Técnico"}</small>
+            </div>
+          </div>
+        </section>
+
         <section className="tec-cards">
-          <MetricCard title="Total" value={resumen.total_asignados || 0} icon={<Wrench />} onClick={() => filtrarPorCard("")} />
+          <MetricCard title="Total" value={resumen.total_asignados || 0} icon={<Wrench />} onClick={() => cambiarTab("TODOS")} />
           <MetricCard title="Asignados" value={resumen.asignados || 0} icon={<Clock />} onClick={() => filtrarPorCard("ASIGNADO")} />
+          <MetricCard title="Programados" value={resumen.programados || 0} icon={<Clock />} onClick={() => filtrarPorCard("PROGRAMADO")} />
           <MetricCard title="En proceso" value={resumen.en_proceso || 0} icon={<Play />} onClick={() => filtrarPorCard("EN_PROCESO")} />
-          <MetricCard title="Pausados" value={resumen.pausados || 0} icon={<Pause />} onClick={() => filtrarPorCard("PAUSADO")} />
           <MetricCard title="Finalizados" value={resumen.finalizados || 0} icon={<CheckCircle />} onClick={() => filtrarPorCard("FINALIZADO")} />
         </section>
 
-        <section className="tec-toolbar">
-          <input
-            placeholder="Buscar por equipo, empresa, sede, tipo o estado..."
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              setPagina(1);
-            }}
-          />
-
-          <select
-            value={filtroEstado}
-            onChange={(e) => {
-              setFiltroEstado(e.target.value);
-              setPagina(1);
-            }}
-          >
-            <option value="">Todos los estados</option>
-            <option value="ASIGNADO">Asignado</option>
-            <option value="EN_PROCESO">En proceso</option>
-            <option value="PAUSADO">Pausado</option>
-            <option value="FINALIZADO">Finalizado</option>
-          </select>
-        </section>
-
-        <section className="tec-observation">
-          <label>Observación técnica rápida</label>
-          <textarea
-            value={observacion}
-            onChange={(e) => setObservacion(e.target.value)}
-            placeholder="Observación para acompañar el cambio de estado..."
-          />
-        </section>
-
         <section className="tec-panel">
-          <div className="tec-panel-header">
+          <div className="tec-panel-header pro">
             <div>
-              <h2>Mantenimientos asignados</h2>
+              <h2>Mis mantenimientos asignados</h2>
               <p>{filtrados.length} registros encontrados</p>
             </div>
+
+            <button className="tec-history-btn" onClick={() => setModalHistorico(true)}>
+              <History size={17} />
+              Ver histórico
+            </button>
           </div>
 
-          <div className="tec-grid">
+          <div className="tec-smart-tabs">
+            <button className={tabActivo === "ACTIVOS" ? "active" : ""} onClick={() => cambiarTab("ACTIVOS")}>
+              Activos
+            </button>
+            <button className={tabActivo === "PROGRAMADOS" ? "active" : ""} onClick={() => cambiarTab("PROGRAMADOS")}>
+              Programados
+            </button>
+            <button className={tabActivo === "EN_PROCESO" ? "active" : ""} onClick={() => cambiarTab("EN_PROCESO")}>
+              En proceso
+            </button>
+            <button className={tabActivo === "PAUSADOS" ? "active" : ""} onClick={() => cambiarTab("PAUSADOS")}>
+              Pausados
+            </button>
+            <button className={tabActivo === "FINALIZADOS" ? "active" : ""} onClick={() => cambiarTab("FINALIZADOS")}>
+              Finalizados
+            </button>
+            <button className={tabActivo === "TODOS" ? "active" : ""} onClick={() => cambiarTab("TODOS")}>
+              Todos
+            </button>
+          </div>
+
+          <section className="tec-toolbar compact">
+            <div className="tec-searchbox">
+              <Search size={16} />
+              <input
+                placeholder="Buscar por equipo, empresa, sede, código, serie, tipo o estado..."
+                value={busqueda}
+                onChange={(e) => {
+                  setBusqueda(e.target.value);
+                  setPagina(1);
+                }}
+              />
+            </div>
+
+            <select
+              value={filtroEstado}
+              onChange={(e) => {
+                setFiltroEstado(e.target.value);
+                setPagina(1);
+              }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="PROGRAMADO">Programado</option>
+              <option value="ASIGNADO">Asignado</option>
+              <option value="EN_PROCESO">En proceso</option>
+              <option value="PAUSADO">Pausado</option>
+              <option value="FINALIZADO">Finalizado</option>
+            </select>
+          </section>
+
+          <div className="tec-worklist">
             {visibles.map((m) => (
-              <MantenimientoCard
+              <MantenimientoRow
                 key={m.mantenimiento_id}
                 mantenimiento={m}
                 onDetalle={() => verDetalle(m)}
                 onEvidencia={() => setModalEvidencia(m)}
-                onEstado={(estado) => cambiarEstado(m, estado)}
+                onFormato={() => abrirFormato(m)}
+                onIniciar={() => abrirEjecucionTecnica(m)}
               />
             ))}
           </div>
 
           {filtrados.length === 0 && (
-            <div className="tec-empty">No tienes mantenimientos asignados.</div>
+            <div className="tec-empty">No hay mantenimientos en esta vista.</div>
           )}
 
           <div className="tec-pagination">
@@ -280,6 +394,26 @@ export default function DashboardTecnico() {
       </main>
 
       {detalle && <DetalleModal detalle={detalle} onClose={() => setDetalle(null)} />}
+
+      {modalEjecucion && (
+        <ModalEjecucionTecnica
+          detalle={modalEjecucion}
+          usuarioId={usuarioId}
+          onClose={() => setModalEjecucion(null)}
+          onRefreshDashboard={cargarDashboardTecnico}
+          onRefreshDetalle={refrescarDetalleEjecucion}
+          onAbrirFormato={abrirFormato}
+        />
+      )}
+
+      {modalHistorico && (
+        <HistoricoTecnicoModal
+          usuarioId={usuarioId}
+          onClose={() => setModalHistorico(false)}
+          onDetalle={verDetalle}
+          onFormato={abrirFormato}
+        />
+      )}
 
       {modalEvidencia && (
         <div className="tec-modal-backdrop">
@@ -301,12 +435,19 @@ export default function DashboardTecnico() {
               </select>
 
               <label>Archivo</label>
-              <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => setArchivo(e.target.files?.[0] || null)} />
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+              />
 
               <label>Descripción</label>
-              <textarea value={descripcionEvidencia} onChange={(e) => setDescripcionEvidencia(e.target.value)} />
+              <textarea
+                value={descripcionEvidencia}
+                onChange={(e) => setDescripcionEvidencia(e.target.value)}
+              />
 
-              <button className="tec-btn-primary" onClick={subirEvidencia}>
+              <button className="tec-btn-primary" onClick={subirEvidenciaRapida}>
                 <UploadCloud size={17} />
                 Subir evidencia
               </button>
@@ -330,42 +471,184 @@ function MetricCard({ title, value, icon, onClick }) {
   );
 }
 
-function MantenimientoCard({ mantenimiento, onDetalle, onEvidencia, onEstado }) {
+function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, onIniciar }) {
   const e = mantenimiento.equipo || {};
   const empresa = mantenimiento.empresa || {};
   const sede = mantenimiento.sede || {};
+  const estado = String(mantenimiento.estado || "").toUpperCase();
 
   return (
-    <article className="tec-maint-card">
-      <div className="tec-maint-top">
-        <div>
-          <h3>{e.nombre || "Equipo"}</h3>
-          <p>{empresa.nombre || "Empresa"} · {sede.nombre || "Sede"}</p>
+    <article className="tec-work-row">
+      <div className={`tec-work-priority ${statusLineClass(estado)}`} />
+
+      <div className="tec-work-content">
+        <div className="tec-work-main">
+          <div>
+            <div className="tec-work-badges">
+              <span className="tec-type-badge">{mantenimiento.tipo || "MANTENIMIENTO"}</span>
+              <span className={statusClass(estado)}>{estado || "SIN ESTADO"}</span>
+            </div>
+
+            <h3>{e.nombre || "Equipo sin nombre"}</h3>
+
+            <p>
+              <Building2 size={14} />
+              {empresa.nombre || "Empresa no registrada"} · {sede.nombre || "Sede no registrada"}
+            </p>
+          </div>
+
+          <button className="tec-work-primary" onClick={onIniciar}>
+            <Play size={16} />
+            {estado === "EN_PROCESO" ? "Continuar ejecución" : "Iniciar"}
+          </button>
         </div>
 
-        <span className={statusClass(mantenimiento.estado)}>
-          {mantenimiento.estado}
-        </span>
-      </div>
+        <div className="tec-work-meta">
+          <InfoMini icon={<CalendarDays size={14} />} label="Programado" value={formatDate(mantenimiento.fecha_programada)} />
+          <InfoMini icon={<MapPin size={14} />} label="Ubicación" value={e.ubicacion || "—"} />
+          <InfoMini icon={<ClipboardList size={14} />} label="Código / Serie" value={`${e.codigo_id || e.inventario || "—"} / ${e.serie || "—"}`} />
+          <InfoMini icon={<Activity size={14} />} label="Estado equipo" value={e.estado || "—"} />
+        </div>
 
-      <div className="tec-maint-info">
-        <div><span>Tipo</span><strong>{mantenimiento.tipo || "—"}</strong></div>
-        <div><span>Programado</span><strong>{formatDate(mantenimiento.fecha_programada)}</strong></div>
-        <div><span>Código / Serie</span><strong>{e.codigo_id || e.inventario || "—"} / {e.serie || "—"}</strong></div>
-        <div><span>Ubicación</span><strong>{e.ubicacion || "—"}</strong></div>
-      </div>
+        <div className="tec-work-actions">
+          <button onClick={onDetalle}>
+            <Eye size={15} />
+            Detalle
+          </button>
 
-      <div className="tec-actions">
-        <button className="tec-btn-secondary" onClick={onDetalle}><Eye size={15} />Detalle</button>
-        <button className="tec-btn-secondary" onClick={onEvidencia}><UploadCloud size={15} />Evidencia</button>
-      </div>
+          <button onClick={onEvidencia}>
+            <UploadCloud size={15} />
+            Evidencia
+          </button>
 
-      <div className="tec-state-actions">
-        <button onClick={() => onEstado("EN_PROCESO")}><Play size={14} />Iniciar</button>
-        <button onClick={() => onEstado("PAUSADO")}><Pause size={14} />Pausar</button>
-        <button onClick={() => onEstado("FINALIZADO")}><CheckCircle size={14} />Finalizar</button>
+          <button className="dark" onClick={onFormato}>
+            <ClipboardList size={15} />
+            Bitácora
+          </button>
+        </div>
       </div>
     </article>
+  );
+}
+
+function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
+  const [historico, setHistorico] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const [empresa, setEmpresa] = useState("");
+  const [sede, setSede] = useState("");
+  const [equipo, setEquipo] = useState("");
+
+  const cargarHistorico = async () => {
+    try {
+      setCargando(true);
+
+      const params = new URLSearchParams();
+
+      if (desde) params.append("desde", desde);
+      if (hasta) params.append("hasta", hasta);
+      if (empresa) params.append("empresa", empresa);
+      if (sede) params.append("sede", sede);
+      if (equipo) params.append("equipo", equipo);
+
+      const res = await API.get(
+        `/dashboard-tecnico/usuario/${usuarioId}/historico?${params.toString()}`
+      );
+
+      setHistorico(res.data.historico || []);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo cargar el histórico.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarHistorico();
+  }, []);
+
+  return (
+    <div className="tec-modal-backdrop">
+      <div className="tec-modal tec-history-modal">
+        <div className="tec-modal-header">
+          <div>
+            <h2>Histórico de mantenimientos realizados</h2>
+            <p>{historico.length} mantenimientos finalizados</p>
+          </div>
+
+          <button onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="tec-history-filters">
+          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          <input placeholder="Empresa" value={empresa} onChange={(e) => setEmpresa(e.target.value)} />
+          <input placeholder="Sede" value={sede} onChange={(e) => setSede(e.target.value)} />
+          <input placeholder="Equipo" value={equipo} onChange={(e) => setEquipo(e.target.value)} />
+
+          <button onClick={cargarHistorico}>
+            <Search size={15} />
+            Filtrar
+          </button>
+        </div>
+
+        {cargando ? (
+          <div className="tec-empty">Cargando histórico...</div>
+        ) : (
+          <div className="tec-history-table-wrap">
+            <table className="tec-history-table">
+              <thead>
+                <tr>
+                  <th>Fecha finalización</th>
+                  <th>Equipo</th>
+                  <th>Empresa / Sede</th>
+                  <th>Tipo</th>
+                  <th>Resultado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {historico.map((m) => (
+                  <tr key={m.mantenimiento_id}>
+                    <td>{formatDate(m.fecha_finalizacion || m.fecha_fin)}</td>
+                    <td>
+                      <strong>{m.equipo?.nombre || "Equipo"}</strong>
+                      <span>{m.equipo?.codigo_id || m.equipo?.inventario || "Sin código"}</span>
+                    </td>
+                    <td>
+                      <strong>{m.empresa?.nombre || "Empresa"}</strong>
+                      <span>{m.sede?.nombre || "Sede"}</span>
+                    </td>
+                    <td>{m.tipo || "—"}</td>
+                    <td>{m.resultado_final || m.observaciones || "Sin resultado registrado"}</td>
+                    <td>
+                      <div className="tec-history-actions">
+                        <button onClick={() => onDetalle(m)}>Detalle</button>
+                        <button onClick={() => onFormato(m)}>Bitácora</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {historico.length === 0 && (
+                  <tr>
+                    <td colSpan="6">
+                      <div className="tec-empty">No hay mantenimientos finalizados con estos filtros.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -390,6 +673,7 @@ function DetalleModal({ detalle, onClose }) {
           <Info title="Ubicación" value={equipo.ubicacion} />
           <Info title="Tipo" value={mantenimiento.tipo} />
           <Info title="Estado" value={mantenimiento.estado} />
+          <Info title="Resultado final" value={mantenimiento.resultado_final} />
           <Info title="Observaciones" value={mantenimiento.observaciones} />
         </div>
 
@@ -397,7 +681,13 @@ function DetalleModal({ detalle, onClose }) {
 
         <div className="tec-evidence-grid">
           {evidencias.map((ev) => (
-            <a key={ev.id} className="tec-evidence-card" href={getFileUrl(ev.archivo_url)} target="_blank" rel="noreferrer">
+            <a
+              key={ev.id}
+              className="tec-evidence-card"
+              href={getFileUrl(ev.archivo_url)}
+              target="_blank"
+              rel="noreferrer"
+            >
               <FileText size={24} />
               <strong>{ev.tipo}</strong>
               <span>{ev.nombre_original || "Archivo"}</span>
@@ -420,16 +710,36 @@ function Info({ title, value }) {
   );
 }
 
+function InfoMini({ icon, label, value }) {
+  return (
+    <div className="tec-info-mini">
+      <div>{icon}</div>
+      <span>{label}</span>
+      <strong>{value || "—"}</strong>
+    </div>
+  );
+}
+
 function statusClass(estado) {
   const value = String(estado || "").toUpperCase();
   if (value === "FINALIZADO") return "tec-status ok";
   if (value === "PAUSADO") return "tec-status warning";
   if (value === "EN_PROCESO") return "tec-status progress";
+  if (value === "PROGRAMADO") return "tec-status programado";
   return "tec-status";
 }
 
+function statusLineClass(estado) {
+  const value = String(estado || "").toUpperCase();
+  if (value === "FINALIZADO") return "line-ok";
+  if (value === "PAUSADO") return "line-warning";
+  if (value === "EN_PROCESO") return "line-progress";
+  if (value === "PROGRAMADO") return "line-programado";
+  return "line-default";
+}
+
 function formatDate(value) {
-  if (!value) return "—";
+  if (!value) return "Sin fecha";
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
 }

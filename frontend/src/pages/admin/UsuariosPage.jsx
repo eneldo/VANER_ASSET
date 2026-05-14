@@ -1,7 +1,14 @@
 // =========================================================
 // PÁGINA ADMIN - USUARIOS Y PERMISOS PRO
-// Crear, listar, buscar, paginar, editar, eliminar/inactivar,
-// activar/inactivar, cambiar contraseña y asignar permisos.
+// Archivo: frontend/src/pages/admin/UsuariosPage.jsx
+//
+// Funciones:
+// - Crear usuarios.
+// - Asignar empresa obligatoria a EMPRESA, COORDINADOR y TECNICO.
+// - Listar, buscar, paginar, editar.
+// - Inactivar usuarios.
+// - Cambiar contraseña.
+// - Asignar permisos directos.
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -49,6 +56,8 @@ export default function UsuariosPage() {
     activo: true,
   });
 
+  const rolesQueRequierenEmpresa = ["EMPRESA", "COORDINADOR", "TECNICO"];
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -70,6 +79,10 @@ export default function UsuariosPage() {
     }
   };
 
+  const requiereEmpresa = (rol) => {
+    return rolesQueRequierenEmpresa.includes(rol);
+  };
+
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
 
@@ -78,9 +91,10 @@ export default function UsuariosPage() {
         u.nombre_completo?.toLowerCase().includes(texto) ||
         u.username?.toLowerCase().includes(texto) ||
         u.email?.toLowerCase().includes(texto) ||
-        u.rol?.toLowerCase().includes(texto)
+        u.rol?.toLowerCase().includes(texto) ||
+        nombreEmpresa(u.empresa_id)?.toLowerCase().includes(texto)
     );
-  }, [usuarios, busqueda]);
+  }, [usuarios, busqueda, empresas]);
 
   const totalPaginas = Math.ceil(usuariosFiltrados.length / porPagina) || 1;
 
@@ -104,6 +118,16 @@ export default function UsuariosPage() {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    if (name === "rol") {
+      setForm((prev) => ({
+        ...prev,
+        rol: value,
+        empresa_id: value === "ADMIN" ? "" : prev.empresa_id,
+      }));
+
+      return;
+    }
+
     setForm({
       ...form,
       [name]: type === "checkbox" ? checked : value,
@@ -124,23 +148,31 @@ export default function UsuariosPage() {
     setEditandoId(null);
   };
 
-  const guardarUsuario = async (e) => {
-    e.preventDefault();
-
+  const validarFormulario = () => {
     if (!form.nombre_completo || !form.username || !form.email) {
       alert("Nombre, usuario y correo son obligatorios");
-      return;
+      return false;
     }
 
     if (!editandoId && !form.password) {
       alert("La contraseña es obligatoria al crear usuario");
-      return;
+      return false;
     }
 
-    if (form.rol === "EMPRESA" && !form.empresa_id) {
-      alert("Los usuarios EMPRESA deben tener empresa asociada");
-      return;
+    if (requiereEmpresa(form.rol) && !form.empresa_id) {
+      alert(
+        `Los usuarios con rol ${form.rol} deben tener una empresa asociada.`
+      );
+      return false;
     }
+
+    return true;
+  };
+
+  const guardarUsuario = async (e) => {
+    e.preventDefault();
+
+    if (!validarFormulario()) return;
 
     try {
       const payload = {
@@ -148,7 +180,7 @@ export default function UsuariosPage() {
         username: form.username,
         email: form.email,
         rol: form.rol,
-        empresa_id: form.empresa_id || null,
+        empresa_id: form.rol === "ADMIN" ? null : form.empresa_id || null,
         activo: form.activo,
       };
 
@@ -199,9 +231,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // =======================================================
-  // CAMBIAR CONTRASEÑA CON MODAL PRO
-  // =======================================================
   const abrirModalPassword = (usuario) => {
     setUsuarioPassword(usuario);
     setNuevaPassword("");
@@ -240,9 +269,6 @@ export default function UsuariosPage() {
     }
   };
 
-  // =======================================================
-  // ELIMINAR / INACTIVAR USUARIO PRO
-  // =======================================================
   const eliminarUsuario = async (usuario) => {
     if (!usuario?.id) {
       alert("No se encontró el ID del usuario.");
@@ -284,7 +310,10 @@ export default function UsuariosPage() {
 
       const res = await API.get(`/permisos/usuario/${usuario.id}`);
 
-      setPermisosUsuario(res.data?.permisos_directos || res.data?.permisos_finales || []);
+      // IMPORTANTE:
+      // Solo se cargan permisos directos para evitar que el coordinador
+      // herede visualmente permisos por rol que no se quieren editar aquí.
+      setPermisosUsuario(res.data?.permisos_directos || []);
     } catch (error) {
       console.error(error);
       alert("Error cargando permisos del usuario");
@@ -308,8 +337,6 @@ export default function UsuariosPage() {
     }
 
     try {
-      // El backend PRO 31.2 guarda permisos directos por UUID.
-      // En la UI manejamos códigos legibles; aquí convertimos código -> id.
       const permisoIds = permisos
         .filter((permiso) => permisosUsuario.includes(permiso.codigo))
         .map((permiso) => permiso.id);
@@ -318,7 +345,11 @@ export default function UsuariosPage() {
         permiso_ids: permisoIds,
       });
 
-      alert("Permisos guardados correctamente");
+      alert(
+        `✅ Permisos asignados correctamente a ${usuarioPermisos.nombre_completo}`
+      );
+
+      await cargarDatos();
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.detail || "Error guardando permisos");
@@ -330,10 +361,10 @@ export default function UsuariosPage() {
     setPermisosUsuario([]);
   };
 
-  const nombreEmpresa = (empresaId) => {
-    const emp = empresas.find((e) => e.id === empresaId);
+  function nombreEmpresa(empresaId) {
+    const emp = empresas.find((e) => String(e.id) === String(empresaId));
     return emp ? emp.nombre : "N/A";
-  };
+  }
 
   return (
     <AdminLayout>
@@ -407,7 +438,7 @@ export default function UsuariosPage() {
               </select>
             </div>
 
-            {form.rol === "EMPRESA" && (
+            {requiereEmpresa(form.rol) && (
               <div className="form-group full">
                 <label>Empresa asociada *</label>
                 <select
@@ -422,6 +453,10 @@ export default function UsuariosPage() {
                     </option>
                   ))}
                 </select>
+
+                <small style={{ color: "#64748b", marginTop: 6 }}>
+                  Este usuario solo podrá trabajar con la empresa seleccionada.
+                </small>
               </div>
             )}
 
@@ -472,7 +507,7 @@ export default function UsuariosPage() {
                 setBusqueda(e.target.value);
                 setPagina(1);
               }}
-              placeholder="Buscar usuario, correo o rol..."
+              placeholder="Buscar usuario, correo, rol o empresa..."
             />
           </div>
 
@@ -620,6 +655,14 @@ export default function UsuariosPage() {
               <p>
                 Usuario: <strong>{usuarioPermisos.nombre_completo}</strong> · Rol:{" "}
                 <strong>{usuarioPermisos.rol}</strong>
+              </p>
+              <p>
+                Empresa:{" "}
+                <strong>
+                  {usuarioPermisos.empresa_id
+                    ? nombreEmpresa(usuarioPermisos.empresa_id)
+                    : "N/A"}
+                </strong>
               </p>
             </div>
 

@@ -46,6 +46,8 @@ from app.routers import reportes
 from app.routers import auditoria
 from app.routers import auditoria_pro
 from app.routers import password_recovery  
+from app.routers import coordinador
+from app.routers import formatos_mantenimiento
 
 
 
@@ -119,7 +121,8 @@ app.include_router(cliente.router)
 app.include_router(reportes.router)
 app.include_router(auditoria.router)
 app.include_router(password_recovery.router)
-
+app.include_router(coordinador.router)
+app.include_router(formatos_mantenimiento.router)
 # Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
 
