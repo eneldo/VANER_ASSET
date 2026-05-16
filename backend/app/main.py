@@ -48,6 +48,8 @@ from app.routers import auditoria_pro
 from app.routers import password_recovery  
 from app.routers import coordinador
 from app.routers import formatos_mantenimiento
+from app.routers import formatos_dinamicos
+from app.routers import bitacoras_dinamicas
 
 
 
@@ -123,6 +125,8 @@ app.include_router(auditoria.router)
 app.include_router(password_recovery.router)
 app.include_router(coordinador.router)
 app.include_router(formatos_mantenimiento.router)
+app.include_router(formatos_dinamicos.router)
+app.include_router(bitacoras_dinamicas.router)
 # Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
 

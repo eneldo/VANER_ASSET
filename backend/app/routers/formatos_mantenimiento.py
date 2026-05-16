@@ -1,13 +1,15 @@
 # ============================================================
 # ROUTER: Formatos de Mantenimiento
 # Archivo: backend/app/routers/formatos_mantenimiento.py
-# Descripción:
-# Endpoints para crear, consultar, actualizar e imprimir
-# formularios técnicos de mantenimiento.
+# Función:
+# - Crear, consultar, actualizar y eliminar bitácoras técnicas.
+# - Soporta mantenimiento_id tipo UUID/string.
+# - Corrige error 422 cuando el mantenimiento_id no es entero.
 # ============================================================
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import cast, String
 
 from app.database import get_db
 from app.models.formato_mantenimiento import FormatoMantenimiento
@@ -26,19 +28,22 @@ router = APIRouter(
 @router.post("/", response_model=FormatoMantenimientoOut)
 def crear_formato(data: FormatoMantenimientoCreate, db: Session = Depends(get_db)):
     """
-    Crea un formato técnico de mantenimiento.
-    Si ya existe un formato para ese mantenimiento, devuelve error
-    para evitar duplicados.
+    Crea una bitácora técnica.
+    Evita duplicados por mantenimiento_id.
     """
 
-    existe = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.mantenimiento_id == data.mantenimiento_id
-    ).first()
+    mantenimiento_id_str = str(data.mantenimiento_id)
+
+    existe = (
+        db.query(FormatoMantenimiento)
+        .filter(cast(FormatoMantenimiento.mantenimiento_id, String) == mantenimiento_id_str)
+        .first()
+    )
 
     if existe:
         raise HTTPException(
             status_code=400,
-            detail="Ya existe un formato para este mantenimiento."
+            detail="Ya existe un formato para este mantenimiento.",
         )
 
     nuevo = FormatoMantenimiento(**data.model_dump())
@@ -53,23 +58,27 @@ def crear_formato(data: FormatoMantenimientoCreate, db: Session = Depends(get_db
 def listar_formatos(db: Session = Depends(get_db)):
     """
     Lista todos los formatos creados.
-    Útil para admin/coordinador.
     """
 
-    return db.query(FormatoMantenimiento).order_by(
-        FormatoMantenimiento.id.desc()
-    ).all()
+    return (
+        db.query(FormatoMantenimiento)
+        .order_by(FormatoMantenimiento.id.desc())
+        .all()
+    )
 
 
-@router.get("/{formato_id}", response_model=FormatoMantenimientoOut)
-def obtener_formato(formato_id: int, db: Session = Depends(get_db)):
+@router.get("/mantenimiento/{mantenimiento_id}", response_model=FormatoMantenimientoOut)
+def obtener_por_mantenimiento(mantenimiento_id: str, db: Session = Depends(get_db)):
     """
-    Consulta un formato por ID.
+    Consulta la bitácora asociada a un mantenimiento.
+    Acepta mantenimiento_id UUID/string.
     """
 
-    formato = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.id == formato_id
-    ).first()
+    formato = (
+        db.query(FormatoMantenimiento)
+        .filter(cast(FormatoMantenimiento.mantenimiento_id, String) == str(mantenimiento_id))
+        .first()
+    )
 
     if not formato:
         raise HTTPException(status_code=404, detail="Formato no encontrado.")
@@ -77,15 +86,17 @@ def obtener_formato(formato_id: int, db: Session = Depends(get_db)):
     return formato
 
 
-@router.get("/mantenimiento/{mantenimiento_id}", response_model=FormatoMantenimientoOut)
-def obtener_por_mantenimiento(mantenimiento_id: int, db: Session = Depends(get_db)):
+@router.get("/{formato_id}", response_model=FormatoMantenimientoOut)
+def obtener_formato(formato_id: int, db: Session = Depends(get_db)):
     """
-    Consulta el formato asociado a un mantenimiento.
+    Consulta una bitácora por ID interno.
     """
 
-    formato = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.mantenimiento_id == mantenimiento_id
-    ).first()
+    formato = (
+        db.query(FormatoMantenimiento)
+        .filter(FormatoMantenimiento.id == formato_id)
+        .first()
+    )
 
     if not formato:
         raise HTTPException(status_code=404, detail="Formato no encontrado.")
@@ -97,15 +108,17 @@ def obtener_por_mantenimiento(mantenimiento_id: int, db: Session = Depends(get_d
 def actualizar_formato(
     formato_id: int,
     data: FormatoMantenimientoUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
-    Actualiza un formato técnico existente.
+    Actualiza una bitácora existente.
     """
 
-    formato = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.id == formato_id
-    ).first()
+    formato = (
+        db.query(FormatoMantenimiento)
+        .filter(FormatoMantenimiento.id == formato_id)
+        .first()
+    )
 
     if not formato:
         raise HTTPException(status_code=404, detail="Formato no encontrado.")
@@ -124,12 +137,14 @@ def actualizar_formato(
 @router.delete("/{formato_id}")
 def eliminar_formato(formato_id: int, db: Session = Depends(get_db)):
     """
-    Elimina un formato técnico.
+    Elimina una bitácora técnica.
     """
 
-    formato = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.id == formato_id
-    ).first()
+    formato = (
+        db.query(FormatoMantenimiento)
+        .filter(FormatoMantenimiento.id == formato_id)
+        .first()
+    )
 
     if not formato:
         raise HTTPException(status_code=404, detail="Formato no encontrado.")

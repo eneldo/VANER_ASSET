@@ -1,6 +1,7 @@
 # =========================================================
-# CONFIGURACIÓN GENERAL SGA PRO (VERSIÓN CORREGIDA)
-# Compatible con Pydantic v2
+# CONFIGURACIÓN GENERAL SGA PRO
+# Archivo: app/config.py
+# Compatible con Pydantic v2 + Alembic + Producción
 # =========================================================
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,14 +10,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
 
     # =====================================================
-    # DATOS GENERALES
+    # INFORMACIÓN GENERAL
     # =====================================================
 
     APP_NAME: str = "SGA PRO"
     APP_ENV: str = "development"
 
-    # IMPORTANTE: ahora sí se reconoce DEBUG
+    # development / production
     DEBUG: bool = False
+
+    # =====================================================
+    # SERVIDOR
+    # =====================================================
+
+    HOST: str = "127.0.0.1"
+    PORT: int = 8000
 
     # =====================================================
     # BASE DE DATOS
@@ -25,30 +33,46 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # =====================================================
-    # SEGURIDAD
+    # SEGURIDAD JWT
     # =====================================================
 
     SECRET_KEY: str
+
     ALGORITHM: str = "HS256"
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
 
     # =====================================================
-    # ARCHIVOS / UPLOADS
+    # UPLOADS / ARCHIVOS
     # =====================================================
 
-    # IMPORTANTE: ahora sí se reconoce UPLOAD_DIR
     UPLOAD_DIR: str = "app/uploads"
 
     # =====================================================
-    # CONFIGURACIÓN Pydantic
-    # 👇 CLAVE DE LA SOLUCIÓN
+    # EXPORTACIONES
+    # =====================================================
+
+    EXPORT_DIR: str = "app/exports"
+
+    # =====================================================
+    # CORS
+    # =====================================================
+
+    BACKEND_CORS_ORIGINS: str = "*"
+
+    # =====================================================
+    # CONFIGURACIÓN PYDANTIC
     # =====================================================
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        extra="ignore"  # 🔥 evita que falle por variables extra
+        extra="ignore",
+        case_sensitive=True
     )
 
 
-# Instancia global
+# =========================================================
+# INSTANCIA GLOBAL
+# =========================================================
+
 settings = Settings()
