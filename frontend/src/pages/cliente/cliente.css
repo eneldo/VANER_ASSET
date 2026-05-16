@@ -1064,3 +1064,227 @@
     margin: 10px 0 !important;
   }
 }
+
+/* ============================================================
+   FASE 36.1 — DASHBOARD EJECUTIVO FULL PRO
+============================================================ */
+
+.cliente-panel h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.cliente-card {
+  transition: all 0.2s ease;
+}
+
+.cliente-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+}
+
+.recharts-wrapper {
+  font-size: 12px;
+}
+/* ============================================================
+   FASE 36.2 — PAGINACIÓN + SCROLL PRO CLIENTE
+   Aplica a sedes, equipos, mantenimientos, cronograma y tablas internas.
+============================================================ */
+
+.cliente-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cliente-sidebar {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.cliente-main {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.cliente-main::-webkit-scrollbar,
+.cliente-sidebar::-webkit-scrollbar,
+.cliente-table-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.cliente-main::-webkit-scrollbar-track,
+.cliente-sidebar::-webkit-scrollbar-track,
+.cliente-table-scroll::-webkit-scrollbar-track {
+  background: #edf4fb;
+  border-radius: 999px;
+}
+
+.cliente-main::-webkit-scrollbar-thumb,
+.cliente-sidebar::-webkit-scrollbar-thumb,
+.cliente-table-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 999px;
+}
+
+.cliente-main::-webkit-scrollbar-thumb:hover,
+.cliente-sidebar::-webkit-scrollbar-thumb:hover,
+.cliente-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1d4ed8, #0891b2);
+}
+
+.cliente-table-scroll {
+  width: 100%;
+  max-height: 540px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid #e5eef8;
+  background: white;
+}
+
+.cliente-table-scroll .cliente-table {
+  min-width: 980px;
+}
+
+.cliente-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fbff;
+}
+
+.cliente-table th {
+  background: #f8fbff;
+  font-size: 12px;
+  font-weight: 900;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.cliente-table td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.cliente-table tbody tr {
+  transition: all 0.15s ease;
+}
+
+.cliente-table tbody tr:hover {
+  background: #f0f9ff;
+}
+
+.cliente-pagination {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cliente-pagination button {
+  border: none;
+  min-width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cliente-pagination button:hover:not(:disabled) {
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.cliente-pagination button.active {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  border: none;
+}
+
+.cliente-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cliente-pagination-info {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  margin-right: auto;
+}
+
+.cliente-grid {
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.cliente-grid::-webkit-scrollbar {
+  width: 10px;
+}
+
+.cliente-grid::-webkit-scrollbar-track {
+  background: #edf4fb;
+  border-radius: 999px;
+}
+
+.cliente-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 999px;
+}
+
+@media (max-width: 900px) {
+  .cliente-table-scroll {
+    max-height: 430px;
+  }
+
+  .cliente-table-scroll .cliente-table {
+    min-width: 820px;
+  }
+
+  .cliente-grid {
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 700px) {
+  .cliente-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .cliente-main {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .cliente-pagination {
+    justify-content: center;
+  }
+
+  .cliente-pagination-info {
+    width: 100%;
+    text-align: center;
+    margin-right: 0;
+  }
+
+  .cliente-table-scroll {
+    max-height: 390px;
+  }
+}

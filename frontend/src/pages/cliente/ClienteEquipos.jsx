@@ -35,6 +35,8 @@ export default function ClienteEquipos() {
   const [busqueda, setBusqueda] = useState("");
   const [detalle, setDetalle] = useState(null);
   const [tab, setTab] = useState("HOJA");
+  const [paginaActual, setPaginaActual] = useState(1);
+  const registrosPorPagina = 10;
 
   useEffect(() => {
     cargar();
@@ -90,6 +92,14 @@ export default function ClienteEquipos() {
       return texto.includes(q);
     });
   }, [equipos, busqueda, sedes]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / registrosPorPagina));
+  const inicioPagina = (paginaActual - 1) * registrosPorPagina;
+  const equiposActuales = filtrados.slice(inicioPagina, inicioPagina + registrosPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda]);
 
   const imprimirHojaVida = () => {
     window.print();
@@ -168,7 +178,7 @@ export default function ClienteEquipos() {
               <span>{filtrados.length} equipos</span>
             </div>
 
-            <div className="cliente-table-wrap">
+            <div className="cliente-table-scroll">
               <table className="cliente-table">
                 <thead>
                   <tr>
@@ -184,7 +194,7 @@ export default function ClienteEquipos() {
                 </thead>
 
                 <tbody>
-                  {filtrados.map((e) => (
+                  {equiposActuales.map((e) => (
                     <tr key={e.id}>
                       <td>
                         <strong>{e.nombre || "Equipo"}</strong>
@@ -232,6 +242,36 @@ export default function ClienteEquipos() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="cliente-pagination no-print">
+              <div className="cliente-pagination-info">
+                Mostrando {equiposActuales.length} de {filtrados.length} equipos
+              </div>
+
+              <button
+                disabled={paginaActual === 1}
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+              >
+                ←
+              </button>
+
+              {Array.from({ length: totalPaginas }, (_, index) => (
+                <button
+                  key={index}
+                  className={paginaActual === index + 1 ? "active" : ""}
+                  onClick={() => setPaginaActual(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                disabled={paginaActual === totalPaginas}
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+              >
+                →
+              </button>
             </div>
           </section>
         </>

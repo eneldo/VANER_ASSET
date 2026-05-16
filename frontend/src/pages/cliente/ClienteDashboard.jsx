@@ -1,5 +1,5 @@
 // ============================================================
-// DASHBOARD CLIENTE INTELIGENTE - SGA PRO
+// ClienteDashboard.jsx - DASHBOARD CLIENTE INTELIGENTE - SGA PRO
 // Cards dinámicas: sedes, equipos, pendientes y realizados.
 // ============================================================
 

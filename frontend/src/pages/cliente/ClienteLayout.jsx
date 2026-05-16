@@ -1,101 +1,154 @@
 // ============================================================
-// LAYOUT PORTAL CLIENTE - SGA PRO
-// Sidebar propio para usuarios cliente.
+// CLIENTE LAYOUT - SGA PRO
+// Archivo: frontend/src/pages/cliente/ClienteLayout.jsx
+// Portal Cliente estable y funcional
 // ============================================================
 
+import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+
 import {
   LayoutDashboard,
   MapPin,
   MonitorCog,
   Wrench,
   CalendarDays,
-  Bell,
   LogOut,
 } from "lucide-react";
+
 import "./cliente.css";
+
+// ============================================================
+// OBTENER EMPRESA ID
+// ============================================================
+
+export function getEmpresaId() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    return (
+      localStorage.getItem("empresa_id") ||
+      user?.empresa_id ||
+      user?.empresa?.id ||
+      ""
+    );
+  } catch {
+    return localStorage.getItem("empresa_id") || "";
+  }
+}
 
 export default function ClienteLayout() {
   const navigate = useNavigate();
-  const user = getUser();
 
-  const salir = () => {
-    localStorage.clear();
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("empresa_id");
+
     navigate("/");
   };
 
+  // ============================================================
+  // USUARIO
+  // ============================================================
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const empresaNombre =
+    user?.empresa_nombre ||
+    user?.empresa?.nombre ||
+    "Empresa Cliente";
+
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
     <div className="cliente-shell">
+      {/* ===================================================== */}
+      {/* SIDEBAR */}
+      {/* ===================================================== */}
+
       <aside className="cliente-sidebar">
+        {/* ================================================= */}
+        {/* LOGO */}
+        {/* ================================================= */}
+
         <div className="cliente-brand">
           <div className="cliente-logo">SGA</div>
+
           <div>
             <h2>SGA PRO</h2>
             <p>Portal Empresa</p>
           </div>
         </div>
 
+        {/* ================================================= */}
+        {/* EMPRESA */}
+        {/* ================================================= */}
+
         <div className="cliente-company">
           <span>Empresa activa</span>
-          <strong>{user?.empresa_nombre || user?.nombre_completo || "Cliente"}</strong>
-          <small>{user?.rol || "CLIENTE"}</small>
+
+          <strong>{empresaNombre}</strong>
+
+          <small>EMPRESA</small>
         </div>
 
+        {/* ================================================= */}
+        {/* MENU */}
+        {/* ================================================= */}
+
         <nav className="cliente-nav">
-          <NavLink className="cliente-link" to="/cliente/dashboard">
+          <NavLink to="/cliente/dashboard" className="cliente-link">
             <LayoutDashboard size={18} />
             Dashboard
           </NavLink>
 
-          <NavLink className="cliente-link" to="/cliente/sedes">
+          <NavLink to="/cliente/sedes" className="cliente-link">
             <MapPin size={18} />
             Sedes
           </NavLink>
 
-          <NavLink className="cliente-link" to="/cliente/equipos">
+          <NavLink to="/cliente/equipos" className="cliente-link">
             <MonitorCog size={18} />
-            Hoja de vida de equipos
+            Hoja de vida equipos
           </NavLink>
 
-          <NavLink className="cliente-link" to="/cliente/mantenimientos">
+          <NavLink to="/cliente/mantenimientos" className="cliente-link">
             <Wrench size={18} />
             Mantenimientos
           </NavLink>
 
-          <NavLink className="cliente-link" to="/cliente/cronograma">
+          <NavLink to="/cliente/cronograma" className="cliente-link">
             <CalendarDays size={18} />
             Cronograma
           </NavLink>
-
-          {/* FASE 29 - NOTIFICACIONES DEL CLIENTE */}
-          <NavLink className="cliente-link" to="/cliente/notificaciones">
-            <Bell size={18} />
-            Notificaciones
-          </NavLink>
         </nav>
 
-        <button className="cliente-logout" onClick={salir}>
-          <LogOut size={16} />
-          Salir
+        {/* ================================================= */}
+        {/* LOGOUT */}
+        {/* ================================================= */}
+
+        <button className="cliente-logout" onClick={logout}>
+          <LogOut size={18} />
+          Cerrar sesión
         </button>
       </aside>
+
+      {/* ===================================================== */}
+      {/* CONTENIDO */}
+      {/* ===================================================== */}
 
       <main className="cliente-main">
         <Outlet />
       </main>
     </div>
   );
-}
-
-export function getUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "{}");
-  } catch {
-    return {};
-  }
-}
-
-export function getEmpresaId() {
-  const user = getUser();
-  return user?.empresa_id || localStorage.getItem("empresa_id");
 }

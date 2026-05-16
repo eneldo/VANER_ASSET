@@ -32,6 +32,8 @@ export default function ClienteSedes() {
   const [busqueda, setBusqueda] = useState("");
   const [detalle, setDetalle] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const registrosPorPagina = 9;
 
   // ============================================================
   // CARGA INICIAL
@@ -107,6 +109,18 @@ export default function ClienteSedes() {
       return texto.includes(q);
     });
   }, [sedes, busqueda]);
+
+  // ============================================================
+  // PAGINACIÓN
+  // ============================================================
+
+  const totalPaginas = Math.max(1, Math.ceil(sedesFiltradas.length / registrosPorPagina));
+  const inicioPagina = (paginaActual - 1) * registrosPorPagina;
+  const sedesActuales = sedesFiltradas.slice(inicioPagina, inicioPagina + registrosPorPagina);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda]);
 
   // ============================================================
   // INDICADORES DE DETALLE
@@ -202,7 +216,7 @@ export default function ClienteSedes() {
                 <span>{equiposDetalle.length} registros</span>
               </div>
 
-              <div className="cliente-table-wrap">
+              <div className="cliente-table-scroll">
                 <table className="cliente-table">
                   <thead>
                     <tr>
@@ -266,7 +280,7 @@ export default function ClienteSedes() {
                 <span>{mantenimientosDetalle.length} registros</span>
               </div>
 
-              <div className="cliente-table-wrap">
+              <div className="cliente-table-scroll">
                 <table className="cliente-table">
                   <thead>
                     <tr>
@@ -327,7 +341,7 @@ export default function ClienteSedes() {
             </div>
           ) : (
             <div className="cliente-grid">
-              {sedesFiltradas.map((sede) => (
+              {sedesActuales.map((sede) => (
                 <button
                   key={sede.id}
                   className="cliente-sede-card cliente-sede-card-button"
@@ -371,6 +385,38 @@ export default function ClienteSedes() {
                   No se encontraron sedes para esta empresa.
                 </div>
               )}
+            </div>
+          )}
+
+          {!loading && sedesFiltradas.length > 0 && (
+            <div className="cliente-pagination">
+              <div className="cliente-pagination-info">
+                Mostrando {sedesActuales.length} de {sedesFiltradas.length} sedes
+              </div>
+
+              <button
+                disabled={paginaActual === 1}
+                onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+              >
+                ←
+              </button>
+
+              {Array.from({ length: totalPaginas }, (_, index) => (
+                <button
+                  key={index}
+                  className={paginaActual === index + 1 ? "active" : ""}
+                  onClick={() => setPaginaActual(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+
+              <button
+                disabled={paginaActual === totalPaginas}
+                onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+              >
+                →
+              </button>
             </div>
           )}
         </>
