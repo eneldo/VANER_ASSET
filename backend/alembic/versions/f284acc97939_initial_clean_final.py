@@ -1,8 +1,8 @@
-"""initial_clean_v3
+"""initial_clean_final
 
-Revision ID: c30f004d21e1
+Revision ID: f284acc97939
 Revises: 
-Create Date: 2026-05-16 21:17:17.761830
+Create Date: 2026-05-16 21:31:21.390786
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'c30f004d21e1'
+revision: str = 'f284acc97939'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -118,31 +118,6 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('formatos_mantenimiento',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('mantenimiento_id', sa.Integer(), nullable=False),
-    sa.Column('tecnico_id', sa.Integer(), nullable=True),
-    sa.Column('fecha', sa.Date(), nullable=True),
-    sa.Column('numero_ot', sa.String(length=80), nullable=True),
-    sa.Column('numero_inventario', sa.String(length=120), nullable=True),
-    sa.Column('ubicacion', sa.String(length=180), nullable=True),
-    sa.Column('mantenimiento_tipo', sa.String(length=50), nullable=True),
-    sa.Column('tecnico_nombre', sa.String(length=180), nullable=True),
-    sa.Column('tecnico_auxiliar', sa.String(length=180), nullable=True),
-    sa.Column('tipo_equipo', sa.String(length=80), nullable=True),
-    sa.Column('trabajos_realizados', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('datos_funcionamiento', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('repuestos_utilizados', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('observaciones', sa.Text(), nullable=True),
-    sa.Column('firma_usuario', sa.Text(), nullable=True),
-    sa.Column('firma_operario', sa.Text(), nullable=True),
-    sa.Column('firma_coordinador', sa.Text(), nullable=True),
-    sa.Column('creado_en', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('actualizado_en', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_formatos_mantenimiento_id'), 'formatos_mantenimiento', ['id'], unique=False)
-    op.create_index(op.f('ix_formatos_mantenimiento_mantenimiento_id'), 'formatos_mantenimiento', ['mantenimiento_id'], unique=False)
     op.create_table('login_intentos',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('username', sa.String(length=180), nullable=False),
@@ -466,6 +441,34 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['mantenimiento_id'], ['mantenimientos.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('formatos_mantenimiento',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('mantenimiento_id', sa.UUID(), nullable=False),
+    sa.Column('tecnico_id', sa.UUID(), nullable=True),
+    sa.Column('fecha', sa.Date(), nullable=True),
+    sa.Column('numero_ot', sa.String(length=80), nullable=True),
+    sa.Column('numero_inventario', sa.String(length=120), nullable=True),
+    sa.Column('ubicacion', sa.String(length=180), nullable=True),
+    sa.Column('mantenimiento_tipo', sa.String(length=50), nullable=True),
+    sa.Column('tecnico_nombre', sa.String(length=180), nullable=True),
+    sa.Column('tecnico_auxiliar', sa.String(length=180), nullable=True),
+    sa.Column('tipo_equipo', sa.String(length=80), nullable=True),
+    sa.Column('trabajos_realizados', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('datos_funcionamiento', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('repuestos_utilizados', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('observaciones', sa.Text(), nullable=True),
+    sa.Column('firma_usuario', sa.Text(), nullable=True),
+    sa.Column('firma_operario', sa.Text(), nullable=True),
+    sa.Column('firma_coordinador', sa.Text(), nullable=True),
+    sa.Column('creado_en', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('actualizado_en', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['mantenimiento_id'], ['mantenimientos.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tecnico_id'], ['tecnicos.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_formatos_mantenimiento_id'), 'formatos_mantenimiento', ['id'], unique=False)
+    op.create_index(op.f('ix_formatos_mantenimiento_mantenimiento_id'), 'formatos_mantenimiento', ['mantenimiento_id'], unique=False)
+    op.create_index(op.f('ix_formatos_mantenimiento_tecnico_id'), 'formatos_mantenimiento', ['tecnico_id'], unique=False)
     op.create_table('hist_mantenimiento',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('mantenimiento_id', sa.UUID(), nullable=False),
@@ -497,12 +500,12 @@ def upgrade() -> None:
     op.create_table('notificaciones',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('rol_destino', sa.String(length=30), nullable=False),
-    sa.Column('usuario_id', sa.Integer(), nullable=True),
-    sa.Column('empresa_id', sa.Integer(), nullable=True),
-    sa.Column('sede_id', sa.Integer(), nullable=True),
-    sa.Column('equipo_id', sa.Integer(), nullable=True),
-    sa.Column('mantenimiento_id', sa.Integer(), nullable=True),
-    sa.Column('tecnico_id', sa.Integer(), nullable=True),
+    sa.Column('usuario_id', sa.UUID(), nullable=True),
+    sa.Column('empresa_id', sa.UUID(), nullable=True),
+    sa.Column('sede_id', sa.UUID(), nullable=True),
+    sa.Column('equipo_id', sa.UUID(), nullable=True),
+    sa.Column('mantenimiento_id', sa.UUID(), nullable=True),
+    sa.Column('tecnico_id', sa.UUID(), nullable=True),
     sa.Column('tipo', sa.String(length=40), nullable=False),
     sa.Column('prioridad', sa.String(length=20), nullable=False),
     sa.Column('titulo', sa.String(length=180), nullable=False),
@@ -571,6 +574,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_hist_mantenimiento_mantenimiento_id'), table_name='hist_mantenimiento')
     op.drop_index(op.f('ix_hist_mantenimiento_id'), table_name='hist_mantenimiento')
     op.drop_table('hist_mantenimiento')
+    op.drop_index(op.f('ix_formatos_mantenimiento_tecnico_id'), table_name='formatos_mantenimiento')
+    op.drop_index(op.f('ix_formatos_mantenimiento_mantenimiento_id'), table_name='formatos_mantenimiento')
+    op.drop_index(op.f('ix_formatos_mantenimiento_id'), table_name='formatos_mantenimiento')
+    op.drop_table('formatos_mantenimiento')
     op.drop_table('evidencias')
     op.drop_index(op.f('ix_bitacoras_dinamicas_tecnico_id'), table_name='bitacoras_dinamicas')
     op.drop_index(op.f('ix_bitacoras_dinamicas_mantenimiento_id'), table_name='bitacoras_dinamicas')
@@ -614,9 +621,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_login_intentos_username'), table_name='login_intentos')
     op.drop_index(op.f('ix_login_intentos_ip_origen'), table_name='login_intentos')
     op.drop_table('login_intentos')
-    op.drop_index(op.f('ix_formatos_mantenimiento_mantenimiento_id'), table_name='formatos_mantenimiento')
-    op.drop_index(op.f('ix_formatos_mantenimiento_id'), table_name='formatos_mantenimiento')
-    op.drop_table('formatos_mantenimiento')
     op.drop_table('empresas')
     op.drop_table('categorias')
     op.drop_table('auditoria_sistema')
