@@ -2,14 +2,6 @@
 // AUTH CONTEXT PRO
 // Archivo: frontend/src/context/AuthContext.jsx
 // ============================================================
-// Maneja sesión global del usuario:
-// - login
-// - logout
-// - usuario autenticado
-// - rol
-// - empresa_id
-// - permisos
-// ============================================================
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
@@ -27,24 +19,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(true);
 
-  // ==========================================================
-  // Restaurar sesión local
-  // ==========================================================
-
   useEffect(() => {
     const storedUser = getStoredUser();
     const token = getAccessToken();
 
     if (storedUser && token) {
       setUser(storedUser);
+    } else {
+      clearSession();
+      setUser(null);
     }
 
     setLoading(false);
   }, []);
-
-  // ==========================================================
-  // LOGIN
-  // ==========================================================
 
   const login = async ({ username, password }) => {
     const response = await api.post("/auth/login", {
@@ -55,9 +42,11 @@ export function AuthProvider({ children }) {
     const data = response.data;
 
     const loggedUser = {
-      id: data.usuario_id,
-      nombre_completo: data.nombre_completo,
-      rol: data.rol,
+      id: data.usuario_id || data.id,
+      nombre_completo: data.nombre_completo || data.nombre || "Usuario",
+      username: data.username || username,
+      email: data.email || username,
+      rol: String(data.rol || "").toUpperCase(),
       empresa_id: data.empresa_id || null,
       permisos: data.permisos || [],
     };
@@ -73,10 +62,6 @@ export function AuthProvider({ children }) {
     return loggedUser;
   };
 
-  // ==========================================================
-  // LOGOUT
-  // ==========================================================
-
   const logout = async () => {
     try {
       const refreshToken = getRefreshToken();
@@ -91,25 +76,18 @@ export function AuthProvider({ children }) {
     } finally {
       clearSession();
       setUser(null);
-      window.location.href = "/login";
+      window.location.href = "/";
     }
   };
 
-  // ==========================================================
-  // HELPERS DE SEGURIDAD
-  // ==========================================================
-
   const hasRole = (...roles) => {
     if (!user?.rol) return false;
-    return roles.map((r) => r.toUpperCase()).includes(user.rol.toUpperCase());
+    return roles.map((r) => String(r).toUpperCase()).includes(user.rol);
   };
 
   const hasPermission = (permission) => {
     if (!permission) return true;
-
-    // ADMIN siempre tiene acceso.
-    if (user?.rol?.toUpperCase() === "ADMIN") return true;
-
+    if (user?.rol === "ADMIN") return true;
     return Array.isArray(user?.permisos) && user.permisos.includes(permission);
   };
 
@@ -119,6 +97,7 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       loading,
+      loadingSession: loading,
       login,
       logout,
       hasRole,

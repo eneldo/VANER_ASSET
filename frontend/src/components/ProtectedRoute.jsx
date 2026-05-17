@@ -1,7 +1,6 @@
 // =========================================================
 // PROTECTED ROUTE - SGA PRO
 // Archivo: frontend/src/components/ProtectedRoute.jsx
-// Protege rutas por autenticación y roles.
 // =========================================================
 
 import { useContext } from "react";
@@ -9,26 +8,32 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 function redirectByRole(rol) {
-  if (rol === "ADMIN") return "/admin";
-  if (rol === "COORDINADOR") return "/coordinador/dashboard";
-  if (rol === "TECNICO") return "/tecnico";
-  if (rol === "EMPRESA" || rol === "CLIENTE") return "/cliente/dashboard";
+  const role = String(rol || "").toUpperCase();
+
+  if (role === "ADMIN") return "/admin/dashboard";
+  if (role === "COORDINADOR") return "/coordinador/dashboard";
+  if (role === "TECNICO") return "/tecnico/dashboard";
+  if (role === "EMPRESA" || role === "CLIENTE") return "/cliente/dashboard";
+
   return "/";
 }
 
 export default function ProtectedRoute({ allowedRoles = [], children }) {
-  const { user, loadingSession } = useContext(AuthContext);
+  const { user, loading, isAuthenticated } = useContext(AuthContext);
 
-  if (loadingSession) {
+  if (loading) {
     return <div style={{ padding: 32 }}>Validando sesión segura...</div>;
   }
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.rol)) {
-    return <Navigate to={redirectByRole(user.rol)} replace />;
+  const userRole = String(user.rol || "").toUpperCase();
+  const rolesPermitidos = allowedRoles.map((r) => String(r).toUpperCase());
+
+  if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(userRole)) {
+    return <Navigate to={redirectByRole(userRole)} replace />;
   }
 
   return children;

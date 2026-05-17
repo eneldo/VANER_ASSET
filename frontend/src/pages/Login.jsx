@@ -60,12 +60,14 @@ export default function Login() {
 
       const rol = user?.rol?.toUpperCase();
 
-      if (rol === "ADMIN" || rol === "COORDINADOR") {
-        navigate("/admin", { replace: true });
+      if (rol === "ADMIN") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (rol === "COORDINADOR") {
+        navigate("/coordinador/dashboard", { replace: true });
       } else if (rol === "EMPRESA" || rol === "CLIENTE") {
         navigate("/cliente/dashboard", { replace: true });
       } else if (rol === "TECNICO") {
-        navigate("/tecnico", { replace: true });
+        navigate("/tecnico/dashboard", { replace: true });
       } else {
         navigate("/", { replace: true });
       }
