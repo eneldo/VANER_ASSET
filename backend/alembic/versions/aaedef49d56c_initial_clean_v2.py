@@ -1,8 +1,8 @@
-"""initial_clean
+"""initial_clean_v2
 
-Revision ID: ed68c5ee83d1
+Revision ID: aaedef49d56c
 Revises: 
-Create Date: 2026-05-16 20:50:12.380898
+Create Date: 2026-05-16 21:10:55.398287
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'ed68c5ee83d1'
+revision: str = 'aaedef49d56c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -468,7 +468,7 @@ def upgrade() -> None:
     )
     op.create_table('hist_mantenimiento',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('mantenimiento_id', sa.Integer(), nullable=False),
+    sa.Column('mantenimiento_id', sa.UUID(), nullable=False),
     sa.Column('estado_anterior', sa.String(length=30), nullable=True),
     sa.Column('estado_nuevo', sa.String(length=30), nullable=False),
     sa.Column('tecnico_id', sa.Integer(), nullable=True),
