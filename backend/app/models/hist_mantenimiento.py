@@ -51,7 +51,7 @@ class HistMantenimiento(Base):
     # tecnicos.id sigue siendo INTEGER
     # =========================================================
     tecnico_id = Column(
-        Integer,
+        UUID(as_uuid=True),
         ForeignKey("tecnicos.id", ondelete="SET NULL"),
         nullable=True,
         index=True
