@@ -1,8 +1,6 @@
 // =========================================================
-// SIDEBAR PRO SGA
+// SIDEBAR RESPONSIVE PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// Menú lateral institucional SOLO para ADMIN / TECNICO.
-// COORDINADOR NO debe heredar módulos ADMIN.
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -20,11 +18,12 @@ import {
   Tags,
   UserCog,
   ShieldCheck,
+  X,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
 
-export default function Sidebar({ user, onLogout }) {
+export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
   const navigate = useNavigate();
 
   let userSeguro = user;
@@ -37,11 +36,15 @@ export default function Sidebar({ user, onLogout }) {
     }
   }
 
-  const rol = userSeguro?.rol;
+  const rol = String(userSeguro?.rol || "").toUpperCase();
 
   const esAdmin = rol === "ADMIN";
   const esTecnico = rol === "TECNICO";
   const esCoordinador = rol === "COORDINADOR";
+
+  const closeMobile = () => {
+    if (typeof onClose === "function") onClose();
+  };
 
   const handleLogout = () => {
     if (typeof onLogout === "function") {
@@ -56,15 +59,21 @@ export default function Sidebar({ user, onLogout }) {
     navigate("/");
   };
 
-  // Seguridad visual:
-  // Si un coordinador cae aquí por error, lo enviamos a su layout real.
   if (esCoordinador) {
     navigate("/coordinador/dashboard");
     return null;
   }
 
   return (
-    <aside className="sga-sidebar">
+    <aside className={`sga-sidebar ${isOpen ? "open" : ""}`}>
+      <button
+        className="sga-sidebar-close"
+        onClick={closeMobile}
+        aria-label="Cerrar menú"
+      >
+        <X size={20} />
+      </button>
+
       <div className="sga-brand">
         <div className="sga-logo">SGA</div>
 
@@ -78,7 +87,8 @@ export default function Sidebar({ user, onLogout }) {
 
       <nav className="sga-menu">
         <NavLink
-          to={esTecnico ? "/tecnico" : "/admin"}
+          to={esTecnico ? "/tecnico/dashboard" : "/admin/dashboard"}
+          onClick={closeMobile}
           className={({ isActive }) =>
             isActive ? "sga-menu-item active" : "sga-menu-item"
           }
@@ -89,117 +99,57 @@ export default function Sidebar({ user, onLogout }) {
 
         {esAdmin && (
           <>
-            <NavLink
-              to="/admin/empresas"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/empresas" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Building2 size={18} />
               Empresas / Cliente
             </NavLink>
 
-            <NavLink
-              to="/admin/sedes"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/sedes" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <MapPin size={18} />
               Sedes
             </NavLink>
 
-            <NavLink
-              to="/admin/categorias"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/categorias" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Tags size={18} />
               Categorías
             </NavLink>
 
-            <NavLink
-              to="/admin/tecnicos"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/tecnicos" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <UserCog size={18} />
               Técnicos
             </NavLink>
 
-            <NavLink
-              to="/admin/usuarios"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/usuarios" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Users size={18} />
               Usuarios y Permisos
             </NavLink>
 
-            <NavLink
-              to="/admin/equipos"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/equipos" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <MonitorCog size={18} />
               Equipos
             </NavLink>
 
-            <NavLink
-              to="/admin/mantenimientos"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/mantenimientos" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Wrench size={18} />
               Mantenimientos
             </NavLink>
 
-            <NavLink
-              to="/admin/evidencias"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/evidencias" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Image size={18} />
               Evidencias
             </NavLink>
 
-            {/* =====================================================
-                LINK NUEVO / ACTUALIZADO: Reportes PRO
-                Ruta conectada con App.jsx:
-                /admin/reportes
-            ===================================================== */}
-            <NavLink
-              to="/admin/reportes"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/reportes" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <FileText size={18} />
               Reportes PRO
             </NavLink>
 
-            <NavLink
-              to="/admin/auditoria"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/auditoria" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <ShieldCheck size={18} />
               Auditoría PRO
             </NavLink>
 
-            <NavLink
-              to="/admin/configuracion"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/admin/configuracion" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Settings size={18} />
               Configuración
             </NavLink>
@@ -208,22 +158,12 @@ export default function Sidebar({ user, onLogout }) {
 
         {esTecnico && (
           <>
-            <NavLink
-              to="/tecnico/mantenimientos"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/tecnico/mantenimientos" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Wrench size={18} />
               Mis mantenimientos
             </NavLink>
 
-            <NavLink
-              to="/tecnico/evidencias"
-              className={({ isActive }) =>
-                isActive ? "sga-menu-item active" : "sga-menu-item"
-              }
-            >
+            <NavLink to="/tecnico/evidencias" onClick={closeMobile} className={({ isActive }) => isActive ? "sga-menu-item active" : "sga-menu-item"}>
               <Image size={18} />
               Evidencias
             </NavLink>

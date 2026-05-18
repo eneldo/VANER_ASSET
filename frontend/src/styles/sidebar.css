@@ -1685,3 +1685,75 @@ select {
   }
 }
 
+/* =========================================================
+   RESPONSIVE SIDEBAR PRO
+   Agregar al final de frontend/src/styles/sidebar.css
+========================================================= */
+
+.sga-sidebar-close {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .sga-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2300;
+    width: min(86vw, 310px);
+    height: 100vh;
+    min-height: 100vh;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    overflow-y: auto;
+    box-shadow: 25px 0 70px rgba(15, 23, 42, 0.35);
+  }
+
+  .sga-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sga-sidebar-close {
+    display: flex;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 12px;
+    align-items: center;
+    justify-content: center;
+    color: #dbeafe;
+    background: rgba(255, 255, 255, 0.11);
+    cursor: pointer;
+  }
+
+  .sga-brand {
+    padding-right: 44px;
+  }
+
+  .sga-menu {
+    padding-bottom: 18px;
+  }
+
+  .sga-user-card {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sga-sidebar {
+    width: 88vw;
+    padding: 22px 16px;
+  }
+
+  .sga-menu-item {
+    height: 44px;
+    font-size: 12px;
+  }
+
+  .sga-user-card strong {
+    font-size: 12px;
+  }
+}

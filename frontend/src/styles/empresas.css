@@ -1,0 +1,186 @@
+/* =========================================================
+   EMPRESAS RESPONSIVE PRO
+   Archivo: frontend/src/styles/empresas.css
+========================================================= */
+
+.equipos-pro-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.equipos-pro-form-card,
+.equipos-pro-list-card {
+  min-width: 0;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 18px 45px rgba(15, 35, 99, 0.08);
+  border: 1px solid #e5edf7;
+}
+
+.equipos-pro-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.equipos-card-title,
+.equipos-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.equipos-card-title h2,
+.equipos-toolbar h2 {
+  margin: 0;
+  color: #172554;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.equipos-card-title p,
+.equipos-toolbar p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.equipos-search {
+  width: 100%;
+  height: 46px;
+  margin-bottom: 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 0 15px;
+  outline: none;
+  color: #172554;
+}
+
+.equipos-search:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.equipos-table-wrap {
+  max-height: calc(100vh - 310px);
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid #e5edf7;
+}
+
+.equipos-table-wrap::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.equipos-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.equipos-table-wrap .sga-table {
+  min-width: 760px;
+}
+
+.page-header {
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  font-size: clamp(22px, 3vw, 30px);
+}
+
+.page-header p {
+  font-size: 14px;
+}
+
+.form-actions {
+  flex-wrap: wrap;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+  min-width: 150px;
+}
+
+.pagination {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1200px) {
+  .equipos-pro-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .equipos-table-wrap {
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 768px) {
+  .equipos-pro-form-card,
+  .equipos-pro-list-card {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .equipos-pro-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.full {
+    grid-column: auto;
+  }
+
+  .equipos-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .equipos-toolbar .btn-secondary {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn-primary,
+  .form-actions .btn-secondary {
+    width: 100%;
+  }
+
+  .pagination {
+    justify-content: center;
+  }
+
+  .pagination .btn-secondary {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    gap: 12px;
+  }
+
+  .page-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+  }
+
+  .equipos-pro-form-card,
+  .equipos-pro-list-card {
+    padding: 15px;
+  }
+
+  .equipos-search {
+    font-size: 13px;
+  }
+}

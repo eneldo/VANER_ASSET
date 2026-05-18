@@ -1,32 +1,39 @@
 // =========================================================
-// ADMIN LAYOUT PRO SGA
-// Layout global para TODOS los módulos administrativos.
-//
-// FUNCIONES:
-// - Renderiza la barra lateral.
-// - Mantiene scroll interno.
-// - Responsive.
-// - Mantiene el contenido dentro del layout.
-//
-// IMPORTANTE:
-// NO redirecciona roles.
-// SOLO pinta el layout.
+// ADMIN LAYOUT RESPONSIVE PRO SGA
+// Archivo: frontend/src/pages/admin/AdminLayout.jsx
 // =========================================================
 
+import { useState } from "react";
+import { Menu } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import "../../styles/sidebar.css";
+import "../../styles/admin.css";
 
 export default function AdminLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="admin-layout-pro">
-      {/* =====================================================
-          SIDEBAR IZQUIERDA
-      ===================================================== */}
-      <Sidebar />
+      <button
+        className="admin-mobile-menu-btn"
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menú"
+      >
+        <Menu size={22} />
+      </button>
 
-      {/* =====================================================
-          CONTENIDO PRINCIPAL
-      ===================================================== */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {sidebarOpen && (
+        <div
+          className="admin-sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       <main className="admin-content-pro">
         {children}
       </main>
