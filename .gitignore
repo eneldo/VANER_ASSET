@@ -1,19 +1,130 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-env/
+# ============================================================
+# SGA SaaS - .gitignore PRODUCCIÓN
+# Evita subir archivos pesados, sensibles o generados
+# ============================================================
 
-# Node
-node_modules/
-dist/
-
-# Variables de entorno
+# ----------------------------
+# Variables de entorno / secretos
+# ----------------------------
 .env
 .env.*
+!.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+frontend/.env.production
+.env.production
 
-# Sistema
+# ----------------------------
+# Python / Backend
+# ----------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.sqlite3
+*.db
+
+.venv/
+venv/
+env/
+backend/.venv/
+backend/venv/
+backend/env/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ----------------------------
+# FastAPI uploads / evidencias
+# No subir archivos cargados por usuarios
+# ----------------------------
+backend/app/uploads/
+backend/uploads/
+uploads/
+
+# Mantener carpeta si necesitas estructura
+!backend/app/uploads/.gitkeep
+
+# ----------------------------
+# Node / Frontend
+# ----------------------------
+node_modules/
+frontend/node_modules/
+
+dist/
+frontend/dist/
+build/
+frontend/build/
+
+.vite/
+frontend/.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------
+# Sistema operativo
+# ----------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ----------------------------
+# IDE / Editores
+# ----------------------------
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ----------------------------
+# Logs
+# ----------------------------
+*.log
+logs/
+backend/logs/
+frontend/logs/
+
+# ----------------------------
+# Docker temporales
+# ----------------------------
+*.pid
+*.seed
+*.pid.lock
+
+# ----------------------------
+# Archivos comprimidos
+# ----------------------------
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# ----------------------------
+# Reportes generados
+# ----------------------------
+backend/app/exports/
+backend/exports/
+exports/
+
+# ----------------------------
+# Alembic cache
+# ----------------------------
+backend/alembic/__pycache__/
+backend/alembic/versions/__pycache__/
+
+# ----------------------------
+# Certificados / llaves privadas
+# ----------------------------
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
