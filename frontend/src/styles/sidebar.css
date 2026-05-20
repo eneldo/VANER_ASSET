@@ -1,55 +1,82 @@
 /* =========================================================
-   SIDEBAR PRO SGA
-   Estilo institucional azul
+   SIDEBAR PRO SGA - RESPONSIVE LIMPIO
+   Archivo: frontend/src/styles/sidebar.css
+   Fase 32.2
    ========================================================= */
 
+:root {
+  --sga-primary: #2563eb;
+  --sga-primary-dark: #172554;
+  --sga-cyan: #06b6d4;
+  --sga-bg: #f5f8ff;
+  --sga-card: #ffffff;
+  --sga-text: #172554;
+  --sga-muted: #64748b;
+  --sga-border: #dbe4f0;
+  --sga-shadow: 0 18px 45px rgba(15, 35, 99, 0.08);
+}
+
 .sga-sidebar {
-  width: 260px;
-  min-height: 100vh;
+  width: 270px;
+  min-width: 270px;
+  height: 100vh;
   background: linear-gradient(180deg, #0f2363 0%, #07183f 100%);
-  color: rgb(59, 105, 231);
+  color: #dbe7ff;
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 2200;
 }
+
+.sga-sidebar::-webkit-scrollbar { width: 8px; }
+.sga-sidebar::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); }
+.sga-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 999px; }
+
+.sga-sidebar-close { display: none; }
 
 .sga-brand {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 42px;
+  margin-bottom: 34px;
 }
 
 .sga-logo {
   width: 48px;
   height: 48px;
-  background: white;
-  color: #2563eb;
-  border-radius: 14px;
+  background: #ffffff;
+  color: var(--sga-primary);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 900;
+  letter-spacing: -0.5px;
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
 }
 
 .sga-brand h2 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 900;
+  color: #ffffff;
 }
 
 .sga-brand p {
   margin: 2px 0 0;
-  font-size: 10px;
+  font-size: 11px;
   color: #b9c7ff;
+  font-weight: 700;
 }
 
 .sga-menu-title {
   font-size: 11px;
   color: #8fa6e8;
-  font-weight: 600;
-  margin-bottom: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
 }
 
 .sga-menu {
@@ -57,22 +84,26 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
+  min-height: 0;
 }
 
 .sga-menu-item {
-  height: 46px;
+  min-height: 46px;
   padding: 0 14px;
-  border-radius: 14px;
+  border-radius: 15px;
   color: #dbe7ff;
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
+
+.sga-menu-item svg { flex-shrink: 0; }
+.sga-menu-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .sga-menu-item:hover {
   background: rgba(255, 255, 255, 0.09);
@@ -80,13 +111,13 @@
 }
 
 .sga-menu-item.active {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, var(--sga-primary), var(--sga-cyan));
   color: white;
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
 }
 
 .sga-user-card {
-  margin-top: auto;
+  margin-top: 18px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 18px;
@@ -94,10 +125,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .sga-user-avatar {
   width: 42px;
+  min-width: 42px;
   height: 42px;
   border-radius: 50%;
   background: #dbeafe;
@@ -105,1613 +138,55 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 900;
 }
 
+.sga-user-info { min-width: 0; }
 .sga-user-card strong {
   display: block;
   font-size: 13px;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
 .sga-user-card span {
-  font-size: 12px;
+  font-size: 11px;
   color: #67e8f9;
-  font-weight: 600;
+  font-weight: 900;
 }
 
 .sga-logout {
-  margin-top: 18px;
-  height: 44px;
+  margin-top: 14px;
+  min-height: 44px;
   background: transparent;
   border: none;
   color: #dbe7ff;
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
   padding: 0 12px;
-  border-radius: 12px;
-}
-
-.sga-logout:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-/* =========================================================
-   CARDS DASHBOARD TÉCNICO
-   ========================================================= */
-
-.metric-card {
-  background: white;
-  border-radius: 22px;
-  padding: 22px;
-  box-shadow: 0 15px 35px rgba(15, 35, 99, 0.08);
-}
-
-.metric-card span {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.metric-card strong {
-  display: block;
-  margin-top: 10px;
-  font-size: 32px;
-  color: #1d4ed8;
-}
-
-.maintenance-card {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 14px;
-  box-shadow: 0 12px 30px rgba(15, 35, 99, 0.07);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.maintenance-card h3 {
-  margin: 0;
-  color: #172554;
-}
-
-.maintenance-card p {
-  color: #64748b;
-  margin: 6px 0;
-}
-
-.maintenance-card small {
-  color: #94a3b8;
-}
-
-.status-badge {
-  background: #dbeafe;
-  color: #1d4ed8;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-/* =========================================================
-   ESTILOS BASE PARA PÁGINAS ADMIN
-   ========================================================= */
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 28px;
-}
-
-.page-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
-}
-
-.page-header h1 {
-  margin: 0;
-  color: #172554;
-  font-size: 30px;
-  font-weight: 700;
-}
-
-.page-header p {
-  margin: 6px 0 0;
-  color: #64748b;
-}
-
-.page-card {
-  background: white;
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 18px 45px rgba(15, 35, 99, 0.08);
-}
-
-.page-card h2 {
-  margin-top: 0;
-  color: #172554;
-}
-
-.page-card p {
-  color: #64748b;
-}
-/* =========================================================
-   CRUD ADMIN - FORMULARIOS Y TABLAS
-   ========================================================= */
-
-.crud-grid {
-  display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.crud-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.form-group.full {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  font-size: 13px;
-  color: #334155;
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  height: 44px;
-  border: 1px solid #dbe4f0;
   border-radius: 14px;
-  padding: 0 14px;
-  outline: none;
-  color: #172554;
-  background: #fff;
 }
 
-.form-group textarea {
-  min-height: 90px;
-  padding-top: 12px;
-  resize: vertical;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-.checkbox-line {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  color: #334155;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.form-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.btn-primary,
-.btn-secondary {
-  height: 44px;
-  border: none;
-  border-radius: 14px;
-  padding: 0 18px;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: white;
-  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.25);
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: #172554;
-  border: 1px solid #dbe4f0;
-}
-
-.btn-primary:hover,
-.btn-secondary:hover,
-.icon-btn:hover {
-  transform: translateY(-1px);
-}
-
-.list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.list-header h2 {
-  margin: 0;
-}
-
-.list-header p {
-  margin: 4px 0 0;
-  color: #64748b;
-}
-
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.sga-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.sga-table th {
-  text-align: left;
-  font-size: 12px;
-  color: #64748b;
-  padding: 14px 12px;
-  border-bottom: 1px solid #e2e8f0;
-  text-transform: uppercase;
-}
-
-.sga-table td {
-  padding: 16px 12px;
-  border-bottom: 1px solid #edf2f7;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.sga-table small {
-  color: #64748b;
-}
-
-.badge {
-  padding: 7px 11px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.badge.active {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.badge.inactive {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.table-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  background: white;
-  color: #2563eb;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon-btn.danger {
-  color: #dc2626;
-}
-
-/* Responsive básico */
-@media (max-width: 1100px) {
-  .crud-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   USUARIOS PRO - BADGES, PAGINACIÓN Y MODAL
-   ========================================================= */
-
-.badge.role {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination span {
-  color: #334155;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-card {
-  background: white;
-  width: 460px;
-  border-radius: 24px;
-  padding: 28px;
-  box-shadow: 0 25px 70px rgba(15, 35, 99, 0.25);
-}
-
-.modal-card h2 {
-  margin-top: 0;
-  color: #172554;
-}
-
-.modal-card p {
-  color: #334155;
-  line-height: 1.6;
-  word-break: break-word;
-}
-/* =========================================================
-   HOJA DE VIDA TÉCNICA - ESTILO DOCUMENTO PRO
-   ========================================================= */
-
-.hoja-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-bottom: 22px;
-}
-
-.hoja-documento {
-  background: white;
-  border-radius: 26px;
-  padding: 34px;
-  box-shadow: 0 20px 50px rgba(15, 35, 99, 0.08);
-}
-
-.hoja-header {
-  display: grid;
-  grid-template-columns: 130px 1fr 160px;
-  gap: 22px;
-  align-items: center;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 24px;
-  margin-bottom: 24px;
-}
-
-.hoja-logo-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hoja-logo-box img {
-  max-width: 100px;
-  max-height: 100px;
-  object-fit: contain;
-}
-
-.hoja-logo-placeholder {
-  width: 92px;
-  height: 92px;
-  border-radius: 18px;
-  background: #eff6ff;
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-}
-
-.hoja-title {
-  text-align: center;
-}
-
-.hoja-title h2 {
-  margin: 0;
-  color: #172554;
-  font-size: 24px;
-  font-weight: 900;
-}
-
-.hoja-title p {
-  margin: 6px 0 0;
-  color: #475569;
-  font-weight: 700;
-}
-
-.hoja-code {
-  text-align: center;
-  background: #eff6ff;
-  border-radius: 18px;
-  padding: 18px;
-}
-
-.hoja-code strong {
-  display: block;
-  color: #dc2626;
-  font-size: 20px;
-}
-
-.hoja-code span {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.hoja-section {
-  border-bottom: 1px solid #e2e8f0;
-  padding: 24px 0;
-}
-
-.hoja-section h3 {
-  color: #dc2626;
-  border-left: 5px solid #dc2626;
-  padding-left: 12px;
-  margin: 0 0 20px;
-  font-size: 17px;
-  font-weight: 900;
-}
-
-.hoja-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-}
-
-.info-cell {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 12px;
-}
-
-.info-cell span {
-  display: block;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.info-cell strong {
-  display: block;
-  color: #172554;
-  margin-top: 5px;
-}
-
-.hoja-form {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.check-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-
-.check-group {
-  background: #f8fafc;
-  border-radius: 18px;
-  padding: 18px;
-  border: 1px solid #e2e8f0;
-}
-
-.check-group h4 {
-  margin: 0 0 12px;
-  color: #172554;
-  text-transform: uppercase;
-  font-size: 13px;
-}
-
-.check-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 9px;
-  color: #334155;
-  font-weight: 600;
-}
-
-/* Impresión */
-@media print {
-  .sga-sidebar,
-  .no-print {
-    display: none !important;
-  }
-
-  main {
-    padding: 0 !important;
-  }
-
-  .hoja-documento {
-    box-shadow: none;
-    border-radius: 0;
-  }
-}
-/* =========================================================
-   EQUIPOS PRO - MEJORA VISUAL FULL
-   ========================================================= */
-
-.equipos-layout {
-  display: grid;
-  grid-template-columns: 430px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.equipos-form-card,
-.equipos-list-card {
-  background: #ffffff;
-  border-radius: 26px;
-  padding: 28px;
-  box-shadow: 0 20px 50px rgba(15, 35, 99, 0.08);
-}
-
-.equipos-form-card h2,
-.equipos-list-card h2 {
-  margin-top: 0;
-  color: #172554;
-  font-size: 24px;
-}
-
-.equipos-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.equipos-form-grid .full {
-  grid-column: 1 / -1;
-}
-
-.equipos-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.equipos-search {
-  width: 100%;
-  height: 46px;
-  border: 1px solid #dbe4f0;
-  border-radius: 16px;
-  padding: 0 16px;
-  outline: none;
-}
-
-.equipos-search:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-.equipo-title {
-  color: #172554;
-  font-weight: 900;
-}
-
-.equipo-sub {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.hv-btn {
-  color: #0f766e;
-}
-
-@media (max-width: 1200px) {
-  .equipos-layout {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   UI EQUIPOS PRO FULL
-   ========================================================= */
-
-.equipos-pro-layout {
-  display: grid;
-  grid-template-columns: 430px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.equipos-pro-form-card,
-.equipos-pro-list-card {
-  background: #ffffff;
-  border-radius: 26px;
-  padding: 28px;
-  box-shadow: 0 20px 50px rgba(15, 35, 99, 0.08);
-}
-
-.equipos-card-title h2,
-.equipos-toolbar h2 {
-  margin: 0;
-  color: #172554;
-  font-size: 24px;
-  font-weight: 900;
-}
-
-.equipos-card-title p,
-.equipos-toolbar p {
-  margin: 6px 0 0;
-  color: #64748b;
-}
-
-.equipos-pro-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-top: 22px;
-}
-
-.equipos-pro-form .full {
-  grid-column: 1 / -1;
-}
-
-.equipos-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.equipos-search {
-  width: 100%;
-  height: 46px;
-  border: 1px solid #dbe4f0;
-  border-radius: 16px;
-  padding: 0 16px;
-  outline: none;
-  color: #172554;
-  margin-bottom: 18px;
-}
-
-.equipos-search:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-.equipos-table-wrap {
-  margin-top: 8px;
-}
-
-.equipo-title {
-  color: #172554;
-  font-weight: 900;
-}
-
-.equipo-sub {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.hv-btn {
-  color: #0f766e;
-}
-
-@media (max-width: 1200px) {
-  .equipos-pro-layout {
-    grid-template-columns: 1fr;
-  }
-}
-/* mantenimiento */
-
-
-/* =========================================================
-   SCROLL PROFESIONAL GLOBAL ADMIN
-========================================================= */
-
-main::-webkit-scrollbar {
-  width: 10px;
-}
-
-main::-webkit-scrollbar-track {
-  background: #edf4ff;
-  border-radius: 20px;
-}
-
-main::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-  border-radius: 20px;
-}
-
-main::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1d4ed8, #0891b2);
-}
-
-/* =========================================================
-   ADMIN LAYOUT PRO - BASE GLOBAL PARA MÓDULOS ADMIN
-   Mantiene la barra lateral fija y el contenido con scroll interno.
-   ========================================================= */
-
-.admin-layout-pro {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-  background: #f5f8ff;
-  overflow: hidden;
-}
-
-.admin-content-pro {
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 28px 32px 90px;
-  background: #f5f8ff;
-}
-
-.admin-content-pro::-webkit-scrollbar {
-  width: 10px;
-}
-
-.admin-content-pro::-webkit-scrollbar-track {
-  background: #edf4ff;
-  border-radius: 20px;
-}
-
-.admin-content-pro::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-  border-radius: 20px;
-}
-
-/* =========================================================
-   EMPRESAS / CLIENTE PRO - AJUSTE DE VISTA COMPLETA
-   Evita bajar zoom y permite trabajar con muchos registros.
-   ========================================================= */
-
-.empresas-pro-grid {
-  display: grid;
-  grid-template-columns: 430px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  width: 100%;
-}
-
-.empresas-form-card {
-  position: sticky;
-  top: 0;
-}
-
-.empresas-toolbar-pro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.empresas-toolbar-pro input {
-  width: min(420px, 100%);
-  height: 44px;
-  border: 1px solid #dbe4f0;
-  border-radius: 14px;
-  padding: 0 14px;
-  outline: none;
-  color: #172554;
-  background: #f8fbff;
-  font-weight: 600;
-}
-
-.empresas-toolbar-pro input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-.empresas-table-card {
-  min-width: 0;
-}
-
-.empresas-pagination-pro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-info {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.empresas-pagination-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-actions select,
-.empresas-pagination-actions button {
-  height: 38px;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #172554;
-  font-weight: 800;
-  padding: 0 12px;
-}
-
-.empresas-pagination-actions button {
-  cursor: pointer;
-}
-
-.empresas-pagination-actions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.empresas-page-current {
-  color: #334155;
-  font-weight: 900;
-  font-size: 13px;
-  padding: 0 4px;
-}
-
-@media (max-width: 1300px) {
-  .empresas-pro-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .empresas-form-card {
-    position: relative;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-layout-pro {
-    display: block;
-    height: auto;
-    overflow: visible;
-  }
-
-  .sga-sidebar {
-    width: 100%;
-    min-height: auto;
-  }
-
-  .admin-content-pro {
-    height: auto;
-    min-height: 100vh;
-    padding: 22px 16px 70px;
-  }
-
-  .empresas-toolbar-pro,
-  .empresas-pagination-pro,
-  .list-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-/* =========================================================
-   FIX FINAL EMPRESAS / CLIENTE PRO
-   - Evita que el formulario se comprima.
-   - Mantiene sidebar fijo y contenido con scroll interno.
-   - Mantiene la tabla responsive sin bajar zoom.
-   ========================================================= */
-
-.admin-layout-pro {
-  display: flex;
-  width: 100%;
-  height: 100vh;
-  min-height: 100vh;
-  background: #f5f8ff;
-  overflow: hidden;
-}
-
-.admin-content-pro {
-  flex: 1;
-  min-width: 0;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 28px 32px 90px;
-  background: #f5f8ff;
-}
-
-.empresas-pro-grid {
-  display: grid;
-  grid-template-columns: 430px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  width: 100%;
-}
-
-.empresas-form-card {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  min-width: 0;
-  overflow: visible;
-}
-
-.empresas-form-card .crud-form {
-  grid-template-columns: 1fr 1fr;
-}
-
-.empresas-form-card .form-group input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.empresas-table-card {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.empresas-table-card .table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.empresas-table-card .sga-table {
-  min-width: 900px;
-}
-
-.empresas-toolbar-pro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.empresas-toolbar-pro input {
-  width: min(460px, 100%);
-  height: 44px;
-  border: 1px solid #dbe4f0;
-  border-radius: 14px;
-  padding: 0 14px;
-  outline: none;
-  color: #172554;
-  background: #f8fbff;
-  font-weight: 600;
-  box-sizing: border-box;
-}
-
-.empresas-toolbar-pro input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-.empresas-pagination-pro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-info {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.empresas-pagination-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-actions select,
-.empresas-pagination-actions button {
-  height: 38px;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #172554;
-  font-weight: 800;
-  padding: 0 12px;
-}
-
-.empresas-pagination-actions button {
-  cursor: pointer;
-}
-
-.empresas-pagination-actions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.empresas-page-current {
-  color: #334155;
-  font-weight: 900;
-  font-size: 13px;
-  padding: 0 4px;
-}
-
-@media (max-width: 1300px) {
-  .empresas-pro-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .empresas-form-card {
-    position: relative;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-layout-pro {
-    display: block;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
-
-  .sga-sidebar {
-    width: 100%;
-    min-height: auto;
-  }
-
-  .admin-content-pro {
-    height: auto;
-    min-height: 100vh;
-    padding: 22px 16px 70px;
-  }
-
-  .empresas-toolbar-pro,
-  .empresas-pagination-pro,
-  .list-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .empresas-form-card .crud-form {
-    grid-template-columns: 1fr;
-  }
-}
-/* =========================================================
-   ADMIN LAYOUT GLOBAL PRO
-========================================================= */
-
-.admin-layout-pro {
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  background: #f5f8ff;
-  overflow: hidden;
-}
-
-.admin-content-pro {
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 28px;
-  background: #f5f8ff;
-}
-
-/* =========================================================
-   EMPRESAS / CLIENTE PRO
-========================================================= */
-
-.empresas-pro-grid {
-  display: grid;
-  grid-template-columns: 430px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.empresas-form-card {
-  position: sticky;
-  top: 0;
-}
-
-.empresas-table-card {
-  min-width: 0;
-}
-
-.empresas-toolbar-pro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.empresas-toolbar-pro input {
-  width: 100%;
-  max-width: 480px;
-  height: 46px;
-  border: 1px solid #dbe4f0;
-  border-radius: 14px;
-  padding: 0 14px;
-  outline: none;
-  font-weight: 500;
-}
-
-.empresas-toolbar-pro input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
-}
-
-/* =========================================================
-   PAGINACIÓN PRO
-========================================================= */
-
-.empresas-pagination-pro {
-  margin-top: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-info {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.empresas-pagination-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.empresas-pagination-actions select,
-.empresas-pagination-actions button {
-  height: 40px;
-  border: 1px solid #dbe4f0;
-  background: white;
-  border-radius: 12px;
-  padding: 0 14px;
-  font-weight: 600;
-}
-
-.empresas-pagination-actions button {
-  cursor: pointer;
-}
-
-.empresas-pagination-actions button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.empresas-page-current {
-  font-weight: 700;
-  color: #172554;
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1300px) {
-  .empresas-pro-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .empresas-form-card {
-    position: relative;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-layout-pro {
-    display: block;
-  }
-
-  .admin-content-pro {
-    height: auto;
-    padding: 20px 16px 70px;
-  }
-
-  .sga-sidebar {
-    width: 100%;
-    min-height: auto;
-  }
-}
-/* =========================================================
-   EMPRESAS / CLIENTE
-   SCROLL INTERNO PROFESIONAL
-========================================================= */
-
-/* Layout principal */
-.equipos-pro-layout {
-  align-items: stretch;
-}
-
-/* Card del listado */
-.equipos-pro-list-card {
-  display: flex;
-  flex-direction: column;
-
-  /* ==========================================
-     Altura máxima visible en pantalla
-  ========================================== */
-  max-height: calc(100vh - 140px);
-
-  overflow: hidden;
-}
-
-/* Contenedor interno tabla */
-.equipos-table-wrap {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  padding-right: 4px;
-}
-
-/* ==========================================
-   SCROLLBAR PRO
-========================================== */
-
-.equipos-table-wrap::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.equipos-table-wrap::-webkit-scrollbar-track {
-  background: #edf4ff;
-  border-radius: 20px;
-}
-
-.equipos-table-wrap::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    #4f46e5,
-    #7c3aed
-  );
-
-  border-radius: 20px;
-}
-
-.equipos-table-wrap::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    #4338ca,
-    #6d28d9
-  );
-}
-/* =========================================================
-   CATEGORÍAS PRO - TABLA MÁS ELEGANTE Y COMPACTA
-========================================================= */
-
-.categorias-layout-pro {
-  display: grid;
-  grid-template-columns: 420px minmax(680px, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.categorias-list-card {
-  max-width: 1180px;
-}
-
-.categorias-table-wrap {
-  max-height: calc(100vh - 360px);
-  overflow-y: auto;
-  overflow-x: auto;
-  border-radius: 18px;
-}
-
-.categorias-table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-.categorias-table th:nth-child(1),
-.categorias-table td:nth-child(1) {
-  width: 24%;
-}
-
-.categorias-table th:nth-child(2),
-.categorias-table td:nth-child(2) {
-  width: 50%;
-}
-
-.categorias-table th:nth-child(3),
-.categorias-table td:nth-child(3) {
-  width: 13%;
-  text-align: center;
-}
-
-.categorias-table th:nth-child(4),
-.categorias-table td:nth-child(4) {
-  width: 13%;
-  text-align: center;
-}
-
-.categorias-table td {
-  white-space: normal;
-  line-height: 1.45;
-  font-weight: 500;
-}
-
-.categorias-table .table-actions {
-  justify-content: center;
-}
-
-.categorias-list-card .pagination {
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-}
-
-@media (max-width: 1200px) {
-  .categorias-layout-pro {
-    grid-template-columns: 1fr;
-  }
-
-  .categorias-list-card {
-    max-width: 100%;
-  }
-}
-
-/* =========================================================
-   FUENTE GLOBAL PRO
-========================================================= */
-
-body,
-input,
-textarea,
-select,
-button,
-table,
-.sga-table,
-.page-card,
-.page-header,
-.sga-sidebar {
-  font-family: "Times New Roman", serif;
-}
-
-/* Texto elegante cursivo */
-.page-header h1,
-.page-header p,
-.page-card h2,
-.page-card p,
-.sga-table td,
-.sga-table th,
-label,
-button,
-input,
-textarea,
-select {
-  font-style: italic;
-}
-
-/* =========================================================
-   CATEGORÍAS PRO FULL
-========================================================= */
-
-.categorias-layout-pro {
-  display: grid;
-  grid-template-columns: 420px minmax(680px, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.categorias-list-card {
-  max-width: 1180px;
-}
-
-.categorias-table-wrap {
-  max-height: calc(100vh - 360px);
-  overflow-y: auto;
-  overflow-x: auto;
-  border-radius: 18px;
-}
-
-.categorias-table {
-  width: 100%;
-  table-layout: fixed;
-}
-
-.categorias-table th:nth-child(1),
-.categorias-table td:nth-child(1) {
-  width: 24%;
-}
-
-.categorias-table th:nth-child(2),
-.categorias-table td:nth-child(2) {
-  width: 50%;
-}
-
-.categorias-table th:nth-child(3),
-.categorias-table td:nth-child(3) {
-  width: 13%;
-  text-align: center;
-}
-
-.categorias-table th:nth-child(4),
-.categorias-table td:nth-child(4) {
-  width: 13%;
-  text-align: center;
-}
-
-.categorias-table td {
-  white-space: normal;
-  line-height: 1.45;
-  font-weight: 500;
-}
-
-.categorias-table .table-actions {
-  justify-content: center;
-}
-
-.categorias-list-card .pagination {
-  justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-}
-
-@media (max-width: 1200px) {
-  .categorias-layout-pro {
-    grid-template-columns: 1fr;
-  }
-
-  .categorias-list-card {
-    max-width: 100%;
-  }
-}
-
-/* =========================================================
-   SEDES - SOLO SCROLL + PAGINACIÓN + RESPONSIVE
-   Conserva formulario y tabla existentes
-========================================================= */
-
-.sedes-list-card {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 190px);
-  overflow: hidden;
-}
-
-.sedes-table-wrap {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-  border-radius: 16px;
-  padding-right: 4px;
-}
-
-/* Scroll elegante */
-.sedes-table-wrap::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.sedes-table-wrap::-webkit-scrollbar-track {
-  background: #edf4ff;
-  border-radius: 20px;
-}
-
-.sedes-table-wrap::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-  border-radius: 20px;
-}
-
-.sedes-table-wrap::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1d4ed8, #0891b2);
-}
-
-/* Mantiene tabla organizada sin deformar diseño */
-.sedes-table {
-  min-width: 980px;
-}
-
-/* Paginación fija abajo dentro de la tarjeta */
-.sedes-list-card .pagination {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #e2e8f0;
-  background: white;
-  flex-shrink: 0;
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-  .sedes-list-card {
-    max-height: none;
-  }
-
-  .sedes-table-wrap {
-    max-height: 520px;
-  }
-}
-
-@media (max-width: 768px) {
-  .sedes-table-wrap {
-    max-height: 420px;
-  }
-
-  .sedes-table {
-    min-width: 900px;
-  }
-}
-
-/* =========================================================
-   RESPONSIVE SIDEBAR PRO
-   Agregar al final de frontend/src/styles/sidebar.css
-========================================================= */
-
-.sga-sidebar-close {
-  display: none;
-}
+.sga-logout:hover { background: rgba(255, 255, 255, 0.08); }
 
 @media (max-width: 1024px) {
   .sga-sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 2300;
-    width: min(86vw, 310px);
-    height: 100vh;
-    min-height: 100vh;
+    width: min(88vw, 315px);
+    min-width: 0;
     transform: translateX(-105%);
-    transition: transform 0.28s ease;
-    overflow-y: auto;
+    transition: transform 0.26s ease;
     box-shadow: 25px 0 70px rgba(15, 23, 42, 0.35);
   }
 
-  .sga-sidebar.open {
-    transform: translateX(0);
-  }
+  .sga-sidebar.open { transform: translateX(0); }
 
   .sga-sidebar-close {
     display: flex;
@@ -1729,31 +204,5 @@ select {
     cursor: pointer;
   }
 
-  .sga-brand {
-    padding-right: 44px;
-  }
-
-  .sga-menu {
-    padding-bottom: 18px;
-  }
-
-  .sga-user-card {
-    margin-top: 18px;
-  }
-}
-
-@media (max-width: 640px) {
-  .sga-sidebar {
-    width: 88vw;
-    padding: 22px 16px;
-  }
-
-  .sga-menu-item {
-    height: 44px;
-    font-size: 12px;
-  }
-
-  .sga-user-card strong {
-    font-size: 12px;
-  }
+  .sga-brand { padding-right: 44px; }
 }

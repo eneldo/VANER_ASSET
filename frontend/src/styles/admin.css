@@ -1,12 +1,23 @@
 /* =========================================================
-   ADMIN RESPONSIVE BASE
+   ADMIN LAYOUT + COMPONENTES BASE PRO
    Archivo: frontend/src/styles/admin.css
-========================================================= */
+   Fase 32.2
+   ========================================================= */
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body {
+  background: var(--sga-bg, #f5f8ff);
+  color: var(--sga-text, #172554);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
 .admin-layout-pro {
-  min-height: 100vh;
   display: flex;
-  background: #f4f7fb;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  background: var(--sga-bg, #f5f8ff);
   overflow: hidden;
 }
 
@@ -16,65 +27,348 @@
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 28px;
+  padding: 28px 32px 90px;
+  background: var(--sga-bg, #f5f8ff);
 }
 
-.admin-content-pro::-webkit-scrollbar {
-  width: 9px;
+.admin-content-pro::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar,
+.equipos-table-wrap::-webkit-scrollbar,
+.sedes-table-wrap::-webkit-scrollbar,
+.categorias-table-wrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
-
-.admin-content-pro::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+.admin-content-pro::-webkit-scrollbar-track,
+.table-wrap::-webkit-scrollbar-track,
+.equipos-table-wrap::-webkit-scrollbar-track,
+.sedes-table-wrap::-webkit-scrollbar-track,
+.categorias-table-wrap::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+.admin-content-pro::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb,
+.equipos-table-wrap::-webkit-scrollbar-thumb,
+.sedes-table-wrap::-webkit-scrollbar-thumb,
+.categorias-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 20px;
 }
 
 .admin-mobile-menu-btn {
   display: none;
   position: fixed;
-  top: 14px;
-  left: 14px;
-  z-index: 2200;
+  top: 16px;
+  left: 16px;
+  z-index: 2100;
   width: 44px;
   height: 44px;
-  border: 0;
+  border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #1d4ed8, #06b6d4);
-  color: #ffffff;
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.28);
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.25);
+  cursor: pointer;
 }
 
 .admin-sidebar-overlay {
-  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+  min-width: 0;
+}
+.page-icon {
+  width: 58px;
+  min-width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
+}
+.page-header h1 { margin: 0; color: #172554; font-size: clamp(24px, 3vw, 34px); font-weight: 900; }
+.page-header p { margin: 6px 0 0; color: #64748b; }
+
+.page-card,
+.metric-card,
+.equipos-pro-form-card,
+.equipos-pro-list-card,
+.equipos-form-card,
+.equipos-list-card,
+.empresas-form-card,
+.empresas-table-card,
+.categorias-list-card,
+.sedes-list-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 18px 45px rgba(15, 35, 99, 0.08);
+  min-width: 0;
+}
+
+.page-card h2 { margin-top: 0; color: #172554; }
+.page-card p { color: #64748b; }
+.empty-module-card { max-width: 780px; }
+
+.crud-grid,
+.empresas-pro-grid,
+.equipos-pro-layout,
+.equipos-layout,
+.categorias-layout-pro {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+.crud-form,
+.equipos-pro-form,
+.equipos-form-grid,
+.hoja-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.form-group { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.form-group.full, .full { grid-column: 1 / -1; }
+.form-group label { font-size: 13px; color: #334155; font-weight: 800; }
+.form-group input,
+.form-group select,
+.form-group textarea,
+.equipos-search,
+.empresas-toolbar-pro input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  color: #172554;
+  background: #fff;
+}
+.form-group textarea { min-height: 90px; padding-top: 12px; resize: vertical; }
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.equipos-search:focus,
+.empresas-toolbar-pro input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+}
+
+.form-actions,
+.table-actions,
+.hoja-actions,
+.empresas-pagination-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.form-actions { grid-column: 1 / -1; justify-content: space-between; margin-top: 8px; }
+
+.btn-primary,
+.btn-secondary,
+.icon-btn,
+.pagination button,
+.empresas-pagination-actions button,
+.empresas-pagination-actions select {
+  border: none;
+  border-radius: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.btn-primary,
+.btn-secondary {
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+.btn-primary { background: linear-gradient(135deg, #2563eb, #06b6d4); color: white; box-shadow: 0 12px 26px rgba(37, 99, 235, 0.25); }
+.btn-secondary { background: #f1f5f9; color: #172554; border: 1px solid #dbe4f0; }
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dbe4f0;
+  background: white;
+  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn.danger { color: #dc2626; }
+
+.list-header,
+.empresas-toolbar-pro,
+.equipos-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+.list-header h2,
+.equipos-toolbar h2 { margin: 0; color: #172554; }
+.list-header p,
+.equipos-toolbar p { margin: 4px 0 0; color: #64748b; }
+
+.table-wrap,
+.equipos-table-wrap,
+.sedes-table-wrap,
+.categorias-table-wrap {
+  width: 100%;
+  overflow: auto;
+  border-radius: 16px;
+}
+.sga-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+.sga-table th {
+  text-align: left;
+  font-size: 12px;
+  color: #64748b;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sga-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #edf2f7;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  vertical-align: top;
+}
+.sga-table small { color: #64748b; }
+
+.badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.badge.active { background: #dcfce7; color: #15803d; }
+.badge.inactive { background: #fee2e2; color: #b91c1c; }
+.badge.role { background: #e0e7ff; color: #3730a3; }
+
+.pagination,
+.empresas-pagination-pro {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.pagination button:disabled,
+.empresas-pagination-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination span,
+.empresas-page-current { color: #334155; font-weight: 900; font-size: 14px; }
+.empresas-pagination-info { color: #64748b; font-size: 13px; font-weight: 800; }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  padding: 18px;
+}
+.modal-card {
+  background: white;
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 25px 70px rgba(15, 35, 99, 0.25);
+}
+
+.empresas-form-card { position: sticky; top: 0; }
+.equipos-pro-list-card,
+.equipos-list-card,
+.sedes-list-card,
+.categorias-list-card { overflow: hidden; }
+.equipos-table-wrap { max-height: calc(100vh - 250px); }
+.sedes-table-wrap, .categorias-table-wrap { max-height: calc(100vh - 360px); }
+
+.hoja-documento { background: white; border-radius: 26px; padding: 34px; box-shadow: 0 20px 50px rgba(15, 35, 99, 0.08); }
+.hoja-header { display: grid; grid-template-columns: 130px minmax(0, 1fr) 160px; gap: 22px; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 24px; margin-bottom: 24px; }
+.hoja-grid-4, .check-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.info-cell, .check-group { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; }
+
+@media (max-width: 1300px) {
+  .crud-grid,
+  .empresas-pro-grid,
+  .equipos-pro-layout,
+  .equipos-layout,
+  .categorias-layout-pro { grid-template-columns: 1fr; }
+  .empresas-form-card { position: relative; }
 }
 
 @media (max-width: 1024px) {
-  .admin-layout-pro {
-    display: block;
-  }
-
-  .admin-mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .admin-sidebar-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 1900;
-    background: rgba(15, 23, 42, 0.52);
-    backdrop-filter: blur(3px);
-  }
-
-  .admin-content-pro {
-    height: 100vh;
-    padding: 76px 18px 22px;
-  }
+  .admin-layout-pro { display: block; overflow: visible; height: auto; min-height: 100vh; }
+  .admin-content-pro { min-height: 100vh; height: auto; padding: 76px 18px 70px; }
+  .admin-mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+  .list-header,
+  .empresas-toolbar-pro,
+  .equipos-toolbar { align-items: flex-start; flex-direction: column; }
 }
 
-@media (max-width: 640px) {
-  .admin-content-pro {
-    padding: 72px 12px 18px;
-  }
+@media (max-width: 768px) {
+  .page-header { align-items: flex-start; gap: 12px; }
+  .page-icon { width: 48px; min-width: 48px; height: 48px; }
+  .page-card,
+  .metric-card,
+  .equipos-pro-form-card,
+  .equipos-pro-list-card,
+  .empresas-form-card,
+  .empresas-table-card,
+  .categorias-list-card,
+  .sedes-list-card { padding: 18px; border-radius: 20px; }
+  .crud-form,
+  .equipos-pro-form,
+  .equipos-form-grid,
+  .hoja-form { grid-template-columns: 1fr; }
+  .sga-table { min-width: 780px; }
+  .hoja-header { grid-template-columns: 1fr; text-align: center; }
+  .hoja-grid-4, .check-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .sga-sidebar,
+  .admin-mobile-menu-btn,
+  .no-print { display: none !important; }
+  .admin-content-pro, main { padding: 0 !important; height: auto !important; overflow: visible !important; }
+  .hoja-documento { box-shadow: none; border-radius: 0; }
 }

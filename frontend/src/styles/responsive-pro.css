@@ -1,0 +1,38 @@
+/* =========================================================
+   RESPONSIVE GLOBAL PRO SGA
+   Archivo: frontend/src/styles/responsive-pro.css
+   Fase 32.2
+   ========================================================= */
+
+img, svg, video, canvas { max-width: 100%; }
+button, input, textarea, select { font: inherit; }
+
+.sga-responsive-grid,
+.dashboard-grid,
+.metrics-grid,
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  body { overflow-x: hidden; }
+}
+
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+  .form-actions,
+  .table-actions,
+  .pagination,
+  .empresas-pagination-pro,
+  .empresas-pagination-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}
