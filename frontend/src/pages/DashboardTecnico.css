@@ -1,21 +1,6 @@
 /* =========================================================
-   DASHBOARD TÉCNICO PRO - SGA PRO
+   DASHBOARD TÉCNICO RESPONSIVE PRO - SGA SaaS
    Archivo: frontend/src/pages/DashboardTecnico.css
-   Compatible con DashboardTecnico.jsx usando clases tec-*
-========================================================= */
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: #f3f7fb;
-  font-family: "Segoe UI", Arial, sans-serif;
-}
-
-/* =========================================================
-   LOADING
 ========================================================= */
 
 .tec-loading {
@@ -23,33 +8,34 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  background: #f3f7fb;
   color: #1e3a8a;
   font-size: 18px;
   font-weight: 800;
 }
 
-/* =========================================================
-   LAYOUT PRINCIPAL
-========================================================= */
+.tec-shell,
+.tec-shell * {
+  box-sizing: border-box;
+}
 
 .tec-shell {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
-  overflow: hidden;
   background: #f3f7fb;
   color: #0f172a;
+  overflow-x: hidden;
 }
 
-/* =========================================================
-   SIDEBAR
-========================================================= */
+/* ================= SIDEBAR ================= */
 
 .tec-sidebar {
   width: 280px;
   min-width: 280px;
   height: 100vh;
+  position: sticky;
+  top: 0;
   padding: 22px 18px;
   background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 55%, #0f172a 100%);
   color: #ffffff;
@@ -63,8 +49,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.16);
 }
 
 .tec-logo {
@@ -75,40 +61,34 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
   font-weight: 950;
-  letter-spacing: -0.04em;
-  box-shadow: 0 14px 30px rgba(56, 189, 248, 0.28);
 }
 
 .tec-brand h2 {
   margin: 0;
   font-size: 22px;
   font-weight: 950;
-  line-height: 1;
 }
 
 .tec-brand p {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: #bfdbfe;
   font-size: 12px;
   font-weight: 700;
 }
 
 .tec-user-card {
-  margin: 22px 0;
+  margin: 20px 0;
   padding: 16px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.10);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(14px);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
 }
 
 .tec-user-card strong {
   display: block;
   font-size: 15px;
   font-weight: 900;
-  line-height: 1.25;
 }
 
 .tec-user-card span {
@@ -116,11 +96,10 @@ body {
   margin-top: 8px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.18);
+  background: rgba(34,197,94,0.18);
   color: #bbf7d0;
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.08em;
 }
 
 .tec-nav {
@@ -140,11 +119,10 @@ body {
   gap: 10px;
   cursor: pointer;
   font-weight: 850;
-  transition: all 0.22s ease;
 }
 
 .tec-nav button {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.08);
   color: #e0f2fe;
 }
 
@@ -152,59 +130,46 @@ body {
 .tec-nav button:hover {
   background: linear-gradient(135deg, #2563eb, #06b6d4);
   color: #ffffff;
-  transform: translateX(3px);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
 }
 
 .tec-logout {
   margin-top: auto;
-  background: rgba(239, 68, 68, 0.14);
+  background: rgba(239,68,68,0.14);
   color: #fecaca;
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  border: 1px solid rgba(248,113,113,0.25);
 }
 
 .tec-logout:hover {
   background: #ef4444;
   color: #ffffff;
-  transform: translateY(-2px);
 }
 
-/* =========================================================
-   MAIN
-========================================================= */
+/* ================= MAIN ================= */
 
 .tec-main {
   flex: 1;
+  min-width: 0;
   height: 100vh;
-  padding: 26px 30px 90px;
+  padding: 26px 30px 70px;
   overflow-y: auto;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(56,189,248,0.16), transparent 32%),
     linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
 }
 
-.tec-main::-webkit-scrollbar {
-  width: 10px;
+.tec-main::-webkit-scrollbar,
+.tec-modal::-webkit-scrollbar,
+.tec-exec-modal::-webkit-scrollbar {
+  width: 9px;
 }
 
-.tec-main::-webkit-scrollbar-track {
-  background: #eaf2ff;
-  border-radius: 20px;
-}
-
-.tec-main::-webkit-scrollbar-thumb {
+.tec-main::-webkit-scrollbar-thumb,
+.tec-modal::-webkit-scrollbar-thumb,
+.tec-exec-modal::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #2563eb, #06b6d4);
   border-radius: 20px;
 }
-
-.tec-main::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1d4ed8, #0891b2);
-}
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .tec-header {
   display: flex;
@@ -224,11 +189,8 @@ body {
 
 .tec-header h1 {
   margin: 0;
-  color: #0f172a;
-  font-size: 34px;
-  line-height: 1;
+  font-size: clamp(28px, 4vw, 38px);
   font-weight: 950;
-  letter-spacing: -0.04em;
 }
 
 .tec-header p {
@@ -238,12 +200,12 @@ body {
   font-weight: 650;
 }
 
-/* =========================================================
-   BOTONES
-========================================================= */
+/* ================= BOTONES ================= */
 
 .tec-btn-primary,
-.tec-btn-secondary {
+.tec-btn-secondary,
+.tec-history-btn,
+.tec-work-primary {
   border: 0;
   border-radius: 14px;
   padding: 11px 15px;
@@ -253,14 +215,14 @@ body {
   gap: 8px;
   cursor: pointer;
   font-weight: 900;
-  transition: all 0.22s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.tec-btn-primary {
+.tec-btn-primary,
+.tec-work-primary {
   background: linear-gradient(135deg, #2563eb, #06b6d4);
   color: #ffffff;
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.20);
 }
 
 .tec-btn-secondary {
@@ -269,19 +231,70 @@ body {
   border: 1px solid #dbeafe;
 }
 
-.tec-btn-primary:hover,
-.tec-btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(37, 99, 235, 0.18);
+.tec-history-btn {
+  background: #0f172a;
+  color: #ffffff;
 }
 
-/* =========================================================
-   KPI CARDS
-========================================================= */
+.tec-btn-primary:hover,
+.tec-btn-secondary:hover,
+.tec-history-btn:hover,
+.tec-work-primary:hover {
+  transform: translateY(-2px);
+}
+
+/* ================= HERO ================= */
+
+.tec-hero {
+  margin-bottom: 18px;
+  padding: 26px 30px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #67e8f9 100%);
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  box-shadow: 0 22px 48px rgba(37,99,235,0.24);
+}
+
+.tec-hero span {
+  display: block;
+  color: #bef264;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+
+.tec-hero h2 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 950;
+}
+
+.tec-hero p {
+  margin: 8px 0 0;
+  color: #e0f2fe;
+  font-weight: 700;
+}
+
+.tec-hero-badge {
+  min-width: 220px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.22);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ================= KPI ================= */
 
 .tec-cards {
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, minmax(140px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -291,20 +304,17 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 24px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+  background: rgba(255,255,255,0.94);
+  box-shadow: 0 16px 36px rgba(15,23,42,0.07);
   display: flex;
   align-items: center;
   gap: 14px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.22s ease;
 }
 
 .tec-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 46px rgba(15, 23, 42, 0.12);
-  border-color: #bfdbfe;
+  transform: translateY(-3px);
 }
 
 .tec-card-icon {
@@ -319,18 +329,12 @@ body {
   flex-shrink: 0;
 }
 
-.tec-card-icon svg {
-  width: 23px;
-  height: 23px;
-}
-
 .tec-card span {
   display: block;
   color: #64748b;
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .tec-card strong {
@@ -338,24 +342,93 @@ body {
   margin-top: 5px;
   color: #0f172a;
   font-size: 28px;
-  line-height: 1;
   font-weight: 950;
 }
 
-/* =========================================================
-   TOOLBAR
-========================================================= */
+/* ================= PANEL ================= */
 
-.tec-toolbar {
+.tec-panel {
+  background: rgba(255,255,255,0.94);
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 20px;
+  box-shadow: 0 18px 42px rgba(15,23,42,0.08);
+}
+
+.tec-panel-header,
+.tec-panel-header.pro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tec-panel-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.tec-panel-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.tec-smart-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tec-smart-tabs button {
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+  color: #1e40af;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.tec-smart-tabs button.active,
+.tec-smart-tabs button:hover {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+/* ================= TOOLBAR ================= */
+
+.tec-toolbar,
+.tec-toolbar.compact {
   display: grid;
   grid-template-columns: 1fr 230px;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+}
+
+.tec-searchbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tec-searchbox svg {
+  position: absolute;
+  left: 14px;
+  color: #2563eb;
+}
+
+.tec-searchbox input {
+  padding-left: 40px;
 }
 
 .tec-toolbar input,
 .tec-toolbar select,
-.tec-observation textarea,
 .tec-form input,
 .tec-form select,
 .tec-form textarea {
@@ -367,177 +440,95 @@ body {
   padding: 12px 14px;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s ease;
 }
 
 .tec-toolbar input:focus,
 .tec-toolbar select:focus,
-.tec-observation textarea:focus,
 .tec-form input:focus,
 .tec-form select:focus,
 .tec-form textarea:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
 }
 
-/* =========================================================
-   OBSERVACIÓN
-========================================================= */
+/* ================= WORKLIST ================= */
 
-.tec-observation {
-  margin-bottom: 18px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 16px;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
-}
-
-.tec-observation label {
-  display: block;
-  margin-bottom: 8px;
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 950;
-}
-
-.tec-observation textarea {
-  min-height: 78px;
-  resize: vertical;
-}
-
-/* =========================================================
-   PANEL
-========================================================= */
-
-.tec-panel {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e2e8f0;
-  border-radius: 28px;
-  padding: 20px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
-}
-
-.tec-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.tec-panel-header h2 {
-  margin: 0;
-  color: #0f172a;
-  font-size: 22px;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-}
-
-.tec-panel-header p {
-  margin: 6px 0 0;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 750;
-}
-
-/* =========================================================
-   CARDS MANTENIMIENTOS
-========================================================= */
-
-.tec-grid {
+.tec-worklist {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
-.tec-maint-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  padding: 18px;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.065);
-  transition: all 0.22s ease;
-}
-
-.tec-maint-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.11);
-  border-color: #bfdbfe;
-}
-
-.tec-maint-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.tec-maint-top h3 {
-  margin: 0;
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 950;
-}
-
-.tec-maint-top p {
-  margin: 6px 0 0;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 750;
-}
-
-.tec-maint-info {
+.tec-work-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.tec-maint-info div {
-  background: #f1f7ff;
+  grid-template-columns: 8px 1fr;
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.98);
   border: 1px solid #dbeafe;
-  border-radius: 16px;
-  padding: 11px;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.065);
+}
+
+.tec-work-priority.line-progress {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+}
+
+.tec-work-priority.line-ok {
+  background: linear-gradient(180deg, #16a34a, #22c55e);
+}
+
+.tec-work-priority.line-warning {
+  background: linear-gradient(180deg, #f59e0b, #facc15);
+}
+
+.tec-work-priority.line-programado {
+  background: linear-gradient(180deg, #0284c7, #38bdf8);
+}
+
+.tec-work-priority.line-default {
+  background: linear-gradient(180deg, #64748b, #94a3b8);
+}
+
+.tec-work-content {
+  padding: 18px;
   min-width: 0;
 }
 
-.tec-maint-info span {
-  display: block;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 950;
-  text-transform: uppercase;
+.tec-work-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 14px;
 }
 
-.tec-maint-info strong {
-  display: block;
-  margin-top: 5px;
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 850;
-  overflow-wrap: anywhere;
+.tec-work-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-/* =========================================================
-   ESTADOS
-========================================================= */
-
+.tec-type-badge,
 .tec-status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 106px;
   padding: 7px 10px;
   border-radius: 999px;
-  background: #e0f2fe;
-  color: #075985;
   font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+}
+
+.tec-type-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tec-status {
+  background: #e0f2fe;
+  color: #075985;
 }
 
 .tec-status.progress {
@@ -555,10 +546,74 @@ body {
   color: #166534;
 }
 
-/* =========================================================
-   ACCIONES
-========================================================= */
+.tec-status.programado {
+  background: #e0f2fe;
+  color: #0369a1;
+}
 
+.tec-work-main h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.tec-work-main p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tec-work-primary {
+  min-height: 46px;
+  min-width: 210px;
+  box-shadow: 0 14px 28px rgba(37,99,235,0.22);
+}
+
+.tec-work-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tec-info-mini {
+  min-height: 72px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f8fbff, #eef6ff);
+  border: 1px solid #dbeafe;
+  min-width: 0;
+}
+
+.tec-info-mini div {
+  color: #2563eb;
+  margin-bottom: 5px;
+}
+
+.tec-info-mini span {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.tec-info-mini strong {
+  display: block;
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.tec-work-actions,
 .tec-actions,
 .tec-state-actions {
   display: flex;
@@ -566,37 +621,34 @@ body {
   gap: 9px;
 }
 
-.tec-actions {
-  margin-bottom: 10px;
+.tec-work-actions {
+  padding-top: 13px;
+  border-top: 1px solid #e2e8f0;
 }
 
+.tec-work-actions button,
 .tec-actions button,
-.tec-state-actions button {
-  min-height: 38px;
-  border-radius: 13px;
-  padding: 9px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  font-weight: 900;
-  transition: all 0.2s ease;
-}
-
 .tec-state-actions button {
   border: 1px solid #dbeafe;
   background: #ffffff;
   color: #1e40af;
+  min-height: 38px;
+  border-radius: 13px;
+  padding: 9px 13px;
+  font-weight: 950;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
-.tec-state-actions button:hover {
-  background: #eff6ff;
-  transform: translateY(-2px);
+.tec-work-actions button.dark {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
 }
 
-/* =========================================================
-   VACÍO Y PAGINACIÓN
-========================================================= */
+/* ================= PAGINACIÓN ================= */
 
 .tec-empty {
   padding: 26px;
@@ -616,6 +668,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .tec-pagination button {
@@ -626,12 +679,6 @@ body {
   padding: 10px 14px;
   font-weight: 900;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tec-pagination button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.15);
 }
 
 .tec-pagination button:disabled {
@@ -645,14 +692,12 @@ body {
   font-size: 13px;
 }
 
-/* =========================================================
-   MODALES
-========================================================= */
+/* ================= MODALES ================= */
 
 .tec-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.62);
+  background: rgba(15,23,42,0.62);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -669,7 +714,7 @@ body {
   background: #ffffff;
   border-radius: 28px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 30px 80px rgba(15,23,42,0.28);
   padding: 22px;
 }
 
@@ -677,18 +722,8 @@ body {
   max-width: 920px;
 }
 
-.tec-modal::-webkit-scrollbar {
-  width: 9px;
-}
-
-.tec-modal::-webkit-scrollbar-track {
-  background: #eaf2ff;
-  border-radius: 20px;
-}
-
-.tec-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-  border-radius: 20px;
+.tec-history-modal {
+  max-width: 1250px;
 }
 
 .tec-modal-header {
@@ -701,9 +736,14 @@ body {
 
 .tec-modal-header h2 {
   margin: 0;
-  color: #0f172a;
   font-size: 22px;
   font-weight: 950;
+}
+
+.tec-modal-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-weight: 750;
 }
 
 .tec-modal-header button {
@@ -714,9 +754,6 @@ body {
   background: #fee2e2;
   color: #b91c1c;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .tec-form {
@@ -725,7 +762,6 @@ body {
 }
 
 .tec-form label {
-  color: #0f172a;
   font-size: 13px;
   font-weight: 950;
 }
@@ -734,10 +770,6 @@ body {
   min-height: 95px;
   resize: vertical;
 }
-
-/* =========================================================
-   DETALLE
-========================================================= */
 
 .tec-detail-grid {
   display: grid;
@@ -763,17 +795,9 @@ body {
 .tec-info strong {
   display: block;
   margin-top: 6px;
-  color: #0f172a;
   font-size: 14px;
   font-weight: 850;
   overflow-wrap: anywhere;
-}
-
-.tec-modal h3 {
-  margin: 20px 0 12px;
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 950;
 }
 
 .tec-evidence-grid {
@@ -792,943 +816,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  transition: all 0.2s ease;
 }
 
-.tec-evidence-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.14);
-}
-
-.tec-evidence-card svg {
-  color: #2563eb;
-}
-
-.tec-evidence-card strong {
-  font-size: 13px;
-  font-weight: 950;
-}
-
-.tec-evidence-card span {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 750;
-  overflow-wrap: anywhere;
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media (max-width: 1200px) {
-  .tec-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .tec-grid {
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .tec-shell {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
-
-  .tec-sidebar {
-    width: 100%;
-    min-width: 100%;
-    height: auto;
-    padding: 16px;
-    border-radius: 0 0 24px 24px;
-  }
-
-  .tec-brand {
-    padding-bottom: 14px;
-  }
-
-  .tec-user-card {
-    margin: 14px 0;
-  }
-
-  .tec-main {
-    height: auto;
-    min-height: calc(100vh - 240px);
-    padding: 20px 16px 70px;
-    overflow: visible;
-  }
-
-  .tec-header {
-    flex-direction: column;
-  }
-
-  .tec-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-detail-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .tec-header h1 {
-    font-size: 28px;
-  }
-
-  .tec-panel {
-    padding: 15px;
-    border-radius: 22px;
-  }
-
-  .tec-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-maint-info {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-actions,
-  .tec-state-actions {
-    flex-direction: column;
-  }
-
-  .tec-actions button,
-  .tec-state-actions button,
-  .tec-btn-secondary,
-  .tec-btn-primary {
-    width: 100%;
-  }
-
-  .tec-modal-backdrop {
-    padding: 12px;
-  }
-
-  .tec-modal {
-    border-radius: 22px;
-    padding: 18px;
-  }
-}
-
-.tec-btn-formato {
-  border: none;
-  background: linear-gradient(135deg, #0f62fe, #003ea8);
-  color: #ffffff;
-  padding: 9px 12px;
-  border-radius: 12px;
-  font-weight: 800;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  box-shadow: 0 10px 22px rgba(15, 98, 254, 0.22);
-  transition: all 0.2s ease;
-}
-
-.tec-btn-formato:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(15, 98, 254, 0.32);
-}
-
-/* =========================================================
-   HERO TÉCNICO PRO
-========================================================= */
-
-.tec-hero {
-  margin-bottom: 18px;
-  padding: 26px 30px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #67e8f9 100%);
-  color: #ffffff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 22px;
-  box-shadow: 0 22px 48px rgba(37, 99, 235, 0.24);
-}
-
-.tec-hero span {
-  display: block;
-  color: #bef264;
-  font-size: 12px;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-  margin-bottom: 8px;
-}
-
-.tec-hero h2 {
-  margin: 0;
-  font-size: 30px;
-  font-weight: 950;
-  letter-spacing: -0.04em;
-}
-
-.tec-hero p {
-  margin: 8px 0 0;
-  color: #e0f2fe;
-  font-weight: 700;
-}
-
-.tec-hero-badge {
-  min-width: 220px;
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  backdrop-filter: blur(12px);
-}
-
-.tec-hero-badge strong,
-.tec-hero-badge small {
-  display: block;
-}
-
-.tec-hero-badge small {
-  margin-top: 3px;
-  color: #dbeafe;
-  font-weight: 700;
-}
-
-/* =========================================================
-   BOTÓN INICIAR PRO
-========================================================= */
-
-.tec-btn-start {
-  width: 100%;
-  border: none !important;
-  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
-  color: #ffffff !important;
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24);
-}
-
-.tec-btn-start:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 34px rgba(37, 99, 235, 0.30);
-}
-
-.tec-status.programado {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-/* =========================================================
-   MODAL EJECUCIÓN TÉCNICA PRO
-========================================================= */
-
-.tec-exec-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(10px);
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tec-exec-modal {
-  position: relative;
-  width: min(1320px, 100%);
-  height: min(94vh, 980px);
-  background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 34%),
-    #ffffff;
-  border-radius: 34px;
-  border: 1px solid #dbeafe;
-  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.34);
-  overflow-y: auto;
-  padding: 34px;
-}
-
-.tec-exec-modal::-webkit-scrollbar {
-  width: 10px;
-}
-
-.tec-exec-modal::-webkit-scrollbar-track {
-  background: #eaf2ff;
-  border-radius: 20px;
-}
-
-.tec-exec-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-  border-radius: 20px;
-}
-
-.tec-exec-close {
-  position: absolute;
-  top: 26px;
-  right: 28px;
-  width: 54px;
-  height: 54px;
-  border: 0;
-  border-radius: 18px;
-  background: #ffffff;
-  color: #2563eb;
-  cursor: pointer;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.22s ease;
-}
-
-.tec-exec-close:hover {
-  transform: translateY(-2px);
-  color: #b91c1c;
-}
-
-.tec-exec-head {
-  padding-right: 76px;
-  margin-bottom: 28px;
-}
-
-.tec-exec-head span {
-  color: #84cc16;
-  font-weight: 950;
-  letter-spacing: 0.13em;
-  font-size: 13px;
-}
-
-.tec-exec-head h1 {
-  margin: 16px 0 14px;
-  color: #0f172a;
-  font-size: 38px;
-  line-height: 1;
-  font-weight: 950;
-  letter-spacing: -0.05em;
-}
-
-.tec-exec-head p {
-  margin: 0;
-  color: #64748b;
-  font-size: 17px;
-  font-weight: 750;
-}
-
-.tec-exec-head p strong {
-  color: #334155;
-}
-
-.tec-exec-grid {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 28px;
-  align-items: start;
-}
-
-.tec-exec-left,
-.tec-exec-right {
-  display: grid;
-  gap: 22px;
-}
-
-.tec-exec-card,
-.tec-exec-form-card {
-  background: rgba(248, 251, 255, 0.95);
-  border: 1px solid #dbeafe;
-  border-radius: 28px;
-  padding: 24px;
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
-}
-
-.tec-exec-card h2,
-.tec-exec-form-card h2 {
-  margin: 0 0 18px;
-  color: #0f172a;
-  font-size: 19px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.tec-exec-info-item {
-  display: grid;
-  grid-template-columns: 24px auto 1fr;
-  align-items: center;
-  gap: 9px;
-  padding: 12px 0;
-  border-bottom: 1px dashed #cbd5e1;
-  color: #475569;
-  font-size: 15px;
-}
-
-.tec-exec-info-item:last-child {
-  border-bottom: none;
-}
-
-.tec-exec-info-icon {
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-}
-
-.tec-exec-info-item strong {
-  color: #0f172a;
-  font-weight: 950;
-}
-
-.tec-exec-info-item span {
-  overflow-wrap: anywhere;
-  font-weight: 650;
-}
-
-.tec-exec-info-text {
-  margin: 0 0 12px;
-  color: #475569;
-  font-size: 15px;
-}
-
-.tec-exec-info-text strong {
-  color: #0f172a;
-}
-
-.tec-exec-form-card label {
-  display: block;
-  margin-bottom: 8px;
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 950;
-}
-
-.tec-exec-form-card textarea {
-  width: 100%;
-  min-height: 96px;
-  margin-bottom: 16px;
-  resize: vertical;
-  border: 1px solid #cfe0f5;
-  border-radius: 18px;
-  background: #ffffff;
-  padding: 16px 18px;
-  color: #0f172a;
-  font-size: 15px;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-.tec-exec-form-card textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
-}
-
-.tec-exec-upload {
-  display: grid;
-  grid-template-columns: 170px 1fr 120px;
-  gap: 12px;
-  align-items: center;
-}
-
-.tec-exec-upload select,
-.tec-exec-upload input,
-.tec-exec-desc {
-  width: 100%;
-  border: 1px solid #cfe0f5;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 12px 14px;
-  color: #0f172a;
-  outline: none;
-}
-
-.tec-exec-upload button {
-  border: 0;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #dbeafe;
-  color: #1e40af;
-  padding: 12px 14px;
-  font-weight: 950;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.tec-exec-desc {
-  margin-top: 12px;
-}
-
-.tec-exec-evidencias {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
-}
-
-.tec-exec-evidencias p {
-  color: #64748b;
-  font-weight: 700;
-}
-
-.tec-exec-evidencia {
-  text-decoration: none;
-  color: #0f172a;
-  padding: 14px;
-  border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid #dbeafe;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: all 0.2s ease;
-}
-
-.tec-exec-evidencia:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 26px rgba(37, 99, 235, 0.12);
-}
-
-.tec-exec-evidencia svg {
-  color: #2563eb;
-}
-
-.tec-exec-evidencia strong,
-.tec-exec-evidencia span {
-  display: block;
-}
-
-.tec-exec-evidencia strong {
-  font-size: 13px;
-  font-weight: 950;
-}
-
-.tec-exec-evidencia span {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
-.tec-exec-signature-box {
-  min-height: 132px;
-  border: 1.5px dashed #93c5fd;
-  border-radius: 18px;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-weight: 850;
-}
-
-.tec-exec-footer {
-  position: sticky;
-  bottom: -34px;
-  margin: 26px -34px -34px;
-  padding: 18px 34px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.tec-exec-primary,
-.tec-exec-light,
-.tec-exec-danger,
-.tec-exec-format {
-  border: 0;
-  min-height: 44px;
-  border-radius: 16px;
-  padding: 11px 18px;
-  font-weight: 950;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  transition: all 0.22s ease;
-}
-
-.tec-exec-primary {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: #ffffff;
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
-}
-
-.tec-exec-light {
-  background: #ffffff;
-  color: #1e40af;
-  border: 1px solid #dbeafe;
-}
-
-.tec-exec-danger {
-  background: #dc2626;
-  color: #ffffff;
-}
-
-.tec-exec-format {
-  background: #0f172a;
-  color: #ffffff;
-}
-
-.tec-exec-primary:hover,
-.tec-exec-light:hover,
-.tec-exec-danger:hover,
-.tec-exec-format:hover {
-  transform: translateY(-2px);
-}
-
-.tec-exec-primary.full {
-  width: 100%;
-  margin-top: 14px;
-}
-
-/* =========================================================
-   RESPONSIVE MODAL EJECUCIÓN
-========================================================= */
-
-@media (max-width: 1100px) {
-  .tec-exec-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-exec-left {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .tec-exec-upload {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .tec-hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .tec-hero-badge {
-    width: 100%;
-  }
-
-  .tec-exec-backdrop {
-    padding: 10px;
-  }
-
-  .tec-exec-modal {
-    height: 96vh;
-    padding: 22px;
-    border-radius: 24px;
-  }
-
-  .tec-exec-head {
-    padding-right: 56px;
-  }
-
-  .tec-exec-head h1 {
-    font-size: 30px;
-  }
-
-  .tec-exec-left {
-    grid-template-columns: 1fr;
-  }
-
-  .tec-exec-footer {
-    margin: 22px -22px -22px;
-    padding: 14px 22px;
-    flex-direction: column;
-  }
-
-  .tec-exec-primary,
-  .tec-exec-light,
-  .tec-exec-danger,
-  .tec-exec-format {
-    width: 100%;
-  }
-}
-/* =========================================================
-   FASE A + B - BANDEJA OPERATIVA INTELIGENTE + HISTÓRICO
-========================================================= */
-
-.tec-panel-header.pro {
-  align-items: center;
-}
-
-.tec-history-btn {
-  border: 0;
-  border-radius: 16px;
-  padding: 11px 16px;
-  background: #0f172a;
-  color: #ffffff;
-  font-weight: 950;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
-  transition: all 0.22s ease;
-}
-
-.tec-history-btn:hover {
-  transform: translateY(-2px);
-}
-
-.tec-smart-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.tec-smart-tabs button {
-  border: 1px solid #dbeafe;
-  background: #ffffff;
-  color: #1e40af;
-  border-radius: 999px;
-  padding: 9px 14px;
-  font-weight: 950;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tec-smart-tabs button.active,
-.tec-smart-tabs button:hover {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: #ffffff;
-  border-color: transparent;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
-}
-
-.tec-toolbar.compact {
-  grid-template-columns: 1fr 230px;
-  margin-bottom: 18px;
-}
-
-.tec-searchbox {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.tec-searchbox svg {
-  position: absolute;
-  left: 14px;
-  color: #2563eb;
-}
-
-.tec-searchbox input {
-  padding-left: 40px;
-}
-
-.tec-worklist {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-
-.tec-work-row {
-  display: grid;
-  grid-template-columns: 8px 1fr;
-  overflow: hidden;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #dbeafe;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.065);
-  transition: all 0.22s ease;
-}
-
-.tec-work-row:hover {
-  transform: translateY(-3px);
-  border-color: #93c5fd;
-  box-shadow: 0 24px 46px rgba(37, 99, 235, 0.14);
-}
-
-.tec-work-priority.line-progress {
-  background: linear-gradient(180deg, #2563eb, #06b6d4);
-}
-
-.tec-work-priority.line-ok {
-  background: linear-gradient(180deg, #16a34a, #22c55e);
-}
-
-.tec-work-priority.line-warning {
-  background: linear-gradient(180deg, #f59e0b, #facc15);
-}
-
-.tec-work-priority.line-programado {
-  background: linear-gradient(180deg, #0284c7, #38bdf8);
-}
-
-.tec-work-priority.line-default {
-  background: linear-gradient(180deg, #64748b, #94a3b8);
-}
-
-.tec-work-content {
-  padding: 18px;
-}
-
-.tec-work-main {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: flex-start;
-  margin-bottom: 14px;
-}
-
-.tec-work-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.tec-type-badge {
-  display: inline-flex;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 11px;
-  font-weight: 950;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.tec-work-main h3 {
-  margin: 0;
-  color: #0f172a;
-  font-size: 22px;
-  font-weight: 950;
-  letter-spacing: -0.04em;
-}
-
-.tec-work-main p {
-  margin: 7px 0 0;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 750;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tec-work-primary {
-  border: 0;
-  border-radius: 16px;
-  min-height: 46px;
-  min-width: 210px;
-  padding: 11px 18px;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: #ffffff;
-  font-weight: 950;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
-  transition: all 0.22s ease;
-}
-
-.tec-work-primary:hover {
-  transform: translateY(-2px);
-}
-
-.tec-work-meta {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.tec-info-mini {
-  min-height: 72px;
-  padding: 12px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #f8fbff, #eef6ff);
-  border: 1px solid #dbeafe;
-}
-
-.tec-info-mini div {
-  color: #2563eb;
-  margin-bottom: 5px;
-}
-
-.tec-info-mini span {
-  display: block;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.tec-info-mini strong {
-  display: block;
-  margin-top: 5px;
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 900;
-  overflow-wrap: anywhere;
-}
-
-.tec-work-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  padding-top: 13px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.tec-work-actions button {
-  border: 1px solid #dbeafe;
-  background: #ffffff;
-  color: #1e40af;
-  min-height: 38px;
-  border-radius: 13px;
-  padding: 9px 13px;
-  font-weight: 950;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  transition: all 0.2s ease;
-}
-
-.tec-work-actions button.dark {
-  background: #0f172a;
-  border-color: #0f172a;
-  color: #ffffff;
-}
-
-.tec-work-actions button:hover {
-  transform: translateY(-2px);
-}
-
-.tec-status.programado {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-/* =========================================================
-   HISTÓRICO MODAL
-========================================================= */
-
-.tec-history-modal {
-  max-width: 1250px;
-}
-
-.tec-modal-header p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-weight: 750;
-}
+/* ================= HISTÓRICO ================= */
 
 .tec-history-filters {
   display: grid;
@@ -1751,10 +841,6 @@ body {
   color: #ffffff;
   font-weight: 950;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
 }
 
 .tec-history-table-wrap {
@@ -1766,17 +852,15 @@ body {
 
 .tec-history-table {
   width: 100%;
-  min-width: 950px;
+  min-width: 900px;
   border-collapse: collapse;
   background: #ffffff;
 }
 
 .tec-history-table th {
   background: #f1f7ff;
-  color: #0f172a;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
   padding: 13px;
   text-align: left;
 }
@@ -1784,14 +868,12 @@ body {
 .tec-history-table td {
   padding: 13px;
   border-top: 1px solid #e2e8f0;
-  color: #334155;
   font-size: 13px;
   vertical-align: top;
 }
 
 .tec-history-table td strong {
   display: block;
-  color: #0f172a;
   font-weight: 950;
 }
 
@@ -1817,17 +899,255 @@ body {
   cursor: pointer;
 }
 
-.tec-history-actions button:hover {
-  background: #eff6ff;
+/* ================= MODAL EJECUCIÓN ================= */
+
+.tec-exec-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15,23,42,0.72);
+  backdrop-filter: blur(10px);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* =========================================================
-   RESPONSIVE FASE A + B
-========================================================= */
+.tec-exec-modal {
+  position: relative;
+  width: min(1320px, 100%);
+  max-height: 94vh;
+  background: #ffffff;
+  border-radius: 34px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 34px 90px rgba(15,23,42,0.34);
+  overflow-y: auto;
+  padding: 34px;
+}
 
-@media (max-width: 1200px) {
+.tec-exec-close {
+  position: absolute;
+  top: 26px;
+  right: 28px;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #2563eb;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(15,23,42,0.1);
+}
+
+.tec-exec-head {
+  padding-right: 76px;
+  margin-bottom: 28px;
+}
+
+.tec-exec-head span {
+  color: #84cc16;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  font-size: 13px;
+}
+
+.tec-exec-head h1 {
+  margin: 16px 0 14px;
+  font-size: clamp(28px, 5vw, 38px);
+  font-weight: 950;
+}
+
+.tec-exec-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.tec-exec-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.tec-exec-left,
+.tec-exec-right {
+  display: grid;
+  gap: 22px;
+}
+
+.tec-exec-card,
+.tec-exec-form-card {
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 28px;
+  padding: 24px;
+}
+
+.tec-exec-card h2,
+.tec-exec-form-card h2 {
+  margin: 0 0 18px;
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.tec-exec-info-item {
+  display: grid;
+  grid-template-columns: 24px auto 1fr;
+  gap: 9px;
+  padding: 12px 0;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.tec-exec-info-item span {
+  overflow-wrap: anywhere;
+}
+
+.tec-exec-form-card textarea,
+.tec-exec-upload select,
+.tec-exec-upload input,
+.tec-exec-desc {
+  width: 100%;
+  border: 1px solid #cfe0f5;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 12px 14px;
+  color: #0f172a;
+  outline: none;
+}
+
+.tec-exec-form-card textarea {
+  min-height: 96px;
+  margin-bottom: 16px;
+  resize: vertical;
+}
+
+.tec-exec-upload {
+  display: grid;
+  grid-template-columns: 170px 1fr 120px;
+  gap: 12px;
+  align-items: center;
+}
+
+.tec-exec-upload button {
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  color: #1e40af;
+  padding: 12px 14px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.tec-exec-desc {
+  margin-top: 12px;
+}
+
+.tec-exec-evidencias {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.tec-exec-evidencia {
+  text-decoration: none;
+  color: #0f172a;
+  padding: 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tec-exec-signature-box {
+  min-height: 132px;
+  border: 1.5px dashed #93c5fd;
+  border-radius: 18px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-weight: 850;
+}
+
+.tec-exec-footer {
+  position: sticky;
+  bottom: -34px;
+  margin: 26px -34px -34px;
+  padding: 18px 34px;
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tec-exec-primary,
+.tec-exec-light,
+.tec-exec-danger,
+.tec-exec-format {
+  border: 0;
+  min-height: 44px;
+  border-radius: 16px;
+  padding: 11px 18px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.tec-exec-primary {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+}
+
+.tec-exec-light {
+  background: #ffffff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.tec-exec-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.tec-exec-format {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.tec-exec-primary.full {
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1280px) {
+  .tec-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .tec-work-meta {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tec-exec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-exec-left {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tec-exec-upload {
+    grid-template-columns: 1fr;
   }
 
   .tec-history-filters {
@@ -1835,18 +1155,98 @@ body {
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 980px) {
+  .tec-shell {
+    flex-direction: column;
+  }
+
+  .tec-sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    position: relative;
+    padding: 16px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .tec-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .tec-nav button {
+    min-width: 180px;
+    justify-content: center;
+  }
+
+  .tec-logout {
+    margin-top: 14px;
+    justify-content: center;
+  }
+
+  .tec-main {
+    height: auto;
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+    overflow: visible;
+  }
+
+  .tec-header {
+    flex-direction: column;
+  }
+
+  .tec-header .tec-btn-secondary {
+    width: 100%;
+  }
+
+  .tec-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px;
+  }
+
+  .tec-hero-badge {
+    width: 100%;
+  }
+
+  .tec-toolbar,
+  .tec-toolbar.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-panel-header,
   .tec-panel-header.pro {
     flex-direction: column;
     align-items: stretch;
   }
 
   .tec-history-btn {
-    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .tec-cards {
+    grid-template-columns: 1fr;
   }
 
-  .tec-toolbar.compact {
-    grid-template-columns: 1fr;
+  .tec-card {
+    min-height: 86px;
+  }
+
+  .tec-panel {
+    padding: 15px;
+    border-radius: 22px;
+  }
+
+  .tec-smart-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tec-smart-tabs button {
+    width: 100%;
   }
 
   .tec-work-main {
@@ -1862,16 +1262,144 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .tec-work-actions {
+  .tec-work-actions,
+  .tec-actions,
+  .tec-state-actions {
     flex-direction: column;
   }
 
-  .tec-work-actions button {
+  .tec-work-actions button,
+  .tec-actions button,
+  .tec-state-actions button,
+  .tec-btn-primary,
+  .tec-btn-secondary {
     width: 100%;
     justify-content: center;
   }
 
+  .tec-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-modal-backdrop {
+    padding: 10px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .tec-modal {
+    max-height: none;
+    border-radius: 22px;
+    padding: 18px;
+    margin: 10px 0;
+  }
+
+  .tec-exec-backdrop {
+    padding: 8px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .tec-exec-modal {
+    max-height: none;
+    min-height: calc(100vh - 16px);
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .tec-exec-close {
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .tec-exec-head {
+    padding-right: 52px;
+  }
+
+  .tec-exec-left {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-exec-card,
+  .tec-exec-form-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .tec-exec-footer {
+    margin: 22px -20px -20px;
+    padding: 14px 20px;
+    flex-direction: column;
+  }
+
+  .tec-exec-primary,
+  .tec-exec-light,
+  .tec-exec-danger,
+  .tec-exec-format {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tec-main {
+    padding: 16px 10px 50px;
+  }
+
+  .tec-sidebar {
+    padding: 14px 10px;
+  }
+
+  .tec-brand h2 {
+    font-size: 18px;
+  }
+
+  .tec-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .tec-header h1 {
+    font-size: 26px;
+  }
+
+  .tec-hero {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .tec-hero h2 {
+    font-size: 24px;
+  }
+
+  .tec-panel {
+    padding: 12px;
+  }
+
+  .tec-work-row {
+    grid-template-columns: 6px 1fr;
+    border-radius: 20px;
+  }
+
+  .tec-work-content {
+    padding: 14px;
+  }
+
+  .tec-work-main h3 {
+    font-size: 19px;
+  }
+
+  .tec-smart-tabs {
+    grid-template-columns: 1fr;
+  }
+
   .tec-history-filters {
     grid-template-columns: 1fr;
+  }
+
+  .tec-history-table {
+    min-width: 820px;
   }
 }
