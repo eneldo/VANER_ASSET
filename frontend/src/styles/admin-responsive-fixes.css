@@ -1,0 +1,68 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.3
+   FIXES RESPONSIVE ADMIN
+   Archivo: frontend/src/styles/admin-responsive-fixes.css
+   ============================================================ */
+
+/* Evita que módulos admin con formularios laterales rompan pantalla */
+.admin-content-pro .crud-grid,
+.admin-content-pro .empresas-pro-grid,
+.admin-content-pro .equipos-pro-layout,
+.admin-content-pro .categorias-layout-pro,
+.admin-content-pro .sedes-layout-pro {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Cards con altura controlada para listados largos */
+.admin-content-pro .empresas-table-card,
+.admin-content-pro .equipos-pro-list-card,
+.admin-content-pro .categorias-list-card,
+.admin-content-pro .sedes-list-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 160px);
+}
+
+.admin-content-pro .empresas-table-card .table-wrap,
+.admin-content-pro .equipos-table-wrap,
+.admin-content-pro .categorias-table-wrap,
+.admin-content-pro .sedes-table-wrap {
+  flex: 1;
+  min-height: 240px;
+}
+
+/* Formularios sticky solo en pantallas grandes */
+@media (min-width: 1301px) {
+  .admin-content-pro .empresas-form-card,
+  .admin-content-pro .equipos-pro-form-card,
+  .admin-content-pro .form-card.sticky-form {
+    position: sticky;
+    top: 0;
+  }
+}
+
+@media (max-width: 1300px) {
+  .admin-content-pro .empresas-table-card,
+  .admin-content-pro .equipos-pro-list-card,
+  .admin-content-pro .categorias-list-card,
+  .admin-content-pro .sedes-list-card {
+    max-height: none;
+  }
+
+  .admin-content-pro .empresas-table-card .table-wrap,
+  .admin-content-pro .equipos-table-wrap,
+  .admin-content-pro .categorias-table-wrap,
+  .admin-content-pro .sedes-table-wrap {
+    max-height: 560px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-content-pro .empresas-table-card .table-wrap,
+  .admin-content-pro .equipos-table-wrap,
+  .admin-content-pro .categorias-table-wrap,
+  .admin-content-pro .sedes-table-wrap {
+    max-height: 430px;
+  }
+}

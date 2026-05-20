@@ -1,0 +1,57 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.3
+   FIXES RESPONSIVE PORTAL CLIENTE
+   Archivo: frontend/src/styles/cliente-responsive-fixes.css
+   ============================================================ */
+
+.cliente-layout,
+.cliente-main,
+.cliente-content {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.cliente-dashboard-grid,
+.cliente-resumen-grid,
+.cliente-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.cliente-table-card,
+.cliente-list-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cliente-table-wrap {
+  width: 100%;
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.cliente-table-wrap .sga-table {
+  min-width: 820px;
+}
+
+@media (max-width: 1200px) {
+  .cliente-dashboard-grid,
+  .cliente-resumen-grid,
+  .cliente-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cliente-dashboard-grid,
+  .cliente-resumen-grid,
+  .cliente-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cliente-table-wrap {
+    max-height: 430px;
+  }
+}

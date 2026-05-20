@@ -1,0 +1,789 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.3
+   RESPONSIVE GLOBAL REAL
+   Archivo: frontend/src/styles/responsive-global.css
+
+   Objetivo:
+   - Unificar comportamiento responsive en todos los módulos.
+   - Evitar desbordes horizontales en celular/tablet.
+   - Normalizar cards, formularios, tablas, modales y paginación.
+   - Mantener compatibilidad con clases existentes del proyecto.
+   ============================================================ */
+
+/* ============================================================
+   1. VARIABLES GLOBALES RESPONSIVE
+   ============================================================ */
+:root {
+  --sga-bg: #f5f8ff;
+  --sga-card: #ffffff;
+  --sga-text: #172554;
+  --sga-muted: #64748b;
+  --sga-border: #dbe4f0;
+  --sga-primary: #2563eb;
+  --sga-primary-dark: #1d4ed8;
+  --sga-cyan: #06b6d4;
+  --sga-danger: #dc2626;
+  --sga-success: #16a34a;
+  --sga-warning: #f59e0b;
+  --sga-shadow: 0 18px 45px rgba(15, 35, 99, 0.08);
+  --sga-radius: 22px;
+  --sga-radius-sm: 14px;
+  --sga-content-max: 1500px;
+}
+
+/* ============================================================
+   2. RESET SEGURO PARA EVITAR DESBORDES
+   ============================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--sga-bg);
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+/* ============================================================
+   3. CONTENIDO PRINCIPAL GLOBAL
+   Compatible con AdminLayout, ClienteLayout, CoordinadorLayout
+   y páginas internas existentes.
+   ============================================================ */
+.admin-content-pro,
+.cliente-content,
+.coordinador-content,
+.tecnico-content,
+.sga-main-content,
+.main-content,
+.page-content {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.admin-content-pro > *,
+.cliente-content > *,
+.coordinador-content > *,
+.tecnico-content > *,
+.sga-main-content > *,
+.main-content > *,
+.page-content > * {
+  min-width: 0;
+}
+
+.sga-page-container,
+.page-container,
+.dashboard-container,
+.admin-page,
+.cliente-page,
+.coordinador-page,
+.tecnico-page {
+  width: 100%;
+  max-width: var(--sga-content-max);
+  margin: 0 auto;
+  min-width: 0;
+}
+
+/* ============================================================
+   4. HEADERS DE PÁGINA
+   ============================================================ */
+.page-header,
+.sga-page-header,
+.dashboard-header,
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.page-header > div,
+.sga-page-header > div,
+.dashboard-header > div,
+.module-header > div {
+  min-width: 0;
+}
+
+.page-header h1,
+.sga-page-header h1,
+.dashboard-header h1,
+.module-header h1 {
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   5. CARDS PRO
+   ============================================================ */
+.page-card,
+.sga-card,
+.metric-card,
+.dashboard-card,
+.kpi-card,
+.form-card,
+.list-card,
+.empresas-form-card,
+.empresas-table-card,
+.equipos-pro-form-card,
+.equipos-pro-list-card,
+.categorias-list-card,
+.sedes-list-card,
+.cliente-card,
+.coordinador-card,
+.tecnico-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.page-card,
+.sga-card,
+.metric-card,
+.dashboard-card,
+.kpi-card,
+.form-card,
+.list-card,
+.cliente-card,
+.coordinador-card,
+.tecnico-card {
+  background: var(--sga-card);
+  border-radius: var(--sga-radius);
+  box-shadow: var(--sga-shadow);
+}
+
+/* ============================================================
+   6. GRIDS RESPONSIVE GENERALES
+   ============================================================ */
+.crud-grid,
+.empresas-pro-grid,
+.equipos-pro-layout,
+.equipos-layout,
+.categorias-layout-pro,
+.sedes-layout-pro,
+.mantenimientos-layout,
+.evidencias-layout,
+.reportes-layout,
+.configuracion-layout,
+.usuarios-layout,
+.tecnicos-layout,
+.cliente-grid,
+.coordinador-grid,
+.tecnico-grid {
+  display: grid;
+  gap: 24px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Desktop amplio: conserva formularios laterales donde existan */
+.crud-grid,
+.empresas-pro-grid,
+.equipos-pro-layout,
+.equipos-layout,
+.categorias-layout-pro,
+.sedes-layout-pro,
+.usuarios-layout,
+.tecnicos-layout {
+  grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+}
+
+.dashboard-grid,
+.metrics-grid,
+.kpi-grid,
+.stats-grid,
+.cliente-kpi-grid,
+.coordinador-kpi-grid,
+.tecnico-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ============================================================
+   7. FORMULARIOS RESPONSIVE
+   ============================================================ */
+.crud-form,
+.equipos-pro-form,
+.equipos-form-grid,
+.hoja-form,
+.sga-form,
+.admin-form,
+.cliente-form,
+.coordinador-form,
+.tecnico-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  width: 100%;
+  min-width: 0;
+}
+
+.form-group,
+.input-group,
+.sga-field {
+  min-width: 0;
+}
+
+.form-group.full,
+.full,
+.col-full,
+.sga-field-full {
+  grid-column: 1 / -1;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea,
+.input-group input,
+.input-group select,
+.input-group textarea,
+.sga-field input,
+.sga-field select,
+.sga-field textarea,
+.search-input,
+.equipos-search,
+.empresas-toolbar-pro input {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-actions,
+.modal-actions,
+.card-actions,
+.page-actions,
+.table-actions,
+.hoja-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-actions,
+.modal-actions,
+.page-actions,
+.hoja-actions {
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   8. TABLAS RESPONSIVE PRO
+   ============================================================ */
+.table-wrap,
+.sga-table-wrap,
+.equipos-table-wrap,
+.categorias-table-wrap,
+.sedes-table-wrap,
+.empresas-table-card .table-wrap,
+.cliente-table-wrap,
+.coordinador-table-wrap,
+.tecnico-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+}
+
+.sga-table,
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-wrap .sga-table,
+.sga-table-wrap .sga-table,
+.equipos-table-wrap .sga-table,
+.categorias-table-wrap .sga-table,
+.sedes-table-wrap .sga-table,
+.cliente-table-wrap .sga-table,
+.coordinador-table-wrap .sga-table,
+.tecnico-table-wrap .sga-table {
+  min-width: 860px;
+}
+
+.sga-table th,
+.sga-table td,
+table th,
+table td {
+  vertical-align: middle;
+}
+
+.sga-table td,
+table td {
+  overflow-wrap: anywhere;
+}
+
+/* Scroll elegante en tablas */
+.table-wrap::-webkit-scrollbar,
+.sga-table-wrap::-webkit-scrollbar,
+.equipos-table-wrap::-webkit-scrollbar,
+.categorias-table-wrap::-webkit-scrollbar,
+.sedes-table-wrap::-webkit-scrollbar,
+.cliente-table-wrap::-webkit-scrollbar,
+.coordinador-table-wrap::-webkit-scrollbar,
+.tecnico-table-wrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-wrap::-webkit-scrollbar-track,
+.sga-table-wrap::-webkit-scrollbar-track,
+.equipos-table-wrap::-webkit-scrollbar-track,
+.categorias-table-wrap::-webkit-scrollbar-track,
+.sedes-table-wrap::-webkit-scrollbar-track,
+.cliente-table-wrap::-webkit-scrollbar-track,
+.coordinador-table-wrap::-webkit-scrollbar-track,
+.tecnico-table-wrap::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb,
+.sga-table-wrap::-webkit-scrollbar-thumb,
+.equipos-table-wrap::-webkit-scrollbar-thumb,
+.categorias-table-wrap::-webkit-scrollbar-thumb,
+.sedes-table-wrap::-webkit-scrollbar-thumb,
+.cliente-table-wrap::-webkit-scrollbar-thumb,
+.coordinador-table-wrap::-webkit-scrollbar-thumb,
+.tecnico-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--sga-primary), var(--sga-cyan));
+  border-radius: 20px;
+}
+
+/* ============================================================
+   9. BARRAS, FILTROS Y TOOLBARS
+   ============================================================ */
+.list-header,
+.toolbar,
+.sga-toolbar,
+.filters-bar,
+.search-bar,
+.empresas-toolbar-pro,
+.equipos-toolbar,
+.cliente-toolbar,
+.coordinador-toolbar,
+.tecnico-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+}
+
+.toolbar > *,
+.sga-toolbar > *,
+.filters-bar > *,
+.search-bar > *,
+.empresas-toolbar-pro > *,
+.equipos-toolbar > *,
+.cliente-toolbar > *,
+.coordinador-toolbar > *,
+.tecnico-toolbar > * {
+  min-width: 0;
+}
+
+.filters-grid,
+.sga-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+/* ============================================================
+   10. PAGINACIÓN PRO
+   ============================================================ */
+.pagination,
+.empresas-pagination-pro,
+.sga-pagination,
+.cliente-pagination,
+.coordinador-pagination,
+.tecnico-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.pagination button,
+.empresas-pagination-actions button,
+.sga-pagination button,
+.cliente-pagination button,
+.coordinador-pagination button,
+.tecnico-pagination button {
+  min-width: 38px;
+}
+
+/* ============================================================
+   11. MODALES RESPONSIVE
+   ============================================================ */
+.modal-backdrop,
+.sga-modal-backdrop {
+  padding: 20px;
+}
+
+.modal-card,
+.sga-modal,
+.modal-content {
+  width: min(96vw, 620px);
+  max-height: min(88vh, 760px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   12. HOJA DE VIDA RESPONSIVE
+   ============================================================ */
+.hoja-documento {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.hoja-header {
+  min-width: 0;
+}
+
+.hoja-grid-4,
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.info-cell {
+  min-width: 0;
+}
+
+/* ============================================================
+   13. BREAKPOINTS PROFESIONALES
+   ============================================================ */
+
+/* Laptop / tablet horizontal */
+@media (max-width: 1300px) {
+  .crud-grid,
+  .empresas-pro-grid,
+  .equipos-pro-layout,
+  .equipos-layout,
+  .categorias-layout-pro,
+  .sedes-layout-pro,
+  .usuarios-layout,
+  .tecnicos-layout,
+  .mantenimientos-layout,
+  .evidencias-layout,
+  .reportes-layout,
+  .configuracion-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid,
+  .metrics-grid,
+  .kpi-grid,
+  .stats-grid,
+  .cliente-kpi-grid,
+  .coordinador-kpi-grid,
+  .tecnico-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters-grid,
+  .sga-filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .empresas-form-card,
+  .form-card {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+/* Tablet / móvil grande */
+@media (max-width: 900px) {
+  .admin-content-pro,
+  .cliente-content,
+  .coordinador-content,
+  .tecnico-content,
+  .sga-main-content,
+  .main-content,
+  .page-content {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .page-header,
+  .sga-page-header,
+  .dashboard-header,
+  .module-header,
+  .list-header,
+  .toolbar,
+  .sga-toolbar,
+  .filters-bar,
+  .search-bar,
+  .empresas-toolbar-pro,
+  .equipos-toolbar,
+  .cliente-toolbar,
+  .coordinador-toolbar,
+  .tecnico-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .crud-form,
+  .equipos-pro-form,
+  .equipos-form-grid,
+  .hoja-form,
+  .sga-form,
+  .admin-form,
+  .cliente-form,
+  .coordinador-form,
+  .tecnico-form {
+    grid-template-columns: 1fr;
+  }
+
+  .hoja-header {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+
+  .hoja-grid-4,
+  .check-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .table-wrap .sga-table,
+  .sga-table-wrap .sga-table,
+  .equipos-table-wrap .sga-table,
+  .categorias-table-wrap .sga-table,
+  .sedes-table-wrap .sga-table,
+  .cliente-table-wrap .sga-table,
+  .coordinador-table-wrap .sga-table,
+  .tecnico-table-wrap .sga-table {
+    min-width: 780px;
+  }
+
+  .page-card,
+  .sga-card,
+  .metric-card,
+  .dashboard-card,
+  .kpi-card,
+  .form-card,
+  .list-card,
+  .empresas-form-card,
+  .empresas-table-card,
+  .equipos-pro-form-card,
+  .equipos-pro-list-card,
+  .categorias-list-card,
+  .sedes-list-card,
+  .cliente-card,
+  .coordinador-card,
+  .tecnico-card {
+    border-radius: 20px;
+  }
+}
+
+/* Celular */
+@media (max-width: 640px) {
+  .admin-content-pro,
+  .cliente-content,
+  .coordinador-content,
+  .tecnico-content,
+  .sga-main-content,
+  .main-content,
+  .page-content {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .page-card,
+  .sga-card,
+  .metric-card,
+  .dashboard-card,
+  .kpi-card,
+  .form-card,
+  .list-card,
+  .empresas-form-card,
+  .empresas-table-card,
+  .equipos-pro-form-card,
+  .equipos-pro-list-card,
+  .categorias-list-card,
+  .sedes-list-card,
+  .cliente-card,
+  .coordinador-card,
+  .tecnico-card {
+    padding: 18px !important;
+    border-radius: 18px;
+  }
+
+  .dashboard-grid,
+  .metrics-grid,
+  .kpi-grid,
+  .stats-grid,
+  .cliente-kpi-grid,
+  .coordinador-kpi-grid,
+  .tecnico-kpi-grid,
+  .filters-grid,
+  .sga-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions,
+  .modal-actions,
+  .card-actions,
+  .page-actions,
+  .hoja-actions,
+  .pagination,
+  .empresas-pagination-pro,
+  .sga-pagination,
+  .cliente-pagination,
+  .coordinador-pagination,
+  .tecnico-pagination {
+    justify-content: stretch;
+  }
+
+  .form-actions button,
+  .modal-actions button,
+  .page-actions button,
+  .hoja-actions button,
+  .pagination button,
+  .sga-pagination button {
+    width: 100%;
+  }
+
+  .table-actions {
+    justify-content: flex-start;
+  }
+
+  .modal-backdrop,
+  .sga-modal-backdrop {
+    align-items: flex-end !important;
+    padding: 10px;
+  }
+
+  .modal-card,
+  .sga-modal,
+  .modal-content {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 22px 22px 0 0 !important;
+  }
+
+  .hoja-grid-4,
+  .check-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header h1,
+  .sga-page-header h1,
+  .dashboard-header h1,
+  .module-header h1 {
+    font-size: clamp(22px, 7vw, 30px) !important;
+  }
+
+  .page-header p,
+  .sga-page-header p,
+  .dashboard-header p,
+  .module-header p {
+    font-size: 13px !important;
+  }
+
+  .table-wrap .sga-table,
+  .sga-table-wrap .sga-table,
+  .equipos-table-wrap .sga-table,
+  .categorias-table-wrap .sga-table,
+  .sedes-table-wrap .sga-table,
+  .cliente-table-wrap .sga-table,
+  .coordinador-table-wrap .sga-table,
+  .tecnico-table-wrap .sga-table {
+    min-width: 720px;
+  }
+}
+
+/* Celular pequeño */
+@media (max-width: 420px) {
+  .page-card,
+  .sga-card,
+  .metric-card,
+  .dashboard-card,
+  .kpi-card,
+  .form-card,
+  .list-card,
+  .empresas-form-card,
+  .empresas-table-card,
+  .equipos-pro-form-card,
+  .equipos-pro-list-card,
+  .categorias-list-card,
+  .sedes-list-card,
+  .cliente-card,
+  .coordinador-card,
+  .tecnico-card {
+    padding: 15px !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .sga-btn,
+  button {
+    min-height: 40px;
+  }
+}
+
+/* ============================================================
+   14. IMPRESIÓN
+   ============================================================ */
+@media print {
+  .sga-sidebar,
+  .sga-mobile-header,
+  .sidebar-overlay,
+  .no-print,
+  .page-actions,
+  .form-actions,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .admin-content-pro,
+  .cliente-content,
+  .coordinador-content,
+  .tecnico-content,
+  .main-content,
+  .page-content {
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .page-card,
+  .sga-card,
+  .hoja-documento {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}

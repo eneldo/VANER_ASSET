@@ -1,0 +1,57 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.3
+   FIXES RESPONSIVE PORTAL COORDINADOR
+   Archivo: frontend/src/styles/coordinador-responsive-fixes.css
+   ============================================================ */
+
+.coordinador-layout,
+.coordinador-main,
+.coordinador-content {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.coordinador-dashboard-grid,
+.coordinador-kpi-grid,
+.coordinador-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.coordinador-table-card,
+.coordinador-list-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.coordinador-table-wrap {
+  width: 100%;
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.coordinador-table-wrap .sga-table {
+  min-width: 860px;
+}
+
+@media (max-width: 1200px) {
+  .coordinador-dashboard-grid,
+  .coordinador-kpi-grid,
+  .coordinador-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .coordinador-dashboard-grid,
+  .coordinador-kpi-grid,
+  .coordinador-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coordinador-table-wrap {
+    max-height: 430px;
+  }
+}

@@ -1,0 +1,69 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.3
+   FIXES RESPONSIVE PORTAL TÉCNICO
+   Archivo: frontend/src/styles/tecnico-responsive-fixes.css
+   ============================================================ */
+
+.tecnico-layout,
+.tecnico-main,
+.tecnico-content,
+.dashboard-tecnico,
+.tecnico-dashboard {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.tecnico-kpi-grid,
+.tecnico-metrics,
+.tecnico-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.maintenance-card,
+.mantenimiento-card,
+.tecnico-maintenance-card {
+  width: 100%;
+  min-width: 0;
+  gap: 16px;
+}
+
+.tecnico-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.tecnico-table-wrap .sga-table {
+  min-width: 820px;
+}
+
+@media (max-width: 1200px) {
+  .tecnico-kpi-grid,
+  .tecnico-metrics,
+  .tecnico-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .maintenance-card,
+  .mantenimiento-card,
+  .tecnico-maintenance-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .tecnico-kpi-grid,
+  .tecnico-metrics,
+  .tecnico-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tecnico-table-wrap {
+    max-height: 430px;
+  }
+}
