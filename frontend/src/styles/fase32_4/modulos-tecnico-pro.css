@@ -1,0 +1,90 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Optimización específica Portal Técnico
+   Archivo: frontend/src/styles/fase32_4/modulos-tecnico-pro.css
+   ============================================================ */
+
+.tecnico-layout,
+.tecnico-page,
+.tecnico-main,
+.tecnico-content,
+.dashboard-tecnico,
+.dashboard-tecnico-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tecnico-dashboard-grid,
+.tecnico-metric-grid,
+.tecnico-cards-grid,
+.tecnico-mantenimientos-grid,
+.maintenance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.maintenance-card,
+.tecnico-card,
+.tecnico-mantenimiento-card,
+.tecnico-bitacora-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.maintenance-card {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.maintenance-card h3,
+.tecnico-card h3,
+.tecnico-mantenimiento-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.tecnico-table,
+.tecnico-table-wrap .sga-table {
+  min-width: 900px;
+}
+
+.tecnico-bitacora-form,
+.formato-mantenimiento-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+@media (max-width: 900px) {
+  .tecnico-content,
+  .tecnico-main,
+  .tecnico-page,
+  .dashboard-tecnico,
+  .dashboard-tecnico-page {
+    padding: 18px 14px 80px !important;
+  }
+
+  .tecnico-dashboard-grid,
+  .tecnico-metric-grid,
+  .tecnico-cards-grid,
+  .tecnico-mantenimientos-grid,
+  .maintenance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-card {
+    flex-direction: column;
+  }
+
+  .maintenance-card > * {
+    width: 100%;
+  }
+
+  .tecnico-bitacora-form,
+  .formato-mantenimiento-form {
+    grid-template-columns: 1fr;
+  }
+}

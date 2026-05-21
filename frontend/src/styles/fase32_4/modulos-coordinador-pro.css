@@ -1,0 +1,63 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Optimización específica Portal Coordinador
+   Archivo: frontend/src/styles/fase32_4/modulos-coordinador-pro.css
+   ============================================================ */
+
+.coordinador-layout,
+.coordinador-page,
+.coordinador-main,
+.coordinador-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.coordinador-dashboard-grid,
+.coordinador-kpi-grid,
+.coordinador-cards-grid,
+.coordinador-cronograma-grid,
+.coordinador-informes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.coordinador-card,
+.coordinador-mantenimiento-card,
+.coordinador-cronograma-card,
+.coordinador-informe-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.coordinador-table,
+.coordinador-table-wrap .sga-table {
+  min-width: 980px;
+}
+
+@media (max-width: 900px) {
+  .coordinador-content,
+  .coordinador-main,
+  .coordinador-page {
+    padding: 18px 14px 80px !important;
+  }
+
+  .coordinador-dashboard-grid,
+  .coordinador-kpi-grid,
+  .coordinador-cards-grid,
+  .coordinador-cronograma-grid,
+  .coordinador-informes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .coordinador-card,
+  .coordinador-mantenimiento-card,
+  .coordinador-cronograma-card,
+  .coordinador-informe-card {
+    border-radius: 18px;
+    padding: 18px !important;
+  }
+}

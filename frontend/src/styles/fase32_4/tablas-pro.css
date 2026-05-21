@@ -1,0 +1,281 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Tablas, scroll interno, paginación y listados responsive
+   Archivo: frontend/src/styles/fase32_4/tablas-pro.css
+   ============================================================ */
+
+.table-wrap,
+.table-responsive,
+.sga-table-wrap,
+.empresas-table-card .table-wrap,
+.equipos-table-wrap,
+.sedes-table-wrap,
+.categorias-table-wrap,
+.mantenimientos-table-wrap,
+.evidencias-table-wrap,
+.reportes-table-wrap,
+.cliente-table-wrap,
+.tecnico-table-wrap,
+.coordinador-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  border-radius: 18px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #2563eb #edf4ff;
+}
+
+.table-wrap::-webkit-scrollbar,
+.table-responsive::-webkit-scrollbar,
+.sga-table-wrap::-webkit-scrollbar,
+.equipos-table-wrap::-webkit-scrollbar,
+.sedes-table-wrap::-webkit-scrollbar,
+.categorias-table-wrap::-webkit-scrollbar,
+.mantenimientos-table-wrap::-webkit-scrollbar,
+.evidencias-table-wrap::-webkit-scrollbar,
+.reportes-table-wrap::-webkit-scrollbar,
+.cliente-table-wrap::-webkit-scrollbar,
+.tecnico-table-wrap::-webkit-scrollbar,
+.coordinador-table-wrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-wrap::-webkit-scrollbar-track,
+.table-responsive::-webkit-scrollbar-track,
+.sga-table-wrap::-webkit-scrollbar-track,
+.equipos-table-wrap::-webkit-scrollbar-track,
+.sedes-table-wrap::-webkit-scrollbar-track,
+.categorias-table-wrap::-webkit-scrollbar-track,
+.mantenimientos-table-wrap::-webkit-scrollbar-track,
+.evidencias-table-wrap::-webkit-scrollbar-track,
+.reportes-table-wrap::-webkit-scrollbar-track,
+.cliente-table-wrap::-webkit-scrollbar-track,
+.tecnico-table-wrap::-webkit-scrollbar-track,
+.coordinador-table-wrap::-webkit-scrollbar-track {
+  background: #edf4ff;
+  border-radius: 20px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb,
+.table-responsive::-webkit-scrollbar-thumb,
+.sga-table-wrap::-webkit-scrollbar-thumb,
+.equipos-table-wrap::-webkit-scrollbar-thumb,
+.sedes-table-wrap::-webkit-scrollbar-thumb,
+.categorias-table-wrap::-webkit-scrollbar-thumb,
+.mantenimientos-table-wrap::-webkit-scrollbar-thumb,
+.evidencias-table-wrap::-webkit-scrollbar-thumb,
+.reportes-table-wrap::-webkit-scrollbar-thumb,
+.cliente-table-wrap::-webkit-scrollbar-thumb,
+.tecnico-table-wrap::-webkit-scrollbar-thumb,
+.coordinador-table-wrap::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  border-radius: 20px;
+}
+
+.sga-table,
+table.sga-table,
+.admin-table,
+.cliente-table,
+.tecnico-table,
+.coordinador-table,
+.empresas-table,
+.sedes-table,
+.categorias-table,
+.equipos-table,
+.mantenimientos-table,
+.evidencias-table,
+.reportes-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.sga-table th,
+.admin-table th,
+.cliente-table th,
+.tecnico-table th,
+.coordinador-table th,
+.sga-table td,
+.admin-table td,
+.cliente-table td,
+.tecnico-table td,
+.coordinador-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sga-table td,
+.admin-table td,
+.cliente-table td,
+.tecnico-table td,
+.coordinador-table td {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sga-table td.wrap,
+.admin-table td.wrap,
+.cliente-table td.wrap,
+.tecnico-table td.wrap,
+.coordinador-table td.wrap,
+.sga-table .wrap,
+.admin-table .wrap,
+.cliente-table .wrap,
+.tecnico-table .wrap,
+.coordinador-table .wrap {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+}
+
+.table-actions,
+.sga-table .table-actions,
+.admin-table .table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+/* Altura controlada por módulo */
+.empresas-table-card,
+.equipos-pro-list-card,
+.sedes-list-card,
+.categorias-list-card,
+.mantenimientos-list-card,
+.evidencias-list-card,
+.reportes-list-card,
+.cliente-list-card,
+.tecnico-list-card,
+.coordinador-list-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.empresas-table-card .table-wrap,
+.equipos-table-wrap,
+.sedes-table-wrap,
+.categorias-table-wrap,
+.mantenimientos-table-wrap,
+.evidencias-table-wrap,
+.reportes-table-wrap,
+.cliente-table-wrap,
+.tecnico-table-wrap,
+.coordinador-table-wrap {
+  flex: 1;
+  min-height: 260px;
+}
+
+.pagination,
+.empresas-pagination-pro,
+.sga-pagination,
+.cliente-pagination,
+.tecnico-pagination,
+.coordinador-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.pagination button,
+.empresas-pagination-actions button,
+.sga-pagination button,
+.cliente-pagination button,
+.tecnico-pagination button,
+.coordinador-pagination button,
+.pagination select,
+.empresas-pagination-actions select,
+.sga-pagination select,
+.cliente-pagination select,
+.tecnico-pagination select,
+.coordinador-pagination select {
+  min-height: 38px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #172554;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.pagination button:disabled,
+.sga-pagination button:disabled,
+.cliente-pagination button:disabled,
+.tecnico-pagination button:disabled,
+.coordinador-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .sga-table,
+  table.sga-table,
+  .admin-table,
+  .cliente-table,
+  .tecnico-table,
+  .coordinador-table,
+  .empresas-table,
+  .sedes-table,
+  .categorias-table,
+  .equipos-table,
+  .mantenimientos-table,
+  .evidencias-table,
+  .reportes-table {
+    min-width: 780px;
+  }
+
+  .empresas-table-card,
+  .equipos-pro-list-card,
+  .sedes-list-card,
+  .categorias-list-card,
+  .mantenimientos-list-card,
+  .evidencias-list-card,
+  .reportes-list-card,
+  .cliente-list-card,
+  .tecnico-list-card,
+  .coordinador-list-card {
+    max-height: none;
+  }
+
+  .pagination,
+  .empresas-pagination-pro,
+  .sga-pagination,
+  .cliente-pagination,
+  .tecnico-pagination,
+  .coordinador-pagination {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .table-wrap,
+  .table-responsive,
+  .sga-table-wrap,
+  .equipos-table-wrap,
+  .sedes-table-wrap,
+  .categorias-table-wrap,
+  .mantenimientos-table-wrap,
+  .evidencias-table-wrap,
+  .reportes-table-wrap,
+  .cliente-table-wrap,
+  .tecnico-table-wrap,
+  .coordinador-table-wrap {
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+}

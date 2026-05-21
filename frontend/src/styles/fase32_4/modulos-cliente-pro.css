@@ -1,0 +1,82 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Optimización específica Portal Cliente
+   Archivo: frontend/src/styles/fase32_4/modulos-cliente-pro.css
+   ============================================================ */
+
+.cliente-layout,
+.cliente-page,
+.cliente-main,
+.cliente-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cliente-dashboard-grid,
+.cliente-cards-grid,
+.cliente-sedes-grid,
+.cliente-equipos-grid,
+.cliente-mantenimientos-grid,
+.cliente-cronograma-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.cliente-card,
+.cliente-sede-card,
+.cliente-equipo-card,
+.cliente-mantenimiento-card,
+.cliente-cronograma-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.cliente-card h2,
+.cliente-card h3,
+.cliente-sede-card h3,
+.cliente-equipo-card h3,
+.cliente-mantenimiento-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.cliente-table,
+.cliente-table-wrap .sga-table {
+  min-width: 900px;
+}
+
+.cliente-hoja-vida,
+.cliente-hoja-card {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 900px) {
+  .cliente-content,
+  .cliente-main,
+  .cliente-page {
+    padding: 18px 14px 80px !important;
+  }
+
+  .cliente-dashboard-grid,
+  .cliente-cards-grid,
+  .cliente-sedes-grid,
+  .cliente-equipos-grid,
+  .cliente-mantenimientos-grid,
+  .cliente-cronograma-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cliente-card,
+  .cliente-sede-card,
+  .cliente-equipo-card,
+  .cliente-mantenimiento-card,
+  .cliente-cronograma-card {
+    border-radius: 18px;
+    padding: 18px !important;
+  }
+}

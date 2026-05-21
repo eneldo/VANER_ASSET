@@ -1,0 +1,172 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Optimización específica módulos ADMIN
+   Archivo: frontend/src/styles/fase32_4/modulos-admin-pro.css
+   ============================================================ */
+
+.admin-content-pro,
+.admin-main,
+.admin-page,
+.admin-module {
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-content-pro {
+  scroll-behavior: smooth;
+}
+
+/* Empresas */
+.empresas-pro-grid .empresas-form-card,
+.empresas-pro-grid .empresas-table-card {
+  min-width: 0;
+}
+
+.empresas-table-card .sga-table {
+  min-width: 920px;
+}
+
+/* Sedes */
+.sedes-table {
+  min-width: 920px;
+}
+
+/* Categorías */
+.categorias-layout-pro {
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+}
+
+.categorias-table {
+  min-width: 760px;
+  table-layout: auto;
+}
+
+/* Equipos */
+.equipos-pro-layout,
+.equipos-layout {
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+}
+
+.equipos-pro-list-card,
+.equipos-list-card {
+  min-width: 0;
+}
+
+.equipos-table-wrap .sga-table,
+.equipos-table,
+.equipos-pro-list-card .sga-table {
+  min-width: 1080px;
+}
+
+/* Hoja de vida */
+.hoja-documento {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.hoja-header {
+  grid-template-columns: 120px minmax(0, 1fr) 150px;
+}
+
+.hoja-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.check-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* Mantenimientos */
+.mantenimientos-table,
+.mantenimientos-list-card .sga-table {
+  min-width: 1100px;
+}
+
+/* Evidencias */
+.evidencias-grid,
+.gallery-grid,
+.evidencias-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.evidencia-card,
+.gallery-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.evidencia-card img,
+.gallery-card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Reportes */
+.reportes-grid,
+.exportaciones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 1280px) {
+  .categorias-layout-pro,
+  .equipos-pro-layout,
+  .equipos-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-content-pro {
+    padding: 18px 14px 80px !important;
+  }
+
+  .page-card,
+  .admin-card,
+  .module-card,
+  .empresas-form-card,
+  .empresas-table-card,
+  .equipos-pro-form-card,
+  .equipos-pro-list-card,
+  .sedes-list-card,
+  .categorias-list-card,
+  .hoja-documento {
+    border-radius: 18px;
+    padding: 18px !important;
+  }
+
+  .hoja-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .hoja-actions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+
+  .hoja-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-content-pro {
+    padding: 14px 10px 76px !important;
+  }
+
+  .page-header {
+    gap: 12px;
+  }
+
+  .page-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+}

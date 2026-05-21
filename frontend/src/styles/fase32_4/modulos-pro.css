@@ -1,0 +1,251 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Optimización módulo por módulo - Base visual global
+   Archivo: frontend/src/styles/fase32_4/modulos-pro.css
+   ============================================================ */
+
+:root {
+  --sga-blue-950: #07183f;
+  --sga-blue-900: #0f2363;
+  --sga-blue-800: #172554;
+  --sga-blue-700: #1d4ed8;
+  --sga-blue-600: #2563eb;
+  --sga-cyan-500: #06b6d4;
+  --sga-bg: #f5f8ff;
+  --sga-card: #ffffff;
+  --sga-border: #dbe4f0;
+  --sga-border-soft: #e8eef8;
+  --sga-text: #172554;
+  --sga-muted: #64748b;
+  --sga-shadow: 0 20px 50px rgba(15, 35, 99, 0.08);
+  --sga-shadow-soft: 0 12px 30px rgba(15, 35, 99, 0.06);
+  --sga-radius-xl: 24px;
+  --sga-radius-lg: 18px;
+  --sga-radius-md: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: var(--sga-bg);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================
+   Encabezados de página
+   ============================================================ */
+
+.page-header,
+.modulo-header,
+.admin-page-header,
+.cliente-header,
+.tecnico-header,
+.coordinador-header {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.page-header > div,
+.modulo-header > div,
+.admin-page-header > div,
+.cliente-header > div,
+.tecnico-header > div,
+.coordinador-header > div {
+  min-width: 0;
+}
+
+.page-header h1,
+.modulo-header h1,
+.admin-page-header h1,
+.cliente-header h1,
+.tecnico-header h1,
+.coordinador-header h1 {
+  margin: 0;
+  color: var(--sga-text);
+  font-size: clamp(1.35rem, 2vw, 2rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.page-header p,
+.modulo-header p,
+.admin-page-header p,
+.cliente-header p,
+.tecnico-header p,
+.coordinador-header p {
+  margin: 6px 0 0;
+  color: var(--sga-muted);
+  font-size: clamp(0.85rem, 1.2vw, 0.98rem);
+  line-height: 1.45;
+}
+
+/* ============================================================
+   Cards base reutilizables
+   ============================================================ */
+
+.page-card,
+.admin-card,
+.module-card,
+.modulo-card,
+.crud-card,
+.list-card,
+.form-card,
+.empresas-form-card,
+.empresas-table-card,
+.sedes-list-card,
+.categorias-list-card,
+.equipos-pro-form-card,
+.equipos-pro-list-card,
+.mantenimientos-card,
+.evidencias-card,
+.reportes-card,
+.cliente-card,
+.tecnico-card,
+.coordinador-card {
+  background: var(--sga-card);
+  border: 1px solid rgba(219, 228, 240, 0.85);
+  border-radius: var(--sga-radius-xl);
+  box-shadow: var(--sga-shadow);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.page-card,
+.admin-card,
+.module-card,
+.modulo-card,
+.crud-card,
+.list-card,
+.form-card {
+  padding: clamp(18px, 2.2vw, 28px);
+}
+
+/* ============================================================
+   Grids PRO: se adaptan sin romper formularios ni tablas
+   ============================================================ */
+
+.crud-grid,
+.empresas-pro-grid,
+.equipos-pro-layout,
+.equipos-layout,
+.categorias-layout-pro,
+.sedes-layout-pro,
+.mantenimientos-layout-pro,
+.evidencias-layout-pro,
+.reportes-layout-pro,
+.cliente-layout-grid,
+.tecnico-layout-grid,
+.coordinador-layout-grid {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.crud-grid,
+.empresas-pro-grid,
+.equipos-pro-layout,
+.equipos-layout,
+.categorias-layout-pro,
+.sedes-layout-pro,
+.mantenimientos-layout-pro,
+.evidencias-layout-pro,
+.reportes-layout-pro {
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+}
+
+@media (max-width: 1280px) {
+  .crud-grid,
+  .empresas-pro-grid,
+  .equipos-pro-layout,
+  .equipos-layout,
+  .categorias-layout-pro,
+  .sedes-layout-pro,
+  .mantenimientos-layout-pro,
+  .evidencias-layout-pro,
+  .reportes-layout-pro {
+    grid-template-columns: 1fr;
+  }
+
+  .empresas-form-card,
+  .form-card,
+  .crud-form-card {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+/* ============================================================
+   KPI / cards de dashboard
+   ============================================================ */
+
+.kpi-grid,
+.stats-grid,
+.metric-grid,
+.dashboard-grid,
+.cliente-kpi-grid,
+.tecnico-kpi-grid,
+.coordinador-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.metric-card,
+.kpi-card,
+.dashboard-card,
+.stat-card,
+.cliente-stat-card,
+.tecnico-stat-card,
+.coordinador-stat-card {
+  min-width: 0;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid rgba(219, 228, 240, 0.85);
+  box-shadow: var(--sga-shadow-soft);
+  padding: clamp(16px, 2vw, 22px);
+  overflow: hidden;
+}
+
+.metric-card strong,
+.kpi-card strong,
+.dashboard-card strong,
+.stat-card strong {
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,211 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Formularios, filtros, modales y botones responsive
+   Archivo: frontend/src/styles/fase32_4/formularios-pro.css
+   ============================================================ */
+
+.crud-form,
+.form-grid,
+.admin-form,
+.cliente-form,
+.tecnico-form,
+.coordinador-form,
+.empresas-form-card .crud-form,
+.equipos-pro-form,
+.equipos-form-grid,
+.hoja-form,
+.mantenimientos-form,
+.evidencias-form,
+.reportes-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.form-group,
+.field-group,
+.input-group {
+  min-width: 0;
+}
+
+.form-group.full,
+.field-group.full,
+.input-group.full,
+.full {
+  grid-column: 1 / -1;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea,
+.field-group input,
+.field-group select,
+.field-group textarea,
+.input-group input,
+.input-group select,
+.input-group textarea,
+input.equipos-search,
+.empresas-toolbar-pro input,
+.search-input,
+.filter-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.form-actions,
+.modal-actions,
+.toolbar-actions,
+.filter-actions,
+.action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success,
+.sga-btn,
+.sga-btn-primary,
+.sga-btn-secondary,
+.icon-btn {
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.filters-grid,
+.filter-grid,
+.toolbar-grid,
+.mantenimientos-filters,
+.evidencias-filters,
+.reportes-filters,
+.cliente-filters,
+.tecnico-filters,
+.coordinador-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+
+.list-header,
+.equipos-toolbar,
+.empresas-toolbar-pro,
+.module-toolbar,
+.page-toolbar,
+.crud-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.list-header > *,
+.equipos-toolbar > *,
+.empresas-toolbar-pro > *,
+.module-toolbar > *,
+.page-toolbar > *,
+.crud-toolbar > * {
+  min-width: 0;
+}
+
+.modal-backdrop {
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.modal-card,
+.sga-modal,
+.modal-content,
+.dialog-card {
+  width: min(100%, 560px) !important;
+  max-width: 100% !important;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  border-radius: 24px;
+}
+
+@media (max-width: 900px) {
+  .crud-form,
+  .form-grid,
+  .admin-form,
+  .cliente-form,
+  .tecnico-form,
+  .coordinador-form,
+  .empresas-form-card .crud-form,
+  .equipos-pro-form,
+  .equipos-form-grid,
+  .hoja-form,
+  .mantenimientos-form,
+  .evidencias-form,
+  .reportes-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions,
+  .modal-actions,
+  .toolbar-actions,
+  .filter-actions,
+  .action-row {
+    justify-content: stretch;
+  }
+
+  .form-actions button,
+  .modal-actions button,
+  .toolbar-actions button,
+  .filter-actions button,
+  .action-row button,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-success,
+  .sga-btn,
+  .sga-btn-primary,
+  .sga-btn-secondary {
+    width: 100%;
+  }
+
+  .list-header,
+  .equipos-toolbar,
+  .empresas-toolbar-pro,
+  .module-toolbar,
+  .page-toolbar,
+  .crud-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .equipos-toolbar input,
+  .empresas-toolbar-pro input,
+  .module-toolbar input,
+  .page-toolbar input,
+  .crud-toolbar input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-backdrop {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .modal-card,
+  .sga-modal,
+  .modal-content,
+  .dialog-card {
+    border-radius: 18px;
+    padding: 18px !important;
+  }
+}

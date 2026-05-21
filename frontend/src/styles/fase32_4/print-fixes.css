@@ -1,0 +1,63 @@
+/* ============================================================
+   SGA SaaS PRO - FASE 32.4
+   Ajustes impresión PDF / hoja de vida / reportes
+   Archivo: frontend/src/styles/fase32_4/print-fixes.css
+   ============================================================ */
+
+@media print {
+  body {
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  .sga-sidebar,
+  .mobile-topbar,
+  .sga-mobile-overlay,
+  .no-print,
+  .form-actions,
+  .page-toolbar,
+  .module-toolbar,
+  .pagination,
+  .sga-pagination {
+    display: none !important;
+  }
+
+  .admin-layout-pro,
+  .admin-content-pro,
+  .cliente-layout,
+  .cliente-content,
+  .tecnico-layout,
+  .tecnico-content,
+  .coordinador-layout,
+  .coordinador-content {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .page-card,
+  .admin-card,
+  .module-card,
+  .hoja-documento,
+  .reportes-card {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .table-wrap,
+  .table-responsive,
+  .sga-table-wrap {
+    overflow: visible !important;
+  }
+
+  .sga-table,
+  table.sga-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 11px !important;
+  }
+}
