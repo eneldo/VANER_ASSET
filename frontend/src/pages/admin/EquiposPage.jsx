@@ -13,6 +13,10 @@ import {
   Save,
   ChevronRight,
   ChevronLeft,
+  FileText,
+  UploadCloud,
+  Download,
+  Printer,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -80,10 +84,10 @@ function getToken() {
   return localStorage.getItem("access_token") || localStorage.getItem("token");
 }
 
-function authHeaders() {
+function authHeaders(json = true) {
   const token = getToken();
   return {
-    "Content-Type": "application/json",
+    ...(json ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -112,13 +116,14 @@ function criticidadClass(valor) {
 
 function limpiarPayload(obj) {
   const data = {};
-
   Object.entries(obj).forEach(([key, value]) => {
-    if (value === "") data[key] = null;
-    else data[key] = value;
+    data[key] = value === "" ? null : value;
   });
-
   return data;
+}
+
+function boolText(value) {
+  return value ? "Sí" : "No";
 }
 
 export default function EquiposPage() {
@@ -140,7 +145,14 @@ export default function EquiposPage() {
   const [hojaForm, setHojaForm] = useState(hojaInicial);
   const [equipoCreadoId, setEquipoCreadoId] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+
   const [detalle, setDetalle] = useState(null);
+  const [hojaCompleta, setHojaCompleta] = useState(null);
+  const [cargandoHoja, setCargandoHoja] = useState(false);
+
+  const [modalImportar, setModalImportar] = useState(false);
+  const [archivoImportar, setArchivoImportar] = useState(null);
+  const [resultadoImportacion, setResultadoImportacion] = useState(null);
 
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -162,28 +174,19 @@ export default function EquiposPage() {
   };
 
   const cargarEquipos = async () => {
-    try {
-      setLoading(true);
-      setError("");
+    const response = await fetch(`${API_URL}/equipos/`, {
+      headers: authHeaders(),
+    });
 
-      const response = await fetch(`${API_URL}/equipos/`, {
-        headers: authHeaders(),
-      });
+    if (!response.ok) throw new Error("Error cargando equipos.");
 
-      if (!response.ok) throw new Error("Error cargando equipos.");
-
-      setEquipos(await response.json());
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Error cargando equipos.");
-    } finally {
-      setLoading(false);
-    }
+    setEquipos(await response.json());
   };
 
   const cargarTodo = async () => {
     try {
       setLoading(true);
+      setError("");
       await Promise.all([cargarCatalogos(), cargarEquipos()]);
     } catch (err) {
       console.error(err);
@@ -222,10 +225,7 @@ export default function EquiposPage() {
     });
   }, [equipos, busqueda]);
 
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(equiposFiltrados.length / equiposPorPagina)
-  );
+  const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / equiposPorPagina));
 
   const equiposPaginados = equiposFiltrados.slice(
     (paginaActual - 1) * equiposPorPagina,
@@ -234,12 +234,8 @@ export default function EquiposPage() {
 
   const totalEquipos = equipos.length;
   const operativos = equipos.filter((e) => e.estado === "OPERATIVO").length;
-  const mantenimiento = equipos.filter(
-    (e) => e.estado === "EN_MANTENIMIENTO"
-  ).length;
-  const fueraServicio = equipos.filter(
-    (e) => e.estado === "FUERA_DE_SERVICIO"
-  ).length;
+  const mantenimiento = equipos.filter((e) => e.estado === "EN_MANTENIMIENTO").length;
+  const fueraServicio = equipos.filter((e) => e.estado === "FUERA_DE_SERVICIO").length;
 
   const abrirNuevoEquipo = () => {
     setModalAbierto(true);
@@ -289,6 +285,7 @@ export default function EquiposPage() {
 
   const guardarPaso1 = async () => {
     const validacion = validarPaso1();
+
     if (validacion) {
       setError(validacion);
       return;
@@ -300,10 +297,7 @@ export default function EquiposPage() {
       setMensaje("");
 
       const payload = limpiarPayload(equipoForm);
-
-      const url = editandoId
-        ? `${API_URL}/equipos/${editandoId}`
-        : `${API_URL}/equipos/`;
+      const url = editandoId ? `${API_URL}/equipos/${editandoId}` : `${API_URL}/equipos/`;
 
       const response = await fetch(url, {
         method: editandoId ? "PUT" : "POST",
@@ -359,10 +353,7 @@ export default function EquiposPage() {
       if (!response.ok) {
         const data = await response.json().catch(() => null);
 
-        if (
-          response.status === 400 &&
-          String(data?.detail || "").includes("ya tiene hoja")
-        ) {
+        if (response.status === 400 && String(data?.detail || "").includes("ya tiene hoja")) {
           setMensaje("El equipo ya tenía hoja de vida técnica registrada.");
           cerrarModal();
           await cargarEquipos();
@@ -418,6 +409,7 @@ export default function EquiposPage() {
 
     try {
       setSaving(true);
+      setError("");
 
       const response = await fetch(`${API_URL}/equipos/${equipo.id}`, {
         method: "DELETE",
@@ -439,6 +431,72 @@ export default function EquiposPage() {
     }
   };
 
+  const verHojaVidaCompleta = async (equipo) => {
+    try {
+      setCargandoHoja(true);
+      setError("");
+      setHojaCompleta(null);
+
+      const response = await fetch(`${API_URL}/equipo-hoja-vida/equipo/${equipo.id}/completa`, {
+        headers: authHeaders(),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.detail || "No fue posible cargar la hoja de vida.");
+      }
+
+      setHojaCompleta(await response.json());
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error cargando hoja de vida.");
+    } finally {
+      setCargandoHoja(false);
+    }
+  };
+
+  const imprimirHojaVida = () => {
+    window.print();
+  };
+
+  const importarInventario = async () => {
+    if (!archivoImportar) {
+      setError("Selecciona un archivo Excel o CSV.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMensaje("");
+      setResultadoImportacion(null);
+
+      const formData = new FormData();
+      formData.append("archivo", archivoImportar);
+
+      const response = await fetch(`${API_URL}/equipos/importar`, {
+        method: "POST",
+        headers: authHeaders(false),
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.detail || "No fue posible importar el inventario.");
+      }
+
+      setResultadoImportacion(data);
+      setMensaje(`Importación finalizada. Equipos creados: ${data.creados || 0}.`);
+      await cargarEquipos();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error importando inventario.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const nombreEmpresa = (id) =>
     empresas.find((e) => String(e.id) === String(id))?.nombre || "N/A";
 
@@ -448,19 +506,30 @@ export default function EquiposPage() {
   const nombreCategoria = (id) =>
     categorias.find((c) => String(c.id) === String(id))?.nombre || "Sin categoría";
 
+  const equipoHV = hojaCompleta?.equipo_basico || {};
+  const encabezadoHV = hojaCompleta?.encabezado || {};
+  const tecnicaHV = hojaCompleta?.hoja_vida_tecnica || {};
+
   return (
     <AdminLayout>
       <div className="equipos-enterprise-page">
         <div className="enterprise-header">
           <div>
             <h1>Inventario de Equipos</h1>
-            <p>Gestión empresarial de activos, mantenimiento y criticidad.</p>
+            <p>Gestión empresarial de activos, hoja de vida, mantenimiento e importación masiva.</p>
           </div>
 
-          <button className="btn-primary-enterprise" onClick={abrirNuevoEquipo}>
-            <Plus size={18} />
-            Nuevo Equipo
-          </button>
+          <div className="enterprise-header-actions">
+            <button className="btn-secondary-enterprise" onClick={() => setModalImportar(true)}>
+              <UploadCloud size={18} />
+              Importar Excel/CSV
+            </button>
+
+            <button className="btn-primary-enterprise" onClick={abrirNuevoEquipo}>
+              <Plus size={18} />
+              Nuevo Equipo
+            </button>
+          </div>
         </div>
 
         {mensaje && <div className="enterprise-alert success">{mensaje}</div>}
@@ -468,43 +537,23 @@ export default function EquiposPage() {
 
         <div className="enterprise-kpis">
           <div className="enterprise-kpi-card">
-            <div className="kpi-icon blue">
-              <MonitorCog size={28} />
-            </div>
-            <div>
-              <h3>Total Equipos</h3>
-              <h2>{totalEquipos}</h2>
-            </div>
+            <div className="kpi-icon blue"><MonitorCog size={28} /></div>
+            <div><h3>Total Equipos</h3><h2>{totalEquipos}</h2></div>
           </div>
 
           <div className="enterprise-kpi-card">
-            <div className="kpi-icon green">
-              <CircleCheckBig size={28} />
-            </div>
-            <div>
-              <h3>Operativos</h3>
-              <h2>{operativos}</h2>
-            </div>
+            <div className="kpi-icon green"><CircleCheckBig size={28} /></div>
+            <div><h3>Operativos</h3><h2>{operativos}</h2></div>
           </div>
 
           <div className="enterprise-kpi-card">
-            <div className="kpi-icon orange">
-              <RefreshCw size={28} />
-            </div>
-            <div>
-              <h3>Mantenimiento</h3>
-              <h2>{mantenimiento}</h2>
-            </div>
+            <div className="kpi-icon orange"><RefreshCw size={28} /></div>
+            <div><h3>Mantenimiento</h3><h2>{mantenimiento}</h2></div>
           </div>
 
           <div className="enterprise-kpi-card">
-            <div className="kpi-icon red">
-              <ShieldAlert size={28} />
-            </div>
-            <div>
-              <h3>Fuera Servicio</h3>
-              <h2>{fueraServicio}</h2>
-            </div>
+            <div className="kpi-icon red"><ShieldAlert size={28} /></div>
+            <div><h3>Fuera Servicio</h3><h2>{fueraServicio}</h2></div>
           </div>
         </div>
 
@@ -542,19 +591,9 @@ export default function EquiposPage() {
 
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan="10">
-                    <div className="loading-enterprise">Cargando equipos...</div>
-                  </td>
-                </tr>
+                <tr><td colSpan="10"><div className="loading-enterprise">Cargando equipos...</div></td></tr>
               ) : equiposPaginados.length === 0 ? (
-                <tr>
-                  <td colSpan="10">
-                    <div className="empty-enterprise">
-                      No existen equipos registrados.
-                    </div>
-                  </td>
-                </tr>
+                <tr><td colSpan="10"><div className="empty-enterprise">No existen equipos registrados.</div></td></tr>
               ) : (
                 equiposPaginados.map((equipo) => (
                   <tr key={equipo.id}>
@@ -562,9 +601,7 @@ export default function EquiposPage() {
 
                     <td>
                       <div className="equipo-cell">
-                        <div className="equipo-avatar">
-                          <MonitorCog size={18} />
-                        </div>
+                        <div className="equipo-avatar"><MonitorCog size={18} /></div>
                         <div>
                           <strong>{equipo.nombre}</strong>
                           <span>{equipo.ubicacion || "Sin ubicación"}</span>
@@ -585,38 +622,26 @@ export default function EquiposPage() {
                     </td>
 
                     <td>
-                      <span
-                        className={`criticidad-badge ${criticidadClass(
-                          equipo.criticidad
-                        )}`}
-                      >
+                      <span className={`criticidad-badge ${criticidadClass(equipo.criticidad)}`}>
                         {equipo.criticidad || "MEDIA"}
                       </span>
                     </td>
 
                     <td>
                       <div className="acciones-enterprise">
-                        <button
-                          className="btn-action blue"
-                          onClick={() => setDetalle(equipo)}
-                          title="Ver"
-                        >
+                        <button className="btn-action blue" onClick={() => setDetalle(equipo)} title="Ver detalle">
                           <Eye size={16} />
                         </button>
 
-                        <button
-                          className="btn-action orange"
-                          onClick={() => editarEquipo(equipo)}
-                          title="Editar"
-                        >
+                        <button className="btn-action purple" onClick={() => verHojaVidaCompleta(equipo)} title="Hoja de vida completa">
+                          <FileText size={16} />
+                        </button>
+
+                        <button className="btn-action orange" onClick={() => editarEquipo(equipo)} title="Editar">
                           <Pencil size={16} />
                         </button>
 
-                        <button
-                          className="btn-action red"
-                          onClick={() => eliminarEquipo(equipo)}
-                          title="Eliminar"
-                        >
+                        <button className="btn-action red" onClick={() => eliminarEquipo(equipo)} title="Eliminar">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -629,23 +654,13 @@ export default function EquiposPage() {
         </div>
 
         <div className="enterprise-pagination">
-          <button
-            disabled={paginaActual === 1}
-            onClick={() => setPaginaActual((prev) => Math.max(1, prev - 1))}
-          >
+          <button disabled={paginaActual === 1} onClick={() => setPaginaActual((prev) => Math.max(1, prev - 1))}>
             Anterior
           </button>
 
-          <span>
-            Página {paginaActual} de {totalPaginas}
-          </span>
+          <span>Página {paginaActual} de {totalPaginas}</span>
 
-          <button
-            disabled={paginaActual === totalPaginas}
-            onClick={() =>
-              setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))
-            }
-          >
+          <button disabled={paginaActual === totalPaginas} onClick={() => setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))}>
             Siguiente
           </button>
         </div>
@@ -657,163 +672,76 @@ export default function EquiposPage() {
                 <div>
                   <span>Registro en dos pasos</span>
                   <h2>{editandoId ? "Editar equipo" : "Nuevo equipo"}</h2>
-                  <p>
-                    Paso {paso} de 2 ·{" "}
-                    {paso === 1 ? "Datos básicos" : "Hoja de vida técnica"}
-                  </p>
+                  <p>Paso {paso} de 2 · {paso === 1 ? "Datos básicos" : "Hoja de vida técnica"}</p>
                 </div>
 
-                <button className="modal-close" onClick={cerrarModal}>
-                  <X size={22} />
-                </button>
+                <button className="modal-close" onClick={cerrarModal}><X size={22} /></button>
               </div>
 
               <div className="enterprise-steps">
-                <button className={paso === 1 ? "active" : ""} onClick={() => setPaso(1)}>
-                  1. Datos básicos
-                </button>
-                <button
-                  className={paso === 2 ? "active" : ""}
-                  disabled={!equipoCreadoId && !editandoId}
-                  onClick={() => setPaso(2)}
-                >
+                <button className={paso === 1 ? "active" : ""} onClick={() => setPaso(1)}>1. Datos básicos</button>
+                <button className={paso === 2 ? "active" : ""} disabled={!equipoCreadoId && !editandoId} onClick={() => setPaso(2)}>
                   2. Hoja de vida
                 </button>
               </div>
 
               {paso === 1 && (
                 <div className="enterprise-form-grid">
-                  <label>
-                    Empresa *
-                    <select
-                      name="empresa_id"
-                      value={equipoForm.empresa_id}
-                      onChange={handleEquipoChange}
-                    >
+                  <label>Empresa *
+                    <select name="empresa_id" value={equipoForm.empresa_id} onChange={handleEquipoChange}>
                       <option value="">Seleccionar empresa</option>
-                      {empresas.map((empresa) => (
-                        <option key={empresa.id} value={empresa.id}>
-                          {empresa.nombre}
-                        </option>
-                      ))}
+                      {empresas.map((empresa) => <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>)}
                     </select>
                   </label>
 
-                  <label>
-                    Sede *
-                    <select
-                      name="sede_id"
-                      value={equipoForm.sede_id}
-                      onChange={handleEquipoChange}
-                      disabled={!equipoForm.empresa_id}
-                    >
+                  <label>Sede *
+                    <select name="sede_id" value={equipoForm.sede_id} onChange={handleEquipoChange} disabled={!equipoForm.empresa_id}>
                       <option value="">Seleccionar sede</option>
-                      {sedesFiltradas.map((sede) => (
-                        <option key={sede.id} value={sede.id}>
-                          {sede.nombre}
-                        </option>
-                      ))}
+                      {sedesFiltradas.map((sede) => <option key={sede.id} value={sede.id}>{sede.nombre}</option>)}
                     </select>
                   </label>
 
-                  <label>
-                    Categoría
-                    <select
-                      name="categoria_id"
-                      value={equipoForm.categoria_id}
-                      onChange={handleEquipoChange}
-                    >
+                  <label>Categoría
+                    <select name="categoria_id" value={equipoForm.categoria_id} onChange={handleEquipoChange}>
                       <option value="">Sin categoría</option>
-                      {categorias.map((categoria) => (
-                        <option key={categoria.id} value={categoria.id}>
-                          {categoria.nombre}
-                        </option>
-                      ))}
+                      {categorias.map((categoria) => <option key={categoria.id} value={categoria.id}>{categoria.nombre}</option>)}
                     </select>
                   </label>
 
-                  <label>
-                    Nombre del equipo *
-                    <input
-                      name="nombre"
-                      value={equipoForm.nombre}
-                      onChange={handleEquipoChange}
-                      placeholder="Ej: Aire acondicionado Habitación 201"
-                    />
+                  <label>Nombre del equipo *
+                    <input name="nombre" value={equipoForm.nombre} onChange={handleEquipoChange} placeholder="Ej: Aire acondicionado Habitación 201" />
                   </label>
 
-                  <label>
-                    Código ID
-                    <input
-                      name="codigo_id"
-                      value={equipoForm.codigo_id}
-                      onChange={handleEquipoChange}
-                      placeholder="Código interno"
-                    />
+                  <label>Código ID
+                    <input name="codigo_id" value={equipoForm.codigo_id} onChange={handleEquipoChange} placeholder="Código interno" />
                   </label>
 
-                  <label>
-                    Inventario
-                    <input
-                      name="inventario"
-                      value={equipoForm.inventario}
-                      onChange={handleEquipoChange}
-                      placeholder="Código físico/institucional"
-                    />
+                  <label>Inventario
+                    <input name="inventario" value={equipoForm.inventario} onChange={handleEquipoChange} placeholder="Código físico/institucional" />
                   </label>
 
-                  <label>
-                    Marca
-                    <input
-                      name="marca"
-                      value={equipoForm.marca}
-                      onChange={handleEquipoChange}
-                    />
+                  <label>Marca
+                    <input name="marca" value={equipoForm.marca} onChange={handleEquipoChange} />
                   </label>
 
-                  <label>
-                    Modelo
-                    <input
-                      name="modelo"
-                      value={equipoForm.modelo}
-                      onChange={handleEquipoChange}
-                    />
+                  <label>Modelo
+                    <input name="modelo" value={equipoForm.modelo} onChange={handleEquipoChange} />
                   </label>
 
-                  <label>
-                    Serie
-                    <input
-                      name="serie"
-                      value={equipoForm.serie}
-                      onChange={handleEquipoChange}
-                    />
+                  <label>Serie
+                    <input name="serie" value={equipoForm.serie} onChange={handleEquipoChange} />
                   </label>
 
-                  <label>
-                    Ubicación
-                    <input
-                      name="ubicacion"
-                      value={equipoForm.ubicacion}
-                      onChange={handleEquipoChange}
-                    />
+                  <label>Ubicación
+                    <input name="ubicacion" value={equipoForm.ubicacion} onChange={handleEquipoChange} />
                   </label>
 
-                  <label>
-                    INVIMA
-                    <input
-                      name="invima"
-                      value={equipoForm.invima}
-                      onChange={handleEquipoChange}
-                    />
+                  <label>INVIMA
+                    <input name="invima" value={equipoForm.invima} onChange={handleEquipoChange} />
                   </label>
 
-                  <label>
-                    Estado
-                    <select
-                      name="estado"
-                      value={equipoForm.estado}
-                      onChange={handleEquipoChange}
-                    >
+                  <label>Estado
+                    <select name="estado" value={equipoForm.estado} onChange={handleEquipoChange}>
                       <option value="OPERATIVO">Operativo</option>
                       <option value="EN_MANTENIMIENTO">En mantenimiento</option>
                       <option value="FUERA_DE_SERVICIO">Fuera de servicio</option>
@@ -821,13 +749,8 @@ export default function EquiposPage() {
                     </select>
                   </label>
 
-                  <label>
-                    Criticidad
-                    <select
-                      name="criticidad"
-                      value={equipoForm.criticidad}
-                      onChange={handleEquipoChange}
-                    >
+                  <label>Criticidad
+                    <select name="criticidad" value={equipoForm.criticidad} onChange={handleEquipoChange}>
                       <option value="BAJA">Baja</option>
                       <option value="MEDIA">Media</option>
                       <option value="ALTA">Alta</option>
@@ -839,82 +762,36 @@ export default function EquiposPage() {
 
               {paso === 2 && (
                 <div className="enterprise-form-grid">
-                  <label>
-                    Adquisición
-                    <input
-                      name="adquisicion"
-                      value={hojaForm.adquisicion}
-                      onChange={handleHojaChange}
-                      placeholder="Compra, donación, comodato..."
-                    />
+                  <label>Adquisición
+                    <input name="adquisicion" value={hojaForm.adquisicion} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Costo
-                    <input
-                      type="number"
-                      name="costo"
-                      value={hojaForm.costo}
-                      onChange={handleHojaChange}
-                    />
+                  <label>Costo
+                    <input type="number" name="costo" value={hojaForm.costo} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Fecha compra
-                    <input
-                      type="date"
-                      name="fecha_compra"
-                      value={hojaForm.fecha_compra}
-                      onChange={handleHojaChange}
-                    />
+                  <label>Fecha compra
+                    <input type="date" name="fecha_compra" value={hojaForm.fecha_compra} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Fecha instalación
-                    <input
-                      type="date"
-                      name="fecha_instalacion"
-                      value={hojaForm.fecha_instalacion}
-                      onChange={handleHojaChange}
-                    />
+                  <label>Fecha instalación
+                    <input type="date" name="fecha_instalacion" value={hojaForm.fecha_instalacion} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Proveedor
-                    <input
-                      name="proveedor"
-                      value={hojaForm.proveedor}
-                      onChange={handleHojaChange}
-                    />
+                  <label>Proveedor
+                    <input name="proveedor" value={hojaForm.proveedor} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    País fabricación
-                    <input
-                      name="pais_fabricacion"
-                      value={hojaForm.pais_fabricacion}
-                      onChange={handleHojaChange}
-                    />
+                  <label>País fabricación
+                    <input name="pais_fabricacion" value={hojaForm.pais_fabricacion} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Fecha fabricación
-                    <input
-                      type="date"
-                      name="fecha_fabricacion"
-                      value={hojaForm.fecha_fabricacion}
-                      onChange={handleHojaChange}
-                    />
+                  <label>Fecha fabricación
+                    <input type="date" name="fecha_fabricacion" value={hojaForm.fecha_fabricacion} onChange={handleHojaChange} />
                   </label>
 
-                  <label>
-                    Vida útil
-                    <input
-                      name="vida_util"
-                      value={hojaForm.vida_util}
-                      onChange={handleHojaChange}
-                      placeholder="Ej: 10 años"
-                    />
+                  <label>Vida útil
+                    <input name="vida_util" value={hojaForm.vida_util} onChange={handleHojaChange} placeholder="Ej: 10 años" />
                   </label>
 
                   {[
@@ -929,23 +806,13 @@ export default function EquiposPage() {
                     ["frecuencia", "Frecuencia"],
                     ["rango_humedad", "Rango humedad"],
                   ].map(([name, label]) => (
-                    <label key={name}>
-                      {label}
-                      <input
-                        name={name}
-                        value={hojaForm[name]}
-                        onChange={handleHojaChange}
-                      />
+                    <label key={name}>{label}
+                      <input name={name} value={hojaForm[name]} onChange={handleHojaChange} />
                     </label>
                   ))}
 
-                  <label className="full">
-                    Otros
-                    <textarea
-                      name="otros"
-                      value={hojaForm.otros}
-                      onChange={handleHojaChange}
-                    />
+                  <label className="full">Otros
+                    <textarea name="otros" value={hojaForm.otros} onChange={handleHojaChange} />
                   </label>
 
                   <div className="check-section full">
@@ -972,12 +839,7 @@ export default function EquiposPage() {
                         ["riesgo_elevado", "Riesgo elevado"],
                       ].map(([name, label]) => (
                         <label key={name} className="check-item">
-                          <input
-                            type="checkbox"
-                            name={name}
-                            checked={Boolean(hojaForm[name])}
-                            onChange={handleHojaChange}
-                          />
+                          <input type="checkbox" name={name} checked={Boolean(hojaForm[name])} onChange={handleHojaChange} />
                           {label}
                         </label>
                       ))}
@@ -987,40 +849,80 @@ export default function EquiposPage() {
               )}
 
               <div className="enterprise-modal-actions">
-                <button className="btn-secondary-enterprise" onClick={cerrarModal}>
-                  <X size={18} />
-                  Cancelar
-                </button>
+                <button className="btn-secondary-enterprise" onClick={cerrarModal}><X size={18} />Cancelar</button>
 
                 {paso === 2 && (
-                  <button
-                    className="btn-secondary-enterprise"
-                    onClick={() => setPaso(1)}
-                  >
-                    <ChevronLeft size={18} />
-                    Atrás
+                  <button className="btn-secondary-enterprise" onClick={() => setPaso(1)}>
+                    <ChevronLeft size={18} />Atrás
                   </button>
                 )}
 
                 {paso === 1 ? (
-                  <button
-                    className="btn-primary-enterprise"
-                    onClick={guardarPaso1}
-                    disabled={saving}
-                  >
-                    <ChevronRight size={18} />
-                    {saving ? "Guardando..." : "Guardar y continuar"}
+                  <button className="btn-primary-enterprise" onClick={guardarPaso1} disabled={saving}>
+                    <ChevronRight size={18} />{saving ? "Guardando..." : "Guardar y continuar"}
                   </button>
                 ) : (
-                  <button
-                    className="btn-primary-enterprise"
-                    onClick={guardarHojaVida}
-                    disabled={saving}
-                  >
-                    <Save size={18} />
-                    {saving ? "Guardando..." : "Finalizar hoja de vida"}
+                  <button className="btn-primary-enterprise" onClick={guardarHojaVida} disabled={saving}>
+                    <Save size={18} />{saving ? "Guardando..." : "Finalizar hoja de vida"}
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {modalImportar && (
+          <div className="enterprise-modal-backdrop">
+            <div className="enterprise-modal small">
+              <div className="enterprise-modal-header">
+                <div>
+                  <span>Importación masiva</span>
+                  <h2>Importar inventario Excel/CSV</h2>
+                  <p>Columnas requeridas: codigo_inventario, nombre, empresa, sede, categoria, marca, modelo, serie, ubicacion, estado, criticidad.</p>
+                </div>
+
+                <button className="modal-close" onClick={() => setModalImportar(false)}>
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div className="import-box">
+                <UploadCloud size={42} />
+                <strong>Selecciona un archivo .xlsx, .xls o .csv</strong>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setArchivoImportar(e.target.files?.[0] || null)}
+                />
+                {archivoImportar && <span>{archivoImportar.name}</span>}
+              </div>
+
+              {resultadoImportacion && (
+                <div className="import-result">
+                  <h3>Resultado</h3>
+                  <p><strong>Creados:</strong> {resultadoImportacion.creados || 0}</p>
+
+                  {resultadoImportacion.errores?.length > 0 && (
+                    <div>
+                      <strong>Errores:</strong>
+                      <ul>
+                        {resultadoImportacion.errores.map((err, index) => (
+                          <li key={index}>Fila {err.fila}: {err.error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="enterprise-modal-actions">
+                <button className="btn-secondary-enterprise" onClick={() => setModalImportar(false)}>
+                  <X size={18} />Cerrar
+                </button>
+
+                <button className="btn-primary-enterprise" onClick={importarInventario} disabled={saving}>
+                  <UploadCloud size={18} />{saving ? "Importando..." : "Importar inventario"}
+                </button>
               </div>
             </div>
           </div>
@@ -1051,6 +953,125 @@ export default function EquiposPage() {
                 <p><strong>Estado:</strong> {textoEstado(detalle.estado)}</p>
                 <p><strong>Criticidad:</strong> {detalle.criticidad}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {(hojaCompleta || cargandoHoja) && (
+          <div className="enterprise-modal-backdrop hoja-modal-wrap">
+            <div className="enterprise-modal hoja-modal">
+              <div className="enterprise-modal-header no-print">
+                <div>
+                  <span>Hoja de vida completa</span>
+                  <h2>{cargandoHoja ? "Cargando..." : equipoHV.nombre}</h2>
+                  <p>Vista profesional para impresión o descarga PDF desde el navegador.</p>
+                </div>
+
+                <div className="hoja-actions">
+                  <button className="btn-secondary-enterprise" onClick={imprimirHojaVida}>
+                    <Printer size={18} />Imprimir / PDF
+                  </button>
+
+                  <button className="btn-primary-enterprise" onClick={imprimirHojaVida}>
+                    <Download size={18} />Descargar PDF
+                  </button>
+
+                  <button className="modal-close" onClick={() => setHojaCompleta(null)}>
+                    <X size={22} />
+                  </button>
+                </div>
+              </div>
+
+              {cargandoHoja ? (
+                <div className="loading-enterprise">Cargando hoja de vida...</div>
+              ) : (
+                <div className="hoja-print-area">
+                  <div className="hoja-header">
+                    <div>
+                      <h1>HOJA DE VIDA TÉCNICA DEL EQUIPO</h1>
+                      <p>{encabezadoHV.empresa_nombre || "Empresa no registrada"}</p>
+                      <p>Sede: {encabezadoHV.sede_nombre || "N/A"}</p>
+                    </div>
+
+                    {encabezadoHV.empresa_logo_url ? (
+                      <img src={encabezadoHV.empresa_logo_url} alt="Logo empresa" />
+                    ) : (
+                      <div className="hoja-logo-placeholder">SGA</div>
+                    )}
+                  </div>
+
+                  <section className="hoja-section">
+                    <h2>1. Datos básicos</h2>
+                    <div className="hoja-grid">
+                      <p><strong>Equipo:</strong> {equipoHV.nombre || "N/A"}</p>
+                      <p><strong>Categoría:</strong> {equipoHV.categoria || "N/A"}</p>
+                      <p><strong>Marca:</strong> {equipoHV.marca || "N/A"}</p>
+                      <p><strong>Modelo:</strong> {equipoHV.modelo || "N/A"}</p>
+                      <p><strong>Serie:</strong> {equipoHV.serie || "N/A"}</p>
+                      <p><strong>Ubicación:</strong> {equipoHV.ubicacion || "N/A"}</p>
+                      <p><strong>INVIMA:</strong> {equipoHV.invima || "N/A"}</p>
+                      <p><strong>Código ID:</strong> {equipoHV.codigo_id || "N/A"}</p>
+                      <p><strong>Inventario:</strong> {equipoHV.inventario || "N/A"}</p>
+                      <p><strong>Estado:</strong> {textoEstado(equipoHV.estado)}</p>
+                      <p><strong>Criticidad:</strong> {equipoHV.criticidad || "N/A"}</p>
+                    </div>
+                  </section>
+
+                  <section className="hoja-section">
+                    <h2>2. Registro histórico</h2>
+                    <div className="hoja-grid">
+                      <p><strong>Adquisición:</strong> {tecnicaHV.adquisicion || "N/A"}</p>
+                      <p><strong>Costo:</strong> {tecnicaHV.costo || "N/A"}</p>
+                      <p><strong>Fecha compra:</strong> {tecnicaHV.fecha_compra || "N/A"}</p>
+                      <p><strong>Fecha instalación:</strong> {tecnicaHV.fecha_instalacion || "N/A"}</p>
+                      <p><strong>Proveedor:</strong> {tecnicaHV.proveedor || "N/A"}</p>
+                      <p><strong>País fabricación:</strong> {tecnicaHV.pais_fabricacion || "N/A"}</p>
+                      <p><strong>Fecha fabricación:</strong> {tecnicaHV.fecha_fabricacion || "N/A"}</p>
+                      <p><strong>Vida útil:</strong> {tecnicaHV.vida_util || "N/A"}</p>
+                      <p><strong>Requiere calibración:</strong> {boolText(tecnicaHV.requiere_calibracion)}</p>
+                    </div>
+                  </section>
+
+                  <section className="hoja-section">
+                    <h2>3. Registro técnico de funcionamiento</h2>
+                    <div className="hoja-grid">
+                      <p><strong>Voltaje:</strong> {tecnicaHV.rango_voltaje || "N/A"}</p>
+                      <p><strong>Presión:</strong> {tecnicaHV.rango_presion || "N/A"}</p>
+                      <p><strong>Gas refrigerante:</strong> {tecnicaHV.gas_refrigerante || "N/A"}</p>
+                      <p><strong>Capacidad:</strong> {tecnicaHV.capacidad || "N/A"}</p>
+                      <p><strong>Corriente:</strong> {tecnicaHV.rango_corriente || "N/A"}</p>
+                      <p><strong>Velocidad:</strong> {tecnicaHV.rango_velocidad || "N/A"}</p>
+                      <p><strong>Potencia:</strong> {tecnicaHV.rango_potencia || "N/A"}</p>
+                      <p><strong>Temperatura:</strong> {tecnicaHV.rango_temperatura || "N/A"}</p>
+                      <p><strong>Frecuencia:</strong> {tecnicaHV.frecuencia || "N/A"}</p>
+                      <p><strong>Humedad:</strong> {tecnicaHV.rango_humedad || "N/A"}</p>
+                    </div>
+                    <p className="hoja-observacion"><strong>Otros:</strong> {tecnicaHV.otros || "N/A"}</p>
+                  </section>
+
+                  <section className="hoja-section">
+                    <h2>4. Soporte técnico y clasificación</h2>
+                    <div className="hoja-grid">
+                      <p><strong>Manual operación:</strong> {boolText(tecnicaHV.manual_operacion)}</p>
+                      <p><strong>Manual mantenimiento:</strong> {boolText(tecnicaHV.manual_mantenimiento)}</p>
+                      <p><strong>Manual partes:</strong> {boolText(tecnicaHV.manual_partes)}</p>
+                      <p><strong>Manual despiece:</strong> {boolText(tecnicaHV.manual_despiece)}</p>
+                      <p><strong>Plano electrónico:</strong> {boolText(tecnicaHV.plano_electronico)}</p>
+                      <p><strong>Plano eléctrico:</strong> {boolText(tecnicaHV.plano_electrico)}</p>
+                      <p><strong>Plano neumático:</strong> {boolText(tecnicaHV.plano_neumatico)}</p>
+                      <p><strong>Plano mecánico:</strong> {boolText(tecnicaHV.plano_mecanico)}</p>
+                      <p><strong>Diagnóstico:</strong> {boolText(tecnicaHV.clase_diagnostico)}</p>
+                      <p><strong>Prevención:</strong> {boolText(tecnicaHV.clase_prevencion)}</p>
+                      <p><strong>Rehabilitación:</strong> {boolText(tecnicaHV.clase_rehabilitacion)}</p>
+                      <p><strong>Análisis:</strong> {boolText(tecnicaHV.clase_analisis)}</p>
+                      <p><strong>Riesgo bajo:</strong> {boolText(tecnicaHV.riesgo_bajo)}</p>
+                      <p><strong>Riesgo moderado:</strong> {boolText(tecnicaHV.riesgo_moderado)}</p>
+                      <p><strong>Riesgo alto:</strong> {boolText(tecnicaHV.riesgo_alto)}</p>
+                      <p><strong>Riesgo elevado:</strong> {boolText(tecnicaHV.riesgo_elevado)}</p>
+                    </div>
+                  </section>
+                </div>
+              )}
             </div>
           </div>
         )}
