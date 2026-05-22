@@ -2,18 +2,18 @@
 // PÁGINA ADMIN - USUARIOS Y PERMISOS PRO
 // Archivo: frontend/src/pages/admin/UsuariosPage.jsx
 //
-// Funciones:
-// - Crear usuarios.
-// - Asignar empresa obligatoria a EMPRESA, COORDINADOR y TECNICO.
-// - Listar, buscar, paginar, editar.
-// - Inactivar usuarios.
-// - Cambiar contraseña.
-// - Asignar permisos directos.
+// Correcciones:
+// - Evita que el módulo quede bloqueado después de crear/editar.
+// - Usa loading y guardando con finally.
+// - Recarga usuarios automáticamente.
+// - Limpia formulario después de guardar.
+// - Mantiene permisos, edición, detalle, reset password y paginación.
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
+
 import {
   Users,
   Plus,
@@ -31,11 +31,12 @@ import {
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [empresas, setEmpresas] = useState([]);
+  const [permisos, setPermisos] = useState([]);
+
   const [editandoId, setEditandoId] = useState(null);
   const [detalle, setDetalle] = useState(null);
   const [busqueda, setBusqueda] = useState("");
 
-  const [permisos, setPermisos] = useState([]);
   const [permisosUsuario, setPermisosUsuario] = useState([]);
   const [usuarioPermisos, setUsuarioPermisos] = useState(null);
 
@@ -45,6 +46,10 @@ export default function UsuariosPage() {
 
   const [pagina, setPagina] = useState(1);
   const porPagina = 6;
+
+  const [cargando, setCargando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState("");
 
   const [form, setForm] = useState({
     nombre_completo: "",
@@ -64,24 +69,31 @@ export default function UsuariosPage() {
 
   const cargarDatos = async () => {
     try {
+      setCargando(true);
+
       const [resUsuarios, resEmpresas, resPermisos] = await Promise.all([
         API.get("/usuarios/"),
         API.get("/empresas/"),
         API.get("/permisos/catalogo"),
       ]);
 
-      setUsuarios(resUsuarios.data || []);
-      setEmpresas(resEmpresas.data || []);
-      setPermisos(resPermisos.data || []);
+      setUsuarios(Array.isArray(resUsuarios.data) ? resUsuarios.data : []);
+      setEmpresas(Array.isArray(resEmpresas.data) ? resEmpresas.data : []);
+      setPermisos(Array.isArray(resPermisos.data) ? resPermisos.data : []);
     } catch (error) {
-      console.error(error);
-      alert("Error cargando usuarios o permisos");
+      console.error("Error cargando usuarios:", error);
+      setMensaje("Error cargando usuarios o permisos.");
+    } finally {
+      setCargando(false);
     }
   };
 
-  const requiereEmpresa = (rol) => {
-    return rolesQueRequierenEmpresa.includes(rol);
-  };
+  const requiereEmpresa = (rol) => rolesQueRequierenEmpresa.includes(rol);
+
+  function nombreEmpresa(empresaId) {
+    const emp = empresas.find((e) => String(e.id) === String(empresaId));
+    return emp ? emp.nombre : "N/A";
+  }
 
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
@@ -128,10 +140,10 @@ export default function UsuariosPage() {
       return;
     }
 
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const limpiarFormulario = () => {
@@ -150,19 +162,17 @@ export default function UsuariosPage() {
 
   const validarFormulario = () => {
     if (!form.nombre_completo || !form.username || !form.email) {
-      alert("Nombre, usuario y correo son obligatorios");
+      setMensaje("Nombre, usuario y correo son obligatorios.");
       return false;
     }
 
     if (!editandoId && !form.password) {
-      alert("La contraseña es obligatoria al crear usuario");
+      setMensaje("La contraseña es obligatoria al crear usuario.");
       return false;
     }
 
     if (requiereEmpresa(form.rol) && !form.empresa_id) {
-      alert(
-        `Los usuarios con rol ${form.rol} deben tener una empresa asociada.`
-      );
+      setMensaje(`Los usuarios con rol ${form.rol} deben tener una empresa asociada.`);
       return false;
     }
 
@@ -172,13 +182,17 @@ export default function UsuariosPage() {
   const guardarUsuario = async (e) => {
     e.preventDefault();
 
+    if (guardando) return;
     if (!validarFormulario()) return;
 
     try {
+      setGuardando(true);
+      setMensaje("");
+
       const payload = {
-        nombre_completo: form.nombre_completo,
-        username: form.username,
-        email: form.email,
+        nombre_completo: form.nombre_completo.trim(),
+        username: form.username.trim(),
+        email: form.email.trim(),
         rol: form.rol,
         empresa_id: form.rol === "ADMIN" ? null : form.empresa_id || null,
         activo: form.activo,
@@ -186,20 +200,25 @@ export default function UsuariosPage() {
 
       if (editandoId) {
         await API.put(`/usuarios/${editandoId}`, payload);
-        alert("Usuario actualizado correctamente");
+        setMensaje("Usuario actualizado correctamente.");
       } else {
         await API.post("/usuarios/", {
           ...payload,
           password: form.password,
         });
-        alert("Usuario creado correctamente");
+        setMensaje("Usuario creado correctamente.");
       }
 
       limpiarFormulario();
-      cargarDatos();
+      setBusqueda("");
+      setPagina(1);
+
+      await cargarDatos();
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error guardando usuario");
+      console.error("Error guardando usuario:", error);
+      setMensaje(error.response?.data?.detail || "Error guardando usuario.");
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -213,8 +232,10 @@ export default function UsuariosPage() {
       password: "",
       rol: usuario.rol || "TECNICO",
       empresa_id: usuario.empresa_id || "",
-      activo: usuario.activo,
+      activo: Boolean(usuario.activo),
     });
+
+    setMensaje("Modo edición activo.");
   };
 
   const verDetalle = (usuario) => {
@@ -223,11 +244,15 @@ export default function UsuariosPage() {
 
   const cambiarEstado = async (usuarioId) => {
     try {
+      setGuardando(true);
       await API.patch(`/usuarios/${usuarioId}/estado`);
+      setMensaje("Estado actualizado correctamente.");
       await cargarDatos();
     } catch (error) {
       console.error(error);
-      alert("Error cambiando estado");
+      setMensaje("Error cambiando estado.");
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -247,31 +272,35 @@ export default function UsuariosPage() {
     if (!usuarioPassword) return;
 
     if (!nuevaPassword || nuevaPassword.length < 6) {
-      alert("La contraseña debe tener mínimo 6 caracteres");
+      setMensaje("La contraseña debe tener mínimo 6 caracteres.");
       return;
     }
 
     if (nuevaPassword !== confirmarPassword) {
-      alert("Las contraseñas no coinciden");
+      setMensaje("Las contraseñas no coinciden.");
       return;
     }
 
     try {
+      setGuardando(true);
+
       await API.patch(`/usuarios/${usuarioPassword.id}/reset-password`, {
         nueva_password: nuevaPassword,
       });
 
-      alert(`Contraseña actualizada para ${usuarioPassword.nombre_completo}`);
+      setMensaje(`Contraseña actualizada para ${usuarioPassword.nombre_completo}.`);
       cerrarModalPassword();
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "Error cambiando contraseña");
+      setMensaje(error.response?.data?.detail || "Error cambiando contraseña.");
+    } finally {
+      setGuardando(false);
     }
   };
 
   const eliminarUsuario = async (usuario) => {
     if (!usuario?.id) {
-      alert("No se encontró el ID del usuario.");
+      setMensaje("No se encontró el ID del usuario.");
       return;
     }
 
@@ -282,9 +311,9 @@ export default function UsuariosPage() {
     if (!confirmar) return;
 
     try {
-      await API.delete(`/usuarios/${usuario.id}`);
+      setGuardando(true);
 
-      alert("Usuario eliminado/inactivado correctamente");
+      await API.delete(`/usuarios/${usuario.id}`);
 
       const nuevaCantidad = usuariosFiltrados.length - 1;
       const nuevaTotalPaginas = Math.ceil(nuevaCantidad / porPagina) || 1;
@@ -293,30 +322,30 @@ export default function UsuariosPage() {
         setPagina(nuevaTotalPaginas);
       }
 
+      setMensaje("Usuario eliminado/inactivado correctamente.");
       await cargarDatos();
     } catch (error) {
       console.error("Error eliminando/inactivando usuario:", error);
-
-      alert(
+      setMensaje(
         error?.response?.data?.detail ||
-          "No fue posible eliminar/inactivar el usuario"
+          "No fue posible eliminar/inactivar el usuario."
       );
+    } finally {
+      setGuardando(false);
     }
   };
 
   const cargarPermisosUsuario = async (usuario) => {
     try {
       setUsuarioPermisos(usuario);
+      setMensaje("");
 
       const res = await API.get(`/permisos/usuario/${usuario.id}`);
 
-      // IMPORTANTE:
-      // Solo se cargan permisos directos para evitar que el coordinador
-      // herede visualmente permisos por rol que no se quieren editar aquí.
       setPermisosUsuario(res.data?.permisos_directos || []);
     } catch (error) {
       console.error(error);
-      alert("Error cargando permisos del usuario");
+      setMensaje("Error cargando permisos del usuario.");
     }
   };
 
@@ -332,11 +361,13 @@ export default function UsuariosPage() {
 
   const guardarPermisos = async () => {
     if (!usuarioPermisos) {
-      alert("Selecciona un usuario para asignar permisos");
+      setMensaje("Selecciona un usuario para asignar permisos.");
       return;
     }
 
     try {
+      setGuardando(true);
+
       const permisoIds = permisos
         .filter((permiso) => permisosUsuario.includes(permiso.codigo))
         .map((permiso) => permiso.id);
@@ -345,14 +376,14 @@ export default function UsuariosPage() {
         permiso_ids: permisoIds,
       });
 
-      alert(
-        `✅ Permisos asignados correctamente a ${usuarioPermisos.nombre_completo}`
-      );
+      setMensaje(`Permisos asignados correctamente a ${usuarioPermisos.nombre_completo}.`);
 
       await cargarDatos();
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "Error guardando permisos");
+      setMensaje(error.response?.data?.detail || "Error guardando permisos.");
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -360,11 +391,6 @@ export default function UsuariosPage() {
     setUsuarioPermisos(null);
     setPermisosUsuario([]);
   };
-
-  function nombreEmpresa(empresaId) {
-    const emp = empresas.find((e) => String(e.id) === String(empresaId));
-    return emp ? emp.nombre : "N/A";
-  }
 
   return (
     <AdminLayout>
@@ -379,6 +405,22 @@ export default function UsuariosPage() {
         </div>
       </div>
 
+      {mensaje && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            borderRadius: 14,
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            color: "#1e3a8a",
+            fontWeight: 800,
+          }}
+        >
+          {mensaje}
+        </div>
+      )}
+
       <div className="crud-grid">
         <section className="page-card">
           <h2>{editandoId ? "Editar usuario" : "Crear usuario"}</h2>
@@ -391,6 +433,7 @@ export default function UsuariosPage() {
                 value={form.nombre_completo}
                 onChange={handleChange}
                 placeholder="Ej: Juan Pérez"
+                disabled={guardando}
               />
             </div>
 
@@ -401,6 +444,7 @@ export default function UsuariosPage() {
                 value={form.username}
                 onChange={handleChange}
                 placeholder="juanperez"
+                disabled={guardando}
               />
             </div>
 
@@ -412,6 +456,7 @@ export default function UsuariosPage() {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="correo@sga.com"
+                disabled={guardando}
               />
             </div>
 
@@ -424,13 +469,19 @@ export default function UsuariosPage() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="123456"
+                  disabled={guardando}
                 />
               </div>
             )}
 
             <div className="form-group">
               <label>Rol *</label>
-              <select name="rol" value={form.rol} onChange={handleChange}>
+              <select
+                name="rol"
+                value={form.rol}
+                onChange={handleChange}
+                disabled={guardando}
+              >
                 <option value="ADMIN">Administrador</option>
                 <option value="COORDINADOR">Coordinador</option>
                 <option value="EMPRESA">Empresa / Cliente</option>
@@ -445,6 +496,7 @@ export default function UsuariosPage() {
                   name="empresa_id"
                   value={form.empresa_id}
                   onChange={handleChange}
+                  disabled={guardando}
                 >
                   <option value="">Seleccionar empresa</option>
                   {empresas.map((empresa) => (
@@ -466,6 +518,7 @@ export default function UsuariosPage() {
                 name="activo"
                 checked={form.activo}
                 onChange={handleChange}
+                disabled={guardando}
               />
               Usuario activo
             </label>
@@ -475,14 +528,19 @@ export default function UsuariosPage() {
                 type="button"
                 className="btn-secondary"
                 onClick={limpiarFormulario}
+                disabled={guardando}
               >
                 <X size={17} />
                 Limpiar
               </button>
 
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {editandoId ? <Save size={17} /> : <Plus size={17} />}
-                {editandoId ? "Actualizar" : "Crear usuario"}
+                {guardando
+                  ? "Guardando..."
+                  : editandoId
+                  ? "Actualizar"
+                  : "Crear usuario"}
               </button>
             </div>
           </form>
@@ -492,10 +550,18 @@ export default function UsuariosPage() {
           <div className="list-header">
             <div>
               <h2>Usuarios registrados</h2>
-              <p>{usuariosFiltrados.length} registros encontrados</p>
+              <p>
+                {cargando
+                  ? "Cargando registros..."
+                  : `${usuariosFiltrados.length} registros encontrados`}
+              </p>
             </div>
 
-            <button className="btn-secondary" onClick={cargarDatos}>
+            <button
+              className="btn-secondary"
+              onClick={cargarDatos}
+              disabled={cargando || guardando}
+            >
               Recargar
             </button>
           </div>
@@ -561,6 +627,7 @@ export default function UsuariosPage() {
                           className="icon-btn"
                           onClick={() => verDetalle(usuario)}
                           title="Detalle"
+                          disabled={guardando}
                         >
                           <Eye size={16} />
                         </button>
@@ -569,6 +636,7 @@ export default function UsuariosPage() {
                           className="icon-btn"
                           onClick={() => editarUsuario(usuario)}
                           title="Editar"
+                          disabled={guardando}
                         >
                           <Pencil size={16} />
                         </button>
@@ -577,6 +645,7 @@ export default function UsuariosPage() {
                           className="icon-btn"
                           onClick={() => cargarPermisosUsuario(usuario)}
                           title="Permisos"
+                          disabled={guardando}
                         >
                           <Shield size={16} />
                         </button>
@@ -585,6 +654,7 @@ export default function UsuariosPage() {
                           className="icon-btn"
                           onClick={() => abrirModalPassword(usuario)}
                           title="Cambiar contraseña"
+                          disabled={guardando}
                         >
                           <KeyRound size={16} />
                         </button>
@@ -593,6 +663,7 @@ export default function UsuariosPage() {
                           className="icon-btn"
                           onClick={() => cambiarEstado(usuario.id)}
                           title="Activar/Inactivar"
+                          disabled={guardando}
                         >
                           <Power size={16} />
                         </button>
@@ -601,6 +672,7 @@ export default function UsuariosPage() {
                           className="icon-btn danger"
                           onClick={() => eliminarUsuario(usuario)}
                           title="Eliminar/Inactivar"
+                          disabled={guardando}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -612,7 +684,7 @@ export default function UsuariosPage() {
                 {usuariosPaginados.length === 0 && (
                   <tr>
                     <td colSpan="6" style={{ textAlign: "center", padding: 30 }}>
-                      No hay usuarios registrados.
+                      {cargando ? "Cargando usuarios..." : "No hay usuarios registrados."}
                     </td>
                   </tr>
                 )}
@@ -623,8 +695,8 @@ export default function UsuariosPage() {
           <div className="pagination">
             <button
               className="btn-secondary"
-              disabled={pagina === 1}
-              onClick={() => setPagina(pagina - 1)}
+              disabled={pagina === 1 || cargando}
+              onClick={() => setPagina((prev) => Math.max(prev - 1, 1))}
             >
               Anterior
             </button>
@@ -635,8 +707,8 @@ export default function UsuariosPage() {
 
             <button
               className="btn-secondary"
-              disabled={pagina === totalPaginas}
-              onClick={() => setPagina(pagina + 1)}
+              disabled={pagina === totalPaginas || cargando}
+              onClick={() => setPagina((prev) => Math.min(prev + 1, totalPaginas))}
             >
               Siguiente
             </button>
@@ -672,9 +744,13 @@ export default function UsuariosPage() {
                 Cerrar
               </button>
 
-              <button className="btn-primary" onClick={guardarPermisos}>
+              <button
+                className="btn-primary"
+                onClick={guardarPermisos}
+                disabled={guardando}
+              >
                 <Save size={17} />
-                Guardar permisos
+                {guardando ? "Guardando..." : "Guardar permisos"}
               </button>
             </div>
           </div>
@@ -700,9 +776,7 @@ export default function UsuariosPage() {
                           {permiso.nombre}
                         </strong>
 
-                        <code style={styles.permisoCodigo}>
-                          {permiso.codigo}
-                        </code>
+                        <code style={styles.permisoCodigo}>{permiso.codigo}</code>
 
                         <p style={styles.permisoDescripcion}>
                           {permiso.descripcion || "Sin descripción"}
@@ -790,9 +864,13 @@ export default function UsuariosPage() {
                 Cancelar
               </button>
 
-              <button className="btn-primary" onClick={guardarPassword}>
+              <button
+                className="btn-primary"
+                onClick={guardarPassword}
+                disabled={guardando}
+              >
                 <Save size={17} />
-                Guardar contraseña
+                {guardando ? "Guardando..." : "Guardar contraseña"}
               </button>
             </div>
           </div>
