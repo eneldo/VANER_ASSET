@@ -1,351 +1,394 @@
-// =========================================================
-// CATEGORÍAS PAGE - SGA PRO
-// Mantiene diseño en tarjetas como Técnicos / Equipos.
-// Incluye:
-// - AdminLayout con barra lateral
-// - CRUD categorías
-// - Búsqueda
-// - Paginación
-// - Tabla compacta
-// =========================================================
+// ============================================================
+// SGA SaaS PRO - CategoríasPage
+// Fase 33.3 - Categorías SaaS PRO
+// Módulo responsive, profesional y compatible con backend actual
+// ============================================================
 
 import { useEffect, useMemo, useState } from "react";
-import AdminLayout from "./AdminLayout";
-import API from "../../api/axios";
-
 import {
-  Tags,
+  Boxes,
+  CheckCircle2,
+  Edit3,
+  Layers3,
   Plus,
-  Save,
-  Trash2,
-  Pencil,
-  X,
   RefreshCcw,
+  Search,
+  Trash2,
+  XCircle,
 } from "lucide-react";
 
-import "../../styles/sidebar.css";
+import AdminLayout from "./AdminLayout";
+import "../../styles/categorias-tecnicos-saas-pro.css";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+const ESTADO_OPTIONS = [
+  { value: true, label: "Activa" },
+  { value: false, label: "Inactiva" },
+];
+
+const initialForm = {
+  nombre: "",
+  descripcion: "",
+  activo: true,
+};
+
+function normalizarCategoria(item) {
+  return {
+    id: item?.id,
+    nombre: item?.nombre || item?.name || "Sin nombre",
+    descripcion: item?.descripcion || item?.description || "Sin descripción",
+    activo: item?.activo ?? item?.estado ?? true,
+  };
+}
 
 export default function CategoriasPage() {
   const [categorias, setCategorias] = useState([]);
-  const [editandoId, setEditandoId] = useState(null);
-  const [cargando, setCargando] = useState(false);
-
+  const [form, setForm] = useState(initialForm);
+  const [editId, setEditId] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  const [pagina, setPagina] = useState(1);
-  const porPagina = 7;
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
 
-  const [form, setForm] = useState({
-    nombre: "",
-    descripcion: "",
-    activo: true,
-  });
+  const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+  const authHeaders = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const cargarCategorias = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/categorias/`, {
+        headers: authHeaders,
+      });
+
+      if (!response.ok) {
+        throw new Error("No fue posible cargar las categorías.");
+      }
+
+      const data = await response.json();
+      const lista = Array.isArray(data) ? data : data?.items || data?.data || [];
+      setCategorias(lista.map(normalizarCategoria));
+    } catch (err) {
+      setError(err.message || "Error cargando categorías.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     cargarCategorias();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    setPagina(1);
-  }, [busqueda]);
+  const filtradas = useMemo(() => {
+    const term = busqueda.trim().toLowerCase();
+    if (!term) return categorias;
 
-  const cargarCategorias = async () => {
-    try {
-      setCargando(true);
-      const res = await API.get("/categorias/");
-      setCategorias(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando categorías");
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const categoriasFiltradas = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-
-    if (!texto) return categorias;
-
-    return categorias.filter((categoria) =>
-      [categoria.nombre, categoria.descripcion]
-        .filter(Boolean)
+    return categorias.filter((cat) =>
+      [cat.nombre, cat.descripcion, cat.activo ? "activa" : "inactiva"]
         .join(" ")
         .toLowerCase()
-        .includes(texto)
+        .includes(term)
     );
   }, [categorias, busqueda]);
 
-  const totalPaginas = Math.ceil(categoriasFiltradas.length / porPagina) || 1;
+  const totalPages = Math.max(1, Math.ceil(filtradas.length / pageSize));
 
-  const categoriasPaginadas = categoriasFiltradas.slice(
-    (pagina - 1) * porPagina,
-    pagina * porPagina
-  );
+  const visibles = useMemo(() => {
+    const current = Math.min(page, totalPages);
+    const start = (current - 1) * pageSize;
+    return filtradas.slice(start, start + pageSize);
+  }, [filtradas, page, pageSize, totalPages]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  useEffect(() => {
+    setPage(1);
+  }, [busqueda, pageSize]);
 
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+  const metricas = useMemo(() => {
+    const total = categorias.length;
+    const activas = categorias.filter((c) => Boolean(c.activo)).length;
+    const inactivas = total - activas;
+    const conDescripcion = categorias.filter((c) => c.descripcion && c.descripcion !== "Sin descripción").length;
+
+    return { total, activas, inactivas, conDescripcion };
+  }, [categorias]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "activo" ? value === "true" : value,
+    }));
   };
 
   const limpiarFormulario = () => {
-    setEditandoId(null);
-
-    setForm({
-      nombre: "",
-      descripcion: "",
-      activo: true,
-    });
+    setForm(initialForm);
+    setEditId(null);
   };
 
-  const guardarCategoria = async (e) => {
-    e.preventDefault();
+  const guardarCategoria = async (event) => {
+    event.preventDefault();
+    setError("");
 
     if (!form.nombre.trim()) {
-      alert("El nombre es obligatorio");
+      setError("El nombre de la categoría es obligatorio.");
       return;
     }
 
+    setSaving(true);
+
     try {
-      if (editandoId) {
-        await API.put(`/categorias/${editandoId}`, form);
-        alert("Categoría actualizada");
-      } else {
-        await API.post("/categorias/", form);
-        alert("Categoría creada");
+      const method = editId ? "PUT" : "POST";
+      const url = editId ? `${API_URL}/categorias/${editId}` : `${API_URL}/categorias/`;
+
+      const response = await fetch(url, {
+        method,
+        headers: authHeaders,
+        body: JSON.stringify({
+          nombre: form.nombre.trim(),
+          descripcion: form.descripcion.trim(),
+          activo: Boolean(form.activo),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(editId ? "No fue posible actualizar la categoría." : "No fue posible crear la categoría.");
       }
 
       limpiarFormulario();
-      cargarCategorias();
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error guardando categoría");
+      await cargarCategorias();
+    } catch (err) {
+      setError(err.message || "Error guardando categoría.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const editarCategoria = (categoria) => {
-    setEditandoId(categoria.id);
-
+    setEditId(categoria.id);
     setForm({
       nombre: categoria.nombre || "",
       descripcion: categoria.descripcion || "",
-      activo: categoria.activo ?? true,
+      activo: Boolean(categoria.activo),
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const eliminarCategoria = async (categoriaId) => {
-    const confirmar = confirm("¿Seguro que deseas eliminar esta categoría?");
+  const eliminarCategoria = async (categoria) => {
+    const confirmar = window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`);
     if (!confirmar) return;
 
+    setError("");
+
     try {
-      await API.delete(`/categorias/${categoriaId}`);
-      alert("Categoría eliminada");
-      cargarCategorias();
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error eliminando categoría");
+      const response = await fetch(`${API_URL}/categorias/${categoria.id}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+
+      if (!response.ok) {
+        throw new Error("No fue posible eliminar la categoría.");
+      }
+
+      await cargarCategorias();
+    } catch (err) {
+      setError(err.message || "Error eliminando categoría.");
     }
   };
 
   return (
     <AdminLayout>
-      {/* ===================================================
-          ENCABEZADO
-      =================================================== */}
-      <div className="page-header">
-        <div className="page-icon">
-          <Tags size={26} />
-        </div>
-
-        <div>
-          <h1>Categorías</h1>
-          <p>Clasifica los equipos por tipo, familia o área técnica.</p>
-        </div>
-      </div>
-
-      {/* ===================================================
-          LAYOUT EN TARJETAS PRO
-      =================================================== */}
-      <div className="equipos-pro-layout categorias-layout-pro">
-        {/* =================================================
-            FORMULARIO
-        ================================================= */}
-        <section className="equipos-pro-form-card categorias-form-card">
-          <div className="equipos-card-title">
-            <h2>{editandoId ? "Editar categoría" : "Crear categoría"}</h2>
-            <p>Gestiona tipos y clasificaciones técnicas.</p>
+      <section className="ct-page">
+        <header className="ct-hero">
+          <div>
+            <span className="ct-eyebrow">Inventario inteligente</span>
+            <h1>Categorías de equipos</h1>
+            <p>
+              Organiza los activos por familias técnicas: aires acondicionados, CCTV,
+              plantas eléctricas, ascensores, bombas, tableros y más.
+            </p>
           </div>
 
-          <form onSubmit={guardarCategoria} className="equipos-pro-form">
-            <div className="form-group full">
-              <label>Nombre *</label>
-              <input
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                placeholder="Ej: Biomédico, CCTV..."
-              />
+          <button className="ct-refresh" type="button" onClick={cargarCategorias} disabled={loading}>
+            <RefreshCcw size={18} />
+            Actualizar
+          </button>
+        </header>
+
+        <div className="ct-kpi-grid">
+          <article className="ct-kpi-card">
+            <div className="ct-kpi-icon blue"><Layers3 size={22} /></div>
+            <span>Total categorías</span>
+            <strong>{metricas.total}</strong>
+          </article>
+
+          <article className="ct-kpi-card">
+            <div className="ct-kpi-icon green"><CheckCircle2 size={22} /></div>
+            <span>Activas</span>
+            <strong>{metricas.activas}</strong>
+          </article>
+
+          <article className="ct-kpi-card">
+            <div className="ct-kpi-icon red"><XCircle size={22} /></div>
+            <span>Inactivas</span>
+            <strong>{metricas.inactivas}</strong>
+          </article>
+
+          <article className="ct-kpi-card">
+            <div className="ct-kpi-icon cyan"><Boxes size={22} /></div>
+            <span>Con descripción</span>
+            <strong>{metricas.conDescripcion}</strong>
+          </article>
+        </div>
+
+        {error && <div className="ct-alert">{error}</div>}
+
+        <div className="ct-grid">
+          <article className="ct-card ct-form-card">
+            <div className="ct-card-head">
+              <div>
+                <h2>{editId ? "Editar categoría" : "Nueva categoría"}</h2>
+                <p>Define una categoría técnica para clasificar equipos.</p>
+              </div>
             </div>
 
-            <div className="form-group full">
-              <label>Descripción</label>
-              <textarea
-                name="descripcion"
-                value={form.descripcion}
-                onChange={handleChange}
-                placeholder="Describe esta categoría..."
-              />
-            </div>
+            <form className="ct-form" onSubmit={guardarCategoria}>
+              <label>
+                Nombre de categoría
+                <input
+                  name="nombre"
+                  value={form.nombre}
+                  onChange={handleChange}
+                  placeholder="Ej: Aires acondicionados"
+                />
+              </label>
 
-            <label className="checkbox-line">
-              <input
-                type="checkbox"
-                name="activo"
-                checked={form.activo}
-                onChange={handleChange}
-              />
-              Categoría activa
-            </label>
+              <label>
+                Estado
+                <select name="activo" value={String(form.activo)} onChange={handleChange}>
+                  {ESTADO_OPTIONS.map((option) => (
+                    <option key={String(option.value)} value={String(option.value)}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={limpiarFormulario}
-              >
-                <X size={16} />
-                Limpiar
-              </button>
+              <label className="ct-full">
+                Descripción
+                <textarea
+                  name="descripcion"
+                  value={form.descripcion}
+                  onChange={handleChange}
+                  placeholder="Describe el tipo de equipos, alcance y uso de esta categoría."
+                />
+              </label>
 
-              <button type="submit" className="btn-primary">
-                {editandoId ? <Save size={16} /> : <Plus size={16} />}
-                {editandoId ? "Actualizar" : "Crear categoría"}
-              </button>
-            </div>
-          </form>
-        </section>
+              <div className="ct-form-actions">
+                <button className="ct-btn-primary" disabled={saving} type="submit">
+                  <Plus size={18} />
+                  {saving ? "Guardando..." : editId ? "Actualizar" : "Crear"}
+                </button>
 
-        {/* =================================================
-            LISTADO
-        ================================================= */}
-        <section className="equipos-pro-list-card categorias-list-card">
-          <div className="equipos-toolbar">
-            <div>
-              <h2>Categorías registradas</h2>
-              <p>{categoriasFiltradas.length} registros encontrados</p>
-            </div>
-
-            <button
-              className="btn-secondary"
-              onClick={cargarCategorias}
-              disabled={cargando}
-            >
-              <RefreshCcw size={16} />
-              {cargando ? "Cargando..." : "Recargar"}
-            </button>
-          </div>
-
-          <input
-            className="equipos-search"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar categoría..."
-          />
-
-          <div className="table-wrap categorias-table-wrap">
-            <table className="sga-table categorias-table">
-              <thead>
-                <tr>
-                  <th>Categoría</th>
-                  <th>Descripción</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {categoriasPaginadas.map((categoria) => (
-                  <tr key={categoria.id}>
-                    <td>
-                      <strong className="equipo-title">
-                        {categoria.nombre}
-                      </strong>
-                    </td>
-
-                    <td>{categoria.descripcion || "Sin descripción"}</td>
-
-                    <td>
-                      <span
-                        className={
-                          categoria.activo ? "badge active" : "badge inactive"
-                        }
-                      >
-                        {categoria.activo ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="table-actions">
-                        <button
-                          className="icon-btn"
-                          onClick={() => editarCategoria(categoria)}
-                          title="Editar categoría"
-                        >
-                          <Pencil size={16} />
-                        </button>
-
-                        <button
-                          className="icon-btn danger"
-                          onClick={() => eliminarCategoria(categoria.id)}
-                          title="Eliminar categoría"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {categoriasPaginadas.length === 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ textAlign: "center", padding: 30 }}>
-                      No hay categorías registradas.
-                    </td>
-                  </tr>
+                {editId && (
+                  <button className="ct-btn-secondary" type="button" onClick={limpiarFormulario}>
+                    Cancelar
+                  </button>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </form>
+          </article>
 
-          {/* =================================================
-              PAGINACIÓN
-          ================================================= */}
-          <div className="pagination">
-            <button
-              className="btn-secondary"
-              disabled={pagina === 1}
-              onClick={() => setPagina(pagina - 1)}
-            >
-              Anterior
-            </button>
+          <article className="ct-card ct-list-card">
+            <div className="ct-toolbar">
+              <div>
+                <h2>Listado de categorías</h2>
+                <p>{filtradas.length} registros encontrados</p>
+              </div>
 
-            <span>
-              Página {pagina} de {totalPaginas}
-            </span>
+              <div className="ct-search-box">
+                <Search size={18} />
+                <input
+                  value={busqueda}
+                  onChange={(event) => setBusqueda(event.target.value)}
+                  placeholder="Buscar categoría..."
+                />
+              </div>
+            </div>
 
-            <button
-              className="btn-secondary"
-              disabled={pagina === totalPaginas}
-              onClick={() => setPagina(pagina + 1)}
-            >
-              Siguiente
-            </button>
-          </div>
-        </section>
-      </div>
+            <div className="ct-table-wrap">
+              <table className="ct-table">
+                <thead>
+                  <tr>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan="4" className="ct-empty">Cargando categorías...</td></tr>
+                  ) : visibles.length === 0 ? (
+                    <tr><td colSpan="4" className="ct-empty">No hay categorías registradas.</td></tr>
+                  ) : (
+                    visibles.map((categoria) => (
+                      <tr key={categoria.id}>
+                        <td>
+                          <div className="ct-main-cell">
+                            <span className="ct-avatar"><Layers3 size={17} /></span>
+                            <div>
+                              <strong>{categoria.nombre}</strong>
+                              <small>ID: {categoria.id}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="ct-description">{categoria.descripcion}</td>
+                        <td>
+                          <span className={categoria.activo ? "ct-badge success" : "ct-badge danger"}>
+                            {categoria.activo ? "Activa" : "Inactiva"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="ct-actions">
+                            <button title="Editar" onClick={() => editarCategoria(categoria)}>
+                              <Edit3 size={16} />
+                            </button>
+                            <button title="Eliminar" className="danger" onClick={() => eliminarCategoria(categoria)}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ct-pagination">
+              <span>Página {Math.min(page, totalPages)} de {totalPages}</span>
+              <div>
+                <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
+                  <option value={6}>6</option>
+                  <option value={8}>8</option>
+                  <option value={12}>12</option>
+                </select>
+                <button disabled={page <= 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>Anterior</button>
+                <button disabled={page >= totalPages} onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}>Siguiente</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
     </AdminLayout>
   );
 }
