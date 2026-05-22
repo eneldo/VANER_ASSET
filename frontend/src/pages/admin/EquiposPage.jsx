@@ -1,927 +1,360 @@
-// =========================================================
-// PÁGINA ADMIN - EQUIPOS FULL PRO
-// CRUD de datos básicos + hoja de vida + importar inventario
-// =========================================================
-
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import AdminLayout from "./AdminLayout";
-import API from "../../api/axios";
-
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  MonitorCog,
+  Search,
   Plus,
-  Save,
-  Trash2,
   Pencil,
-  X,
-  RefreshCcw,
-  FileText,
-  UploadCloud,
-  FileSpreadsheet,
-  AlertTriangle,
-  CheckCircle,
+  Trash2,
+  MonitorCog,
+  ShieldAlert,
+  CircleCheckBig,
+  CircleX,
+  RefreshCw,
+  Eye,
 } from "lucide-react";
 
-import "../../styles/sidebar.css";
+import AdminLayout from "./AdminLayout";
+
+import "../../styles/equipos-saas-pro-enterprise.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function EquiposPage() {
-  const navigate = useNavigate();
-
   const [equipos, setEquipos] = useState([]);
-  const [empresas, setEmpresas] = useState([]);
-  const [sedes, setSedes] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [editandoId, setEditandoId] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  const [pagina, setPagina] = useState(1);
 
-  // Estados del importador Excel/CSV
-  const [mostrarImportador, setMostrarImportador] = useState(false);
-  const [archivoImportar, setArchivoImportar] = useState(null);
-  const [importando, setImportando] = useState(false);
-  const [resultadoImportacion, setResultadoImportacion] = useState(null);
+  const [paginaActual, setPaginaActual] = useState(1);
 
-  const porPagina = 6;
+  const equiposPorPagina = 10;
 
-  const [form, setForm] = useState({
-    empresa_id: "",
-    sede_id: "",
-    categoria_id: "",
-    nombre: "",
-    marca: "",
-    modelo: "",
-    serie: "",
-    ubicacion: "",
-    invima: "",
-    codigo_id: "",
-    inventario: "",
-    estado: "OPERATIVO",
-    criticidad: "MEDIA",
-    activo: true,
-  });
+  // ============================================================
+  // CARGAR EQUIPOS
+  // ============================================================
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
+  const cargarEquipos = async () => {
     try {
-      const [resEquipos, resEmpresas, resSedes, resCategorias] =
-        await Promise.all([
-          API.get("/equipos/"),
-          API.get("/empresas/"),
-          API.get("/sedes/"),
-          API.get("/categorias/"),
-        ]);
+      setLoading(true);
 
-      setEquipos(resEquipos.data || []);
-      setEmpresas(resEmpresas.data || []);
-      setSedes(resSedes.data || []);
-      setCategorias(resCategorias.data || []);
-    } catch (error) {
-      console.error(error);
-      alert("Error cargando datos de equipos");
-    }
-  };
+      const response = await fetch(`${API_URL}/equipos/`);
 
-  const sedesFiltradas = useMemo(() => {
-    return sedes.filter((sede) => sede.empresa_id === form.empresa_id);
-  }, [sedes, form.empresa_id]);
-
-  const nombreEmpresa = (empresaId) => {
-    return empresas.find((e) => e.id === empresaId)?.nombre || "N/A";
-  };
-
-  const nombreSede = (sedeId) => {
-    return sedes.find((s) => s.id === sedeId)?.nombre || "N/A";
-  };
-
-  const nombreCategoria = (categoriaId) => {
-    return (
-      categorias.find((c) => c.id === categoriaId)?.nombre || "Sin categoría"
-    );
-  };
-
-  const equiposFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
-
-    return equipos.filter(
-      (equipo) =>
-        equipo.nombre?.toLowerCase().includes(texto) ||
-        equipo.marca?.toLowerCase().includes(texto) ||
-        equipo.modelo?.toLowerCase().includes(texto) ||
-        equipo.serie?.toLowerCase().includes(texto) ||
-        equipo.codigo_id?.toLowerCase().includes(texto) ||
-        equipo.inventario?.toLowerCase().includes(texto) ||
-        equipo.ubicacion?.toLowerCase().includes(texto) ||
-        equipo.estado?.toLowerCase().includes(texto) ||
-        equipo.criticidad?.toLowerCase().includes(texto)
-    );
-  }, [equipos, busqueda]);
-
-  const totalPaginas = Math.ceil(equiposFiltrados.length / porPagina) || 1;
-
-  const equiposPaginados = equiposFiltrados.slice(
-    (pagina - 1) * porPagina,
-    pagina * porPagina
-  );
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (name === "empresa_id") {
-      setForm({
-        ...form,
-        empresa_id: value,
-        sede_id: "",
-      });
-      return;
-    }
-
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  const limpiarFormulario = () => {
-    setForm({
-      empresa_id: "",
-      sede_id: "",
-      categoria_id: "",
-      nombre: "",
-      marca: "",
-      modelo: "",
-      serie: "",
-      ubicacion: "",
-      invima: "",
-      codigo_id: "",
-      inventario: "",
-      estado: "OPERATIVO",
-      criticidad: "MEDIA",
-      activo: true,
-    });
-
-    setEditandoId(null);
-  };
-
-  const guardarEquipo = async (e) => {
-    e.preventDefault();
-
-    if (!form.empresa_id) {
-      alert("Debe seleccionar una empresa");
-      return;
-    }
-
-    if (!form.sede_id) {
-      alert("Debe seleccionar una sede");
-      return;
-    }
-
-    if (!form.nombre.trim()) {
-      alert("El nombre del equipo es obligatorio");
-      return;
-    }
-
-    try {
-      const payload = {
-        ...form,
-        categoria_id: form.categoria_id || null,
-        codigo_id: form.codigo_id || null,
-        inventario: form.inventario || null,
-      };
-
-      if (editandoId) {
-        await API.put(`/equipos/${editandoId}`, payload);
-        alert("Equipo actualizado correctamente");
-      } else {
-        await API.post("/equipos/", payload);
-        alert("Equipo creado correctamente");
+      if (!response.ok) {
+        throw new Error("Error cargando equipos");
       }
 
-      limpiarFormulario();
-      cargarDatos();
+      const data = await response.json();
+
+      setEquipos(data);
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "Error guardando equipo");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const editarEquipo = (equipo) => {
-    setEditandoId(equipo.id);
+  useEffect(() => {
+    cargarEquipos();
+  }, []);
 
-    setForm({
-      empresa_id: equipo.empresa_id || "",
-      sede_id: equipo.sede_id || "",
-      categoria_id: equipo.categoria_id || "",
-      nombre: equipo.nombre || "",
-      marca: equipo.marca || "",
-      modelo: equipo.modelo || "",
-      serie: equipo.serie || "",
-      ubicacion: equipo.ubicacion || "",
-      invima: equipo.invima || "",
-      codigo_id: equipo.codigo_id || "",
-      inventario: equipo.inventario || "",
-      estado: equipo.estado || "OPERATIVO",
-      criticidad: equipo.criticidad || "MEDIA",
-      activo: equipo.activo,
+  // ============================================================
+  // FILTRO
+  // ============================================================
+
+  const equiposFiltrados = useMemo(() => {
+    return equipos.filter((equipo) => {
+      const texto = `
+        ${equipo.nombre || ""}
+        ${equipo.marca || ""}
+        ${equipo.modelo || ""}
+        ${equipo.serie || ""}
+        ${equipo.codigo_inventario || ""}
+      `.toLowerCase();
+
+      return texto.includes(busqueda.toLowerCase());
     });
-  };
+  }, [equipos, busqueda]);
 
-  const eliminarEquipo = async (equipoId) => {
-    const confirmar = confirm(
-      "¿Seguro que deseas eliminar este equipo? Esta acción puede afectar hoja de vida y mantenimientos asociados."
+  // ============================================================
+  // PAGINACIÓN
+  // ============================================================
+
+  const totalPaginas = Math.ceil(
+    equiposFiltrados.length / equiposPorPagina
+  );
+
+  const indiceInicial =
+    (paginaActual - 1) * equiposPorPagina;
+
+  const equiposPaginados =
+    equiposFiltrados.slice(
+      indiceInicial,
+      indiceInicial + equiposPorPagina
     );
 
-    if (!confirmar) return;
+  // ============================================================
+  // KPIs
+  // ============================================================
 
-    try {
-      await API.delete(`/equipos/${equipoId}`);
-      alert("Equipo eliminado correctamente");
-      cargarDatos();
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error eliminando equipo");
-    }
-  };
+  const totalEquipos = equipos.length;
 
-  const abrirHojaVida = (equipo) => {
-    if (!equipo.id) {
-      alert("Este equipo no tiene ID válido. Recarga la página.");
-      return;
-    }
+  const operativos = equipos.filter(
+    (e) => e.estado === "OPERATIVO"
+  ).length;
 
-    navigate(`/admin/equipos/${equipo.id}/hoja-vida`);
-  };
+  const mantenimiento = equipos.filter(
+    (e) => e.estado === "MANTENIMIENTO"
+  ).length;
 
-  const abrirImportador = () => {
-    setMostrarImportador(true);
-    setArchivoImportar(null);
-    setResultadoImportacion(null);
-  };
+  const fueraServicio = equipos.filter(
+    (e) => e.estado === "FUERA_SERVICIO"
+  ).length;
 
-  const cerrarImportador = () => {
-    setMostrarImportador(false);
-    setArchivoImportar(null);
-    setResultadoImportacion(null);
-  };
-
-  const importarInventario = async () => {
-    if (!archivoImportar) {
-      alert("Selecciona un archivo Excel o CSV.");
-      return;
-    }
-
-    const extension = archivoImportar.name.split(".").pop().toLowerCase();
-
-    if (!["xlsx", "xls", "csv"].includes(extension)) {
-      alert("Formato no permitido. Usa .xlsx, .xls o .csv");
-      return;
-    }
-
-    try {
-      setImportando(true);
-      setResultadoImportacion(null);
-
-      const formData = new FormData();
-      formData.append("archivo", archivoImportar);
-
-      const res = await API.post("/equipos/importar", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setResultadoImportacion(res.data);
-      await cargarDatos();
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.detail || "Error importando inventario");
-    } finally {
-      setImportando(false);
-    }
-  };
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
     <AdminLayout>
-      <div className="page-header">
-        <div className="page-icon">
-          <MonitorCog size={26} />
+      <div className="equipos-enterprise-page">
+
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
+
+        <div className="enterprise-header">
+          <div>
+            <h1>Inventario de Equipos</h1>
+            <p>
+              Gestión empresarial de activos,
+              mantenimiento y criticidad.
+            </p>
+          </div>
+
+          <button className="btn-primary-enterprise">
+            <Plus size={18} />
+            Nuevo Equipo
+          </button>
         </div>
 
-        <div>
-          <h1>Equipos</h1>
-          <p>
-            Registra los datos básicos del equipo. Luego completa la hoja de vida
-            técnica.
-          </p>
-        </div>
-      </div>
+        {/* ================================================= */}
+        {/* KPIs */}
+        {/* ================================================= */}
 
-      <div style={styles.importMiniBar}>
-        <div>
-          <strong>Importación masiva de inventario</strong>
-          <p>
-            Carga equipos desde archivos Excel o CSV sin afectar el registro
-            manual.
-          </p>
-        </div>
+        <div className="enterprise-kpis">
 
-        <button className="btn-primary" onClick={abrirImportador}>
-          <UploadCloud size={17} />
-          Importar inventario
-        </button>
-      </div>
+          <div className="enterprise-kpi-card">
+            <div className="kpi-icon blue">
+              <MonitorCog size={28} />
+            </div>
 
-      <div className="equipos-pro-layout">
-        <section className="equipos-pro-form-card">
-          <div className="equipos-card-title">
             <div>
-              <h2>{editandoId ? "Editar equipo" : "Crear equipo básico"}</h2>
-              <p>Paso 1: información básica del activo.</p>
+              <h3>Total Equipos</h3>
+              <h2>{totalEquipos}</h2>
             </div>
           </div>
 
-          <form onSubmit={guardarEquipo} className="equipos-pro-form">
-            <div className="form-group full">
-              <label>Empresa *</label>
-              <select
-                name="empresa_id"
-                value={form.empresa_id}
-                onChange={handleChange}
-              >
-                <option value="">Seleccionar empresa</option>
-                {empresas.map((empresa) => (
-                  <option key={empresa.id} value={empresa.id}>
-                    {empresa.nombre}
-                  </option>
-                ))}
-              </select>
+          <div className="enterprise-kpi-card">
+            <div className="kpi-icon green">
+              <CircleCheckBig size={28} />
             </div>
 
-            <div className="form-group full">
-              <label>Sede *</label>
-              <select
-                name="sede_id"
-                value={form.sede_id}
-                onChange={handleChange}
-                disabled={!form.empresa_id}
-              >
-                <option value="">
-                  {form.empresa_id
-                    ? "Seleccionar sede"
-                    : "Primero selecciona empresa"}
-                </option>
-                {sedesFiltradas.map((sede) => (
-                  <option key={sede.id} value={sede.id}>
-                    {sede.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group full">
-              <label>Categoría</label>
-              <select
-                name="categoria_id"
-                value={form.categoria_id}
-                onChange={handleChange}
-              >
-                <option value="">Sin categoría</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group full">
-              <label>Nombre del equipo *</label>
-              <input
-                name="nombre"
-                value={form.nombre}
-                onChange={handleChange}
-                placeholder="Ej: Monitor de signos vitales"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Marca</label>
-              <input name="marca" value={form.marca} onChange={handleChange} />
-            </div>
-
-            <div className="form-group">
-              <label>Modelo</label>
-              <input
-                name="modelo"
-                value={form.modelo}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Serie</label>
-              <input name="serie" value={form.serie} onChange={handleChange} />
-            </div>
-
-            <div className="form-group">
-              <label>Ubicación</label>
-              <input
-                name="ubicacion"
-                value={form.ubicacion}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>INVIMA</label>
-              <input
-                name="invima"
-                value={form.invima}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Código ID</label>
-              <input
-                name="codigo_id"
-                value={form.codigo_id}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Inventario</label>
-              <input
-                name="inventario"
-                value={form.inventario}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Estado</label>
-              <select name="estado" value={form.estado} onChange={handleChange}>
-                <option value="OPERATIVO">Operativo</option>
-                <option value="EN_MANTENIMIENTO">En mantenimiento</option>
-                <option value="FUERA_DE_SERVICIO">Fuera de servicio</option>
-                <option value="BAJA">Baja</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Criticidad</label>
-              <select
-                name="criticidad"
-                value={form.criticidad}
-                onChange={handleChange}
-              >
-                <option value="BAJA">Baja</option>
-                <option value="MEDIA">Media</option>
-                <option value="ALTA">Alta</option>
-                <option value="CRITICA">Crítica</option>
-              </select>
-            </div>
-
-            <label className="checkbox-line">
-              <input
-                type="checkbox"
-                name="activo"
-                checked={form.activo}
-                onChange={handleChange}
-              />
-              Equipo activo
-            </label>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={limpiarFormulario}
-              >
-                <X size={17} />
-                Limpiar
-              </button>
-
-              <button type="submit" className="btn-primary">
-                {editandoId ? <Save size={17} /> : <Plus size={17} />}
-                {editandoId ? "Actualizar" : "Crear equipo"}
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="equipos-pro-list-card">
-          <div className="equipos-toolbar">
             <div>
-              <h2>Equipos registrados</h2>
-              <p>{equiposFiltrados.length} registros encontrados</p>
+              <h3>Operativos</h3>
+              <h2>{operativos}</h2>
             </div>
-
-            <button className="btn-secondary" onClick={cargarDatos}>
-              <RefreshCcw size={16} />
-              Recargar
-            </button>
           </div>
 
-          <input
-            className="equipos-search"
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              setPagina(1);
-            }}
-            placeholder="Buscar por equipo, marca, modelo, serie, código, inventario, ubicación..."
-          />
+          <div className="enterprise-kpi-card">
+            <div className="kpi-icon orange">
+              <RefreshCw size={28} />
+            </div>
 
-          <div className="table-wrap equipos-table-wrap">
-            <table className="sga-table equipos-pro-table">
-              <thead>
+            <div>
+              <h3>Mantenimiento</h3>
+              <h2>{mantenimiento}</h2>
+            </div>
+          </div>
+
+          <div className="enterprise-kpi-card">
+            <div className="kpi-icon red">
+              <ShieldAlert size={28} />
+            </div>
+
+            <div>
+              <h3>Fuera Servicio</h3>
+              <h2>{fueraServicio}</h2>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ================================================= */}
+        {/* FILTROS */}
+        {/* ================================================= */}
+
+        <div className="enterprise-toolbar">
+
+          <div className="search-enterprise">
+            <Search size={18} />
+
+            <input
+              type="text"
+              placeholder="Buscar equipo..."
+              value={busqueda}
+              onChange={(e) =>
+                setBusqueda(e.target.value)
+              }
+            />
+          </div>
+
+        </div>
+
+        {/* ================================================= */}
+        {/* TABLA */}
+        {/* ================================================= */}
+
+        <div className="enterprise-table-wrapper">
+
+          <table className="enterprise-table">
+
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Equipo</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Serie</th>
+                <th>Estado</th>
+                <th>Criticidad</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {loading ? (
                 <tr>
-                  <th>Equipo</th>
-                  <th>Empresa / Sede</th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th>Criticidad</th>
-                  <th>Acciones</th>
+                  <td colSpan="8">
+                    <div className="loading-enterprise">
+                      Cargando equipos...
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {equiposPaginados.map((equipo) => (
+              ) : equiposPaginados.length === 0 ? (
+                <tr>
+                  <td colSpan="8">
+                    <div className="empty-enterprise">
+                      No existen equipos registrados.
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                equiposPaginados.map((equipo) => (
                   <tr key={equipo.id}>
+
                     <td>
-                      <strong className="equipo-title">{equipo.nombre}</strong>
-                      <br />
-                      <small className="equipo-sub">
-                        {equipo.marca || "Sin marca"} |{" "}
-                        {equipo.modelo || "Sin modelo"}
-                      </small>
-                      <br />
-                      <small className="equipo-sub">
-                        Código: {equipo.codigo_id || "N/A"} | Inventario:{" "}
-                        {equipo.inventario || "N/A"}
-                      </small>
+                      {equipo.codigo_inventario}
                     </td>
 
-                    <td>
-                      <strong>{nombreEmpresa(equipo.empresa_id)}</strong>
-                      <br />
-                      <small>{nombreSede(equipo.sede_id)}</small>
+                    <td className="equipo-cell">
+                      <div className="equipo-avatar">
+                        <MonitorCog size={18} />
+                      </div>
+
+                      <div>
+                        <strong>{equipo.nombre}</strong>
+
+                        <span>
+                          {equipo.ubicacion || "Sin ubicación"}
+                        </span>
+                      </div>
                     </td>
 
-                    <td>{nombreCategoria(equipo.categoria_id)}</td>
+                    <td>{equipo.marca}</td>
+
+                    <td>{equipo.modelo}</td>
+
+                    <td>{equipo.serie}</td>
 
                     <td>
-                      <span className="badge role">{equipo.estado}</span>
+                      <span
+                        className={`estado-badge ${(
+                          equipo.estado || ""
+                        ).toLowerCase()}`}
+                      >
+                        {equipo.estado}
+                      </span>
                     </td>
 
                     <td>
                       <span
-                        className={
-                          equipo.criticidad === "ALTA" ||
-                          equipo.criticidad === "CRITICA"
-                            ? "badge inactive"
-                            : "badge active"
-                        }
+                        className={`criticidad-badge ${(
+                          equipo.criticidad || ""
+                        ).toLowerCase()}`}
                       >
                         {equipo.criticidad}
                       </span>
                     </td>
 
                     <td>
-                      <div className="table-actions">
-                        <button
-                          className="icon-btn hv-btn"
-                          onClick={() => abrirHojaVida(equipo)}
-                          title="Hoja de vida técnica"
-                        >
-                          <FileText size={16} />
+                      <div className="acciones-enterprise">
+
+                        <button className="btn-action blue">
+                          <Eye size={16} />
                         </button>
 
-                        <button
-                          className="icon-btn"
-                          onClick={() => editarEquipo(equipo)}
-                          title="Editar equipo"
-                        >
+                        <button className="btn-action orange">
                           <Pencil size={16} />
                         </button>
 
-                        <button
-                          className="icon-btn danger"
-                          onClick={() => eliminarEquipo(equipo.id)}
-                          title="Eliminar equipo"
-                        >
+                        <button className="btn-action red">
                           <Trash2 size={16} />
                         </button>
+
                       </div>
                     </td>
+
                   </tr>
-                ))}
-
-                {equiposPaginados.length === 0 && (
-                  <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: 30 }}>
-                      No hay equipos registrados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="pagination">
-            <button
-              className="btn-secondary"
-              disabled={pagina === 1}
-              onClick={() => setPagina(pagina - 1)}
-            >
-              Anterior
-            </button>
-
-            <span>
-              Página {pagina} de {totalPaginas}
-            </span>
-
-            <button
-              className="btn-secondary"
-              disabled={pagina === totalPaginas}
-              onClick={() => setPagina(pagina + 1)}
-            >
-              Siguiente
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {mostrarImportador && (
-        <div style={styles.overlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitleBox}>
-                <div style={styles.modalIcon}>
-                  <FileSpreadsheet size={24} />
-                </div>
-
-                <div>
-                  <h2 style={styles.modalTitle}>Importar inventario</h2>
-                  <p style={styles.modalSubtitle}>
-                    Carga masiva de equipos desde archivo Excel o CSV.
-                  </p>
-                </div>
-              </div>
-
-              <button style={styles.closeBtn} onClick={cerrarImportador}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={styles.uploadBox}>
-              <label style={styles.uploadLabel}>Archivo Excel/CSV</label>
-
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={(e) => {
-                  setArchivoImportar(e.target.files?.[0] || null);
-                  setResultadoImportacion(null);
-                }}
-                style={styles.fileInput}
-              />
-
-              {archivoImportar && (
-                <div style={styles.fileSelected}>
-                  <FileSpreadsheet size={18} />
-                  <span>{archivoImportar.name}</span>
-                </div>
+                ))
               )}
-            </div>
 
-            <div style={styles.helpBox}>
-              <strong>Columnas recomendadas:</strong>
-              <p>
-                codigo_inventario, nombre, empresa, sede, categoria, marca,
-                modelo, serie, ubicacion, estado, criticidad.
-              </p>
-            </div>
+            </tbody>
 
-            {resultadoImportacion && (
-              <div style={styles.resultBox}>
-                <div style={styles.resultOk}>
-                  <CheckCircle size={18} />
-                  <strong>
-                    Equipos importados: {resultadoImportacion.creados || 0}
-                  </strong>
-                </div>
+          </table>
 
-                {resultadoImportacion.errores?.length > 0 && (
-                  <div style={styles.errorsBox}>
-                    <div style={styles.errorTitle}>
-                      <AlertTriangle size={18} />
-                      <strong>Registros con error</strong>
-                    </div>
-
-                    <ul style={styles.errorList}>
-                      {resultadoImportacion.errores.map((err, index) => (
-                        <li key={index}>
-                          Fila {err.fila}: {err.error}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={styles.modalActions}>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={cerrarImportador}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={importarInventario}
-                disabled={importando}
-              >
-                <UploadCloud size={17} />
-                {importando ? "Importando..." : "Importar inventario"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+
+        {/* ================================================= */}
+        {/* PAGINACIÓN */}
+        {/* ================================================= */}
+
+        <div className="enterprise-pagination">
+
+          <button
+            disabled={paginaActual === 1}
+            onClick={() =>
+              setPaginaActual((prev) => prev - 1)
+            }
+          >
+            Anterior
+          </button>
+
+          <span>
+            Página {paginaActual} de {totalPaginas || 1}
+          </span>
+
+          <button
+            disabled={paginaActual === totalPaginas}
+            onClick={() =>
+              setPaginaActual((prev) => prev + 1)
+            }
+          >
+            Siguiente
+          </button>
+
+        </div>
+
+      </div>
     </AdminLayout>
   );
 }
-
-const styles = {
-  importMiniBar: {
-    background: "linear-gradient(135deg, #eff6ff, #ecfeff)",
-    border: "1px solid #dbeafe",
-    borderRadius: 20,
-    padding: "16px 18px",
-    marginBottom: 20,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 16,
-    boxShadow: "0 14px 35px rgba(15, 23, 42, 0.06)",
-  },
-
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.45)",
-    backdropFilter: "blur(6px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 999,
-    padding: 20,
-  },
-
-  modal: {
-    width: "min(920px, 96vw)",
-    background: "white",
-    borderRadius: 26,
-    padding: 24,
-    boxShadow: "0 30px 80px rgba(15, 23, 42, 0.25)",
-  },
-
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-
-  modalTitleBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-  },
-
-  modalIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-    background: "linear-gradient(135deg, #2563eb, #06b6d4)",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  modalTitle: {
-    margin: 0,
-    fontSize: 24,
-    fontWeight: 900,
-    color: "#0f172a",
-  },
-
-  modalSubtitle: {
-    margin: "5px 0 0",
-    color: "#64748b",
-  },
-
-  closeBtn: {
-    border: "none",
-    borderRadius: 12,
-    background: "#f1f5f9",
-    padding: 9,
-    cursor: "pointer",
-  },
-
-  uploadBox: {
-    border: "1px solid #dbe5ef",
-    borderRadius: 18,
-    padding: 16,
-    background: "#f8fafc",
-    marginBottom: 14,
-  },
-
-  uploadLabel: {
-    display: "block",
-    fontWeight: 900,
-    color: "#172554",
-    marginBottom: 10,
-  },
-
-  fileInput: {
-    width: "100%",
-    border: "1px solid #dbe5ef",
-    borderRadius: 14,
-    padding: 12,
-    background: "white",
-  },
-
-  fileSelected: {
-    marginTop: 12,
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    color: "#0369a1",
-    fontWeight: 800,
-  },
-
-  helpBox: {
-    background: "#eaf4ff",
-    border: "1px solid #dbeafe",
-    borderRadius: 16,
-    padding: 14,
-    color: "#1e3a8a",
-    marginBottom: 14,
-  },
-
-  resultBox: {
-    border: "1px solid #dbeafe",
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 14,
-    background: "#f8fbff",
-  },
-
-  resultOk: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    color: "#15803d",
-  },
-
-  errorsBox: {
-    marginTop: 12,
-    background: "#fff7ed",
-    border: "1px solid #fed7aa",
-    borderRadius: 14,
-    padding: 12,
-    color: "#9a3412",
-  },
-
-  errorTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  errorList: {
-    margin: "10px 0 0",
-    paddingLeft: 20,
-    maxHeight: 180,
-    overflowY: "auto",
-  },
-
-  modalActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-};
