@@ -1,13 +1,12 @@
 # =========================================================
-# ROUTER AUTH - FASE 31.4 HARDENING BACKEND PRO
+# ROUTER AUTH - SGA PRO
 # Archivo: backend/app/routers/auth.py
 #
-# Incluye:
-# - Login seguro
-# - JWT access token
-# - JWT refresh token
-# - Endpoint /auth/refresh
-# - Usuario actual
+# CORRECCIÓN:
+# - El bloqueo ya NO es global por IP.
+# - Ahora bloquea por usuario + IP.
+# - Así, si falla cliente@empresa.com, NO bloquea admin@sga-holding.com.
+# - Mensaje profesional sin fecha técnica completa.
 # =========================================================
 
 from datetime import datetime, timedelta
@@ -31,17 +30,9 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-# =========================================================
-# SCHEMA REFRESH TOKEN
-# =========================================================
-
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
-
-# =========================================================
-# CONFIG JWT
-# =========================================================
 
 def _jwt_secret_key():
     return getattr(settings, "SECRET_KEY", None) or getattr(settings, "secret_key", None)
@@ -64,10 +55,6 @@ def _crear_payload_usuario(usuario: Usuario, tipo: str = "access"):
         "type": tipo,
     }
 
-
-# =========================================================
-# USUARIO ACTUAL
-# =========================================================
 
 def obtener_usuario_actual(
     token: str = Depends(oauth2_scheme),
@@ -123,6 +110,10 @@ def _request_id(request: Request):
     return getattr(request.state, "request_id", None)
 
 
+def _normalizar_username(username: str) -> str:
+    return (username or "").strip().lower()
+
+
 def _registrar_intento_login(
     db: Session,
     *,
@@ -145,7 +136,7 @@ def _registrar_intento_login(
             """
         ),
         {
-            "username": username,
+            "username": _normalizar_username(username),
             "ip_origen": get_client_ip(request),
             "exitoso": exitoso,
             "motivo": motivo,
@@ -159,6 +150,12 @@ def _registrar_intento_login(
 
 
 def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> int:
+    """
+    Bloqueo correcto:
+    - Cuenta fallos del MISMO usuario.
+    - En la MISMA IP.
+    - Ya NO bloquea otros usuarios por compartir IP.
+    """
     desde = datetime.utcnow() - timedelta(minutes=VENTANA_MINUTOS)
 
     total = db.execute(
@@ -168,12 +165,13 @@ def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> in
             FROM login_intentos
             WHERE exitoso = false
               AND creado_en >= :desde
-              AND (LOWER(username) = LOWER(:username) OR ip_origen = :ip_origen)
+              AND LOWER(username) = LOWER(:username)
+              AND ip_origen = :ip_origen
             """
         ),
         {
             "desde": desde,
-            "username": username,
+            "username": _normalizar_username(username),
             "ip_origen": ip_origen,
         },
     ).scalar()
@@ -182,6 +180,12 @@ def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> in
 
 
 def _bloqueo_activo(db: Session, username: str, ip_origen: str):
+    """
+    Bloqueo correcto:
+    - Revisa bloqueo activo solo para ese usuario + IP.
+    - No afecta Admin si falló Cliente.
+    - No afecta Técnico si falló Empresa.
+    """
     bloqueo = db.execute(
         text(
             """
@@ -189,11 +193,12 @@ def _bloqueo_activo(db: Session, username: str, ip_origen: str):
             FROM login_intentos
             WHERE bloqueado_hasta IS NOT NULL
               AND bloqueado_hasta > NOW()
-              AND (LOWER(username) = LOWER(:username) OR ip_origen = :ip_origen)
+              AND LOWER(username) = LOWER(:username)
+              AND ip_origen = :ip_origen
             """
         ),
         {
-            "username": username,
+            "username": _normalizar_username(username),
             "ip_origen": ip_origen,
         },
     ).scalar()
@@ -201,18 +206,30 @@ def _bloqueo_activo(db: Session, username: str, ip_origen: str):
     return bloqueo
 
 
-# =========================================================
-# LOGIN
-# =========================================================
+def _minutos_restantes(bloqueo) -> int:
+    if not bloqueo:
+        return BLOQUEO_MINUTOS
+
+    ahora = datetime.utcnow()
+
+    try:
+        diferencia = bloqueo.replace(tzinfo=None) - ahora
+        minutos = int(diferencia.total_seconds() // 60) + 1
+        return max(minutos, 1)
+    except Exception:
+        return BLOQUEO_MINUTOS
+
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    username = data.username.strip()
+    username = _normalizar_username(data.username)
     ip_origen = get_client_ip(request)
 
     bloqueo = _bloqueo_activo(db, username, ip_origen)
 
     if bloqueo:
+        minutos = _minutos_restantes(bloqueo)
+
         registrar_evento_seguridad(
             db,
             request=request,
@@ -220,12 +237,12 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
             evento="LOGIN_BLOQUEADO",
             modulo="AUTH",
             permitido=False,
-            detalle=f"Login bloqueado temporalmente hasta {bloqueo}",
+            detalle=f"Login bloqueado temporalmente por {minutos} minutos",
         )
 
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Demasiados intentos fallidos. Intenta nuevamente después de {bloqueo}.",
+            detail=f"Demasiados intentos fallidos. Intenta nuevamente en {minutos} minutos.",
         )
 
     usuario = (
@@ -387,10 +404,6 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     )
 
 
-# =========================================================
-# REFRESH TOKEN
-# =========================================================
-
 @router.post("/refresh")
 def refresh_token(
     data: RefreshTokenRequest,
@@ -443,10 +456,6 @@ def refresh_token(
         "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
     }
 
-
-# =========================================================
-# PERFIL AUTENTICADO
-# =========================================================
 
 @router.get("/me")
 def auth_me(usuario: Usuario = Depends(obtener_usuario_actual)):
