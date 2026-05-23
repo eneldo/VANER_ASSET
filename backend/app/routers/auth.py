@@ -2,11 +2,11 @@
 # ROUTER AUTH - SGA PRO
 # Archivo: backend/app/routers/auth.py
 #
-# CORRECCIÓN:
-# - El bloqueo ya NO es global por IP.
-# - Ahora bloquea por usuario + IP.
-# - Así, si falla cliente@empresa.com, NO bloquea admin@sga-holding.com.
-# - Mensaje profesional sin fecha técnica completa.
+# FIX PRODUCCIÓN:
+# - Login no sensible a mayúsculas/minúsculas.
+# - username/email se buscan con LOWER().
+# - No bloquea globalmente por IP.
+# - Bloqueo por usuario + IP.
 # =========================================================
 
 from datetime import datetime, timedelta
@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
-from sqlalchemy import or_, text
+from sqlalchemy import or_, text, func
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -97,10 +97,6 @@ get_current_user = obtener_usuario_actual
 get_usuario_actual = obtener_usuario_actual
 
 
-# =========================================================
-# CONFIGURACIÓN BLOQUEO LOGIN
-# =========================================================
-
 MAX_LOGIN_FALLIDOS = 5
 BLOQUEO_MINUTOS = 15
 VENTANA_MINUTOS = 15
@@ -150,12 +146,6 @@ def _registrar_intento_login(
 
 
 def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> int:
-    """
-    Bloqueo correcto:
-    - Cuenta fallos del MISMO usuario.
-    - En la MISMA IP.
-    - Ya NO bloquea otros usuarios por compartir IP.
-    """
     desde = datetime.utcnow() - timedelta(minutes=VENTANA_MINUTOS)
 
     total = db.execute(
@@ -180,12 +170,6 @@ def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> in
 
 
 def _bloqueo_activo(db: Session, username: str, ip_origen: str):
-    """
-    Bloqueo correcto:
-    - Revisa bloqueo activo solo para ese usuario + IP.
-    - No afecta Admin si falló Cliente.
-    - No afecta Técnico si falló Empresa.
-    """
     bloqueo = db.execute(
         text(
             """
@@ -222,10 +206,11 @@ def _minutos_restantes(bloqueo) -> int:
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    username = _normalizar_username(data.username)
+    username_original = (data.username or "").strip()
+    username_normalizado = _normalizar_username(username_original)
     ip_origen = get_client_ip(request)
 
-    bloqueo = _bloqueo_activo(db, username, ip_origen)
+    bloqueo = _bloqueo_activo(db, username_normalizado, ip_origen)
 
     if bloqueo:
         minutos = _minutos_restantes(bloqueo)
@@ -233,7 +218,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         registrar_evento_seguridad(
             db,
             request=request,
-            usuario_email=username,
+            usuario_email=username_original,
             evento="LOGIN_BLOQUEADO",
             modulo="AUTH",
             permitido=False,
@@ -249,15 +234,15 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         db.query(Usuario)
         .filter(
             or_(
-                Usuario.username == username,
-                Usuario.email == username,
+                func.lower(Usuario.username) == username_normalizado,
+                func.lower(Usuario.email) == username_normalizado,
             )
         )
         .first()
     )
 
     if not usuario:
-        fallidos = _contar_fallidos_recientes(db, username, ip_origen) + 1
+        fallidos = _contar_fallidos_recientes(db, username_normalizado, ip_origen) + 1
 
         bloqueado_hasta = (
             datetime.utcnow() + timedelta(minutes=BLOQUEO_MINUTOS)
@@ -268,7 +253,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         _registrar_intento_login(
             db,
             request=request,
-            username=username,
+            username=username_normalizado,
             exitoso=False,
             motivo="USUARIO_NO_EXISTE",
             intentos_fallidos=fallidos,
@@ -278,7 +263,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         registrar_evento_seguridad(
             db,
             request=request,
-            usuario_email=username,
+            usuario_email=username_original,
             evento="LOGIN_FALLIDO",
             modulo="AUTH",
             permitido=False,
@@ -295,7 +280,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         _registrar_intento_login(
             db,
             request=request,
-            username=username,
+            username=usuario.username,
             exitoso=False,
             motivo="USUARIO_INACTIVO",
         )
@@ -319,7 +304,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         )
 
     if not verify_password(data.password, usuario.password_hash):
-        fallidos = _contar_fallidos_recientes(db, username, ip_origen) + 1
+        fallidos = _contar_fallidos_recientes(db, username_normalizado, ip_origen) + 1
 
         bloqueado_hasta = (
             datetime.utcnow() + timedelta(minutes=BLOQUEO_MINUTOS)
@@ -330,7 +315,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         _registrar_intento_login(
             db,
             request=request,
-            username=username,
+            username=usuario.username,
             exitoso=False,
             motivo="PASSWORD_INCORRECTO",
             intentos_fallidos=fallidos,
@@ -371,7 +356,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     _registrar_intento_login(
         db,
         request=request,
-        username=username,
+        username=usuario.username,
         exitoso=True,
         motivo="LOGIN_OK",
         intentos_fallidos=0,
