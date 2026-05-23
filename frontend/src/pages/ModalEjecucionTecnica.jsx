@@ -20,6 +20,8 @@ import {
   Save,
   UploadCloud,
   FileText,
+  Eye,
+  Trash2,
   Barcode,
   Cpu,
   MapPin,
@@ -55,6 +57,7 @@ export default function ModalEjecucionTecnica({
 
   const [guardando, setGuardando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [previewEvidencia, setPreviewEvidencia] = useState(null);
 
   useEffect(() => {
     setEstadoInicial(mantenimiento.estado_inicial || mantenimiento.estado_inicial_equipo || "");
@@ -134,6 +137,30 @@ export default function ModalEjecucionTecnica({
       alert(error.response?.data?.detail || "No se pudo subir la evidencia.");
     } finally {
       setSubiendo(false);
+    }
+  };
+
+
+  const eliminarEvidencia = async (evidenciaId) => {
+    const confirmar = window.confirm(
+      "¿Deseas eliminar esta evidencia? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmar) return;
+
+    try {
+      await API.delete(`/evidencias/${evidenciaId}`);
+
+      await onRefreshDashboard();
+
+      if (onRefreshDetalle) {
+        await onRefreshDetalle(mantenimientoId);
+      }
+
+      alert("Evidencia eliminada correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "No se pudo eliminar la evidencia.");
     }
   };
 
@@ -265,21 +292,51 @@ export default function ModalEjecucionTecnica({
                   <p>No hay evidencias cargadas.</p>
                 )}
 
-                {evidencias.map((ev) => (
-                  <a
-                    key={ev.id}
-                    href={getFileUrl(ev.archivo_url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tec-exec-evidencia"
-                  >
-                    <FileText size={18} />
-                    <div>
-                      <strong>{ev.tipo}</strong>
-                      <span>{ev.nombre_original || "Archivo"}</span>
-                    </div>
-                  </a>
-                ))}
+                {evidencias.map((ev) => {
+                  const url = getFileUrl(ev.archivo_url);
+                  const imagen = isImage(ev.archivo_url);
+
+                  return (
+                    <article key={ev.id} className="tec-exec-evidencia tec-evidence-card-pro">
+                      <div className="tec-evidence-card-preview">
+                        {imagen ? (
+                          <img src={url} alt={ev.nombre_original || "Evidencia"} />
+                        ) : (
+                          <div className="tec-evidence-file-preview">
+                            <FileText size={30} />
+                            <span>{isPdf(ev.archivo_url) ? "PDF" : "Archivo"}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="tec-evidence-card-info">
+                        <strong>{ev.tipo || "SOPORTE"}</strong>
+                        <span>{ev.nombre_original || ev.filename || "Archivo"}</span>
+                        <small>{ev.descripcion || "Sin descripción"}</small>
+
+                        <div className="tec-evidence-card-actions">
+                          <button
+                            type="button"
+                            className="tec-exec-light"
+                            onClick={() => setPreviewEvidencia({ ...ev, url })}
+                          >
+                            <Eye size={15} />
+                            Ver
+                          </button>
+
+                          <button
+                            type="button"
+                            className="tec-exec-danger"
+                            onClick={() => eliminarEvidencia(ev.id)}
+                          >
+                            <Trash2 size={15} />
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
 
@@ -336,6 +393,37 @@ export default function ModalEjecucionTecnica({
             Finalizar
           </button>
         </div>
+
+        {previewEvidencia && (
+          <div className="tec-modal-backdrop">
+            <div className="tec-modal tec-modal-large">
+              <div className="tec-modal-header">
+                <div>
+                  <h2>Vista de evidencia</h2>
+                  <p>{previewEvidencia.nombre_original || previewEvidencia.filename || "Archivo"}</p>
+                </div>
+
+                <button onClick={() => setPreviewEvidencia(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {isPdf(previewEvidencia.archivo_url) ? (
+                <iframe
+                  src={previewEvidencia.url}
+                  title="Evidencia PDF"
+                  className="tec-evidence-iframe"
+                />
+              ) : (
+                <img
+                  src={previewEvidencia.url}
+                  alt="Vista evidencia"
+                  className="tec-evidence-big-img"
+                />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -367,6 +455,24 @@ function formatDate(value) {
 
 function getFileUrl(url) {
   if (!url) return "#";
-  if (url.startsWith("http")) return url;
-  return `http://127.0.0.1:8000${url}`;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+  const base = String(
+    import.meta.env.VITE_API_URL ||
+      API?.defaults?.baseURL ||
+      window.location.origin
+  ).replace(/\/$/, "");
+
+  return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+}
+
+function isPdf(url = "") {
+  return String(url).toLowerCase().includes(".pdf");
+}
+
+function isImage(url = "") {
+  const lower = String(url).toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
+    lower.includes(ext)
+  );
 }
