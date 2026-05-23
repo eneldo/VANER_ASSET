@@ -2,13 +2,17 @@
 // EVIDENCIAS PAGE PRO
 // Galería visual + filtros + SaaS UI
 // Admin consulta evidencias por equipo o mantenimiento.
-// La carga real de evidencias será desde plataforma técnico.
+// FIX PRODUCCIÓN:
+// - No usa 127.0.0.1.
+// - Construye URL pública desde VITE_API_URL.
+// - Renderiza imagen real.
+// - Preview modal para imagen/PDF.
 // =========================================================
 
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
-import SecureFileUploader from "../../components/SecureFileUploader";
+
 import {
   Image,
   Search,
@@ -16,7 +20,54 @@ import {
   Trash2,
   FileText,
   Eye,
+  ExternalLink,
 } from "lucide-react";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  API?.defaults?.baseURL ||
+  window.location.origin;
+
+function buildFileUrl(url) {
+  if (!url) return "";
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  const base = String(API_BASE).replace(/\/$/, "");
+
+  if (url.startsWith("/")) {
+    return `${base}${url}`;
+  }
+
+  return `${base}/${url}`;
+}
+
+function esPdf(url = "") {
+  return String(url).toLowerCase().includes(".pdf");
+}
+
+function esImagen(url = "") {
+  const lower = String(url).toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif")
+  );
+}
+
+function formatDate(value) {
+  if (!value) return "Sin fecha";
+
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) return value;
+
+  return d.toLocaleString("es-CO");
+}
 
 export default function EvidenciasPage() {
   const [evidencias, setEvidencias] = useState([]);
@@ -30,6 +81,8 @@ export default function EvidenciasPage() {
 
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     cargarTodo();
@@ -38,6 +91,8 @@ export default function EvidenciasPage() {
   const cargarTodo = async () => {
     try {
       setLoading(true);
+      setError("");
+      setMensaje("");
 
       const [resEvidencias, resMantenimientos, resEquipos] =
         await Promise.all([
@@ -46,27 +101,31 @@ export default function EvidenciasPage() {
           API.get("/equipos/"),
         ]);
 
-      setEvidencias(resEvidencias.data || []);
-      setMantenimientos(resMantenimientos.data || []);
-      setEquipos(resEquipos.data || []);
-    } catch (error) {
-      console.error("Error cargando evidencias:", error);
-      alert("Error cargando evidencias.");
+      setEvidencias(Array.isArray(resEvidencias.data) ? resEvidencias.data : []);
+      setMantenimientos(
+        Array.isArray(resMantenimientos.data) ? resMantenimientos.data : []
+      );
+      setEquipos(Array.isArray(resEquipos.data) ? resEquipos.data : []);
+    } catch (err) {
+      console.error("Error cargando evidencias:", err);
+      setError("Error cargando evidencias.");
     } finally {
       setLoading(false);
     }
   };
 
   const eliminar = async (id) => {
-    const ok = confirm("¿Eliminar evidencia?");
+    const ok = window.confirm("¿Eliminar evidencia?");
     if (!ok) return;
 
     try {
+      setError("");
       await API.delete(`/evidencias/${id}`);
+      setMensaje("Evidencia eliminada correctamente.");
       await cargarTodo();
-    } catch (error) {
-      console.error(error);
-      alert("No se pudo eliminar la evidencia.");
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo eliminar la evidencia.");
     }
   };
 
@@ -91,18 +150,6 @@ export default function EvidenciasPage() {
     return `#${m.id} · ${m.tipo || "Mantenimiento"} · ${
       m.estado || "Sin estado"
     }`;
-  };
-
-  const getArchivoUrl = (url) => {
-    if (!url) return "";
-
-    if (url.startsWith("http")) return url;
-
-    return `http://127.0.0.1:8000${url}`;
-  };
-
-  const esPdf = (url = "") => {
-    return url.toLowerCase().includes(".pdf");
   };
 
   const filtradas = useMemo(() => {
@@ -153,19 +200,18 @@ export default function EvidenciasPage() {
 
         <div>
           <h1>Evidencias</h1>
-          <p>
-            Consulta fotos, PDF y soportes asociados a equipos y mantenimientos.
-          </p>
+          <p>Consulta fotos, PDF y soportes asociados a equipos y mantenimientos.</p>
         </div>
       </div>
+
+      {mensaje && <div style={styles.successAlert}>{mensaje}</div>}
+      {error && <div style={styles.errorAlert}>{error}</div>}
 
       <section style={styles.card}>
         <div style={styles.cardHeader}>
           <div>
             <h2 style={styles.title}>Galería de evidencias</h2>
-            <p style={styles.subtitle}>
-              {filtradas.length} evidencias encontradas
-            </p>
+            <p style={styles.subtitle}>{filtradas.length} evidencias encontradas</p>
           </div>
 
           <button className="btn-secondary" onClick={cargarTodo}>
@@ -181,6 +227,7 @@ export default function EvidenciasPage() {
               placeholder="Buscar por tipo, descripción, equipo o mantenimiento..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
+              style={styles.searchInput}
             />
           </div>
 
@@ -232,7 +279,7 @@ export default function EvidenciasPage() {
         ) : (
           <div style={styles.grid}>
             {filtradas.map((e) => {
-              const url = getArchivoUrl(e.archivo_url);
+              const url = buildFileUrl(e.archivo_url);
 
               return (
                 <div key={e.id} style={styles.evidenceCard}>
@@ -242,18 +289,27 @@ export default function EvidenciasPage() {
                         <FileText size={44} />
                         <span>Documento PDF</span>
                       </div>
-                    ) : (
+                    ) : esImagen(e.archivo_url) ? (
                       <img
                         src={url}
                         alt={e.nombre_original || "Evidencia"}
                         style={styles.img}
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
                       />
+                    ) : (
+                      <div style={styles.pdfBox}>
+                        <FileText size={44} />
+                        <span>Archivo</span>
+                      </div>
                     )}
                   </div>
 
                   <div style={styles.info}>
                     <div style={styles.infoTop}>
-                      <span style={styles.badge(e.tipo)}>{e.tipo}</span>
+                      <span style={styles.badge(e.tipo)}>{e.tipo || "SOPORTE"}</span>
                       <small>{formatDate(e.created_at)}</small>
                     </div>
 
@@ -277,6 +333,16 @@ export default function EvidenciasPage() {
                         <Eye size={15} />
                         Ver
                       </button>
+
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={styles.openBtn}
+                      >
+                        <ExternalLink size={15} />
+                        Abrir
+                      </a>
 
                       <button
                         style={styles.deleteBtn}
@@ -330,17 +396,27 @@ export default function EvidenciasPage() {
   );
 }
 
-function formatDate(value) {
-  if (!value) return "Sin fecha";
-
-  const d = new Date(value);
-
-  if (Number.isNaN(d.getTime())) return value;
-
-  return d.toLocaleString();
-}
-
 const styles = {
+  successAlert: {
+    marginBottom: 16,
+    padding: "12px 16px",
+    borderRadius: 14,
+    background: "#dcfce7",
+    border: "1px solid #bbf7d0",
+    color: "#166534",
+    fontWeight: 800,
+  },
+
+  errorAlert: {
+    marginBottom: 16,
+    padding: "12px 16px",
+    borderRadius: 14,
+    background: "#fee2e2",
+    border: "1px solid #fecaca",
+    color: "#991b1b",
+    fontWeight: 800,
+  },
+
   card: {
     background: "white",
     borderRadius: 24,
@@ -355,6 +431,7 @@ const styles = {
     alignItems: "center",
     gap: 16,
     marginBottom: 18,
+    flexWrap: "wrap",
   },
 
   title: {
@@ -384,6 +461,14 @@ const styles = {
     alignItems: "center",
     gap: 9,
     background: "#f8fafc",
+  },
+
+  searchInput: {
+    width: "100%",
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    padding: "12px 0",
   },
 
   select: {
@@ -493,13 +578,13 @@ const styles = {
   },
 
   actions: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
     gap: 8,
     marginTop: 6,
   },
 
   viewBtn: {
-    flex: 1,
     border: "none",
     borderRadius: 12,
     padding: "9px 10px",
@@ -513,8 +598,21 @@ const styles = {
     gap: 6,
   },
 
+  openBtn: {
+    border: "none",
+    borderRadius: 12,
+    padding: "9px 10px",
+    background: "#eef2ff",
+    color: "#3730a3",
+    fontWeight: 900,
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+
   deleteBtn: {
-    flex: 1,
     border: "none",
     borderRadius: 12,
     padding: "9px 10px",
@@ -554,7 +652,9 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 14,
     marginBottom: 14,
+    flexWrap: "wrap",
   },
 
   modalTitle: {
