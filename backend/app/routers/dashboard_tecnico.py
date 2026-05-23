@@ -29,6 +29,7 @@ from app.models.sede import Sede
 from app.models.categoria import Categoria
 from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.evidencia import Evidencia
+from app.services.evidencia_service import save_secure_file
 
 
 router = APIRouter(prefix="/dashboard-tecnico", tags=["Dashboard Técnico"])
@@ -53,6 +54,28 @@ def safe_str(value):
 
 def safe_get(obj, attr, default=None):
     return getattr(obj, attr, default) if obj else default
+
+def serializar_evidencia_tecnico(e: Evidencia):
+    archivo = getattr(e, "archivo_url", None) or ""
+    filename = os.path.basename(archivo)
+
+    if archivo.startswith("/uploads/"):
+        archivo_url = archivo
+    else:
+        archivo_url = f"/uploads/evidencias/{filename}" if filename else ""
+
+    return {
+        "id": str(e.id),
+        "mantenimiento_id": str(e.mantenimiento_id) if e.mantenimiento_id else None,
+        "equipo_id": str(e.equipo_id) if e.equipo_id else None,
+        "tipo": e.tipo,
+        "descripcion": e.descripcion,
+        "nombre_original": e.nombre_original,
+        "archivo_url": archivo_url,
+        "filename": filename,
+        "created_at": safe_str(e.created_at),
+    }
+
 
 
 def get_fecha_fin(mantenimiento):
@@ -340,14 +363,7 @@ def detalle_mantenimiento_tecnico(
         },
         "hoja_vida_tecnica": serializar_hoja_vida(hoja_vida),
         "evidencias": [
-            {
-                "id": str(e.id),
-                "tipo": e.tipo,
-                "archivo_url": e.archivo_url,
-                "nombre_original": e.nombre_original,
-                "descripcion": e.descripcion,
-                "created_at": safe_str(e.created_at),
-            }
+            serializar_evidencia_tecnico(e)
             for e in evidencias
         ],
     }
@@ -460,32 +476,31 @@ async def subir_evidencia_tecnico(
     if tipo not in tipos_validos:
         raise HTTPException(status_code=400, detail="Tipo de evidencia inválido")
 
-    extension = archivo.filename.split(".")[-1].lower()
+    try:
+        saved = await save_secure_file(archivo)
 
-    if extension not in ["jpg", "jpeg", "png", "pdf"]:
-        raise HTTPException(status_code=400, detail="Solo se permiten JPG, JPEG, PNG o PDF")
+        evidencia = Evidencia(
+            mantenimiento_id=mantenimiento.id,
+            equipo_id=mantenimiento.equipo_id,
+            tipo=tipo,
+            archivo_url=saved["public_url"],
+            nombre_original=archivo.filename,
+            descripcion=descripcion,
+        )
 
-    nombre_archivo = f"{uuid.uuid4()}.{extension}"
-    ruta = os.path.join(UPLOAD_DIR, nombre_archivo)
+        db.add(evidencia)
+        db.commit()
+        db.refresh(evidencia)
 
-    contenido = await archivo.read()
+        return {
+            "message": "Evidencia subida correctamente",
+            "evidencia": serializar_evidencia_tecnico(evidencia),
+        }
 
-    with open(ruta, "wb") as buffer:
-        buffer.write(contenido)
-
-    evidencia = Evidencia(
-        mantenimiento_id=mantenimiento.id,
-        equipo_id=mantenimiento.equipo_id,
-        tipo=tipo,
-        archivo_url=f"/uploads/evidencias/{nombre_archivo}",
-        nombre_original=archivo.filename,
-        descripcion=descripcion,
-    )
-
-    db.add(evidencia)
-    db.commit()
-
-    return {"message": "Evidencia subida correctamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"No se pudo subir la evidencia: {str(e)}")
 
 
 # =========================================================

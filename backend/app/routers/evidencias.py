@@ -10,12 +10,17 @@ Funciones:
 - Filtrar por mantenimiento
 - Filtrar por equipo
 - Eliminar evidencia
+
+FIX PRODUCCIÓN:
+- Usa el mismo servicio de guardado para todos los flujos.
+- Guarda en BD la URL pública real: /uploads/evidencias/<archivo>.
+- Eliminar borra BD aunque el archivo físico ya no exista.
 ===========================================================
 """
 
 import os
-from pathlib import Path
 from uuid import UUID
+
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -23,20 +28,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.evidencia import Evidencia
 from app.models.mantenimiento import Mantenimiento
-from app.services.evidencia_service import save_secure_file
+from app.services.evidencia_service import (
+    save_secure_file,
+    get_evidencia_path,
+    EVIDENCIAS_DIR,
+)
 
 router = APIRouter(prefix="/evidencias", tags=["Evidencias PRO"])
-
-
-# ===========================================================
-# CONFIGURACIÓN DE RUTA DE ARCHIVOS
-# ===========================================================
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOADS_DIR = BASE_DIR / "uploads"
-UPLOAD_DIR = UPLOADS_DIR / "evidencias"
-
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ===========================================================
@@ -44,10 +42,6 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # ===========================================================
 
 def serializar_evidencia(e: Evidencia):
-    """
-    Convierte una evidencia en diccionario listo para React.
-    """
-
     archivo = e.archivo_url or ""
 
     if archivo.startswith("/uploads/"):
@@ -55,7 +49,7 @@ def serializar_evidencia(e: Evidencia):
         filename = os.path.basename(archivo)
     else:
         filename = os.path.basename(archivo)
-        archivo_url = f"/uploads/evidencias/{filename}"
+        archivo_url = f"/uploads/evidencias/{filename}" if filename else ""
 
     return {
         "id": str(e.id),
@@ -122,7 +116,7 @@ def evidencias_por_equipo(
 
 
 # ===========================================================
-# SUBIR EVIDENCIA
+# SUBIR EVIDENCIA ADMIN / GENERAL
 # POST /evidencias/subir
 # ===========================================================
 
@@ -155,15 +149,13 @@ async def subir_evidencia(
     try:
         saved = await save_secure_file(archivo)
 
-        filename = saved["filename"]
-
         nueva = Evidencia(
             mantenimiento_id=mantenimiento_id,
             equipo_id=equipo_final_id,
             tipo=tipo,
             descripcion=descripcion,
             nombre_original=archivo.filename,
-            archivo_url=filename,
+            archivo_url=saved["public_url"],
         )
 
         db.add(nueva)
@@ -175,8 +167,10 @@ async def subir_evidencia(
             "evidencia": serializar_evidencia(nueva),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error guardando evidencia: {str(e)}")
 
 
 # ===========================================================
@@ -186,13 +180,15 @@ async def subir_evidencia(
 
 @router.get("/descargar/{filename}")
 def descargar_archivo(filename: str):
-    safe_name = os.path.basename(filename)
-    path = UPLOAD_DIR / safe_name
+    try:
+        path = get_evidencia_path(filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Nombre de archivo inválido")
 
     if not path.exists():
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
-    return FileResponse(path)
+    return FileResponse(str(path))
 
 
 # ===========================================================
@@ -211,10 +207,15 @@ def eliminar_evidencia(
         raise HTTPException(status_code=404, detail="Evidencia no encontrada")
 
     filename = os.path.basename(evidencia.archivo_url or "")
-    path = os.path.join(UPLOAD_DIR, filename)
 
-    if path.exists():
-        path.unlink()
+    if filename:
+        try:
+            path = get_evidencia_path(filename)
+            if path.exists():
+                path.unlink()
+        except Exception:
+            # Evita que un archivo faltante bloquee la eliminación de BD.
+            pass
 
     db.delete(evidencia)
     db.commit()

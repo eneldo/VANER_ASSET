@@ -42,7 +42,7 @@ export default function ModalEjecucionTecnica({
 }) {
   const mantenimiento = detalle?.mantenimiento || {};
   const equipo = detalle?.equipo_basico || {};
-  const evidencias = detalle?.evidencias || [];
+  const evidenciasIniciales = detalle?.evidencias || [];
 
   const mantenimientoId = mantenimiento.id;
 
@@ -57,7 +57,9 @@ export default function ModalEjecucionTecnica({
 
   const [guardando, setGuardando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [eliminandoId, setEliminandoId] = useState(null);
   const [previewEvidencia, setPreviewEvidencia] = useState(null);
+  const [evidencias, setEvidencias] = useState(evidenciasIniciales);
 
   useEffect(() => {
     setEstadoInicial(mantenimiento.estado_inicial || mantenimiento.estado_inicial_equipo || "");
@@ -65,6 +67,25 @@ export default function ModalEjecucionTecnica({
     setResultadoFinal(mantenimiento.resultado_final || "");
     setObservaciones(mantenimiento.observaciones || "");
   }, [mantenimiento.id]);
+
+  useEffect(() => {
+    setEvidencias(Array.isArray(evidenciasIniciales) ? evidenciasIniciales : []);
+  }, [detalle]);
+
+  const cargarEvidencias = async () => {
+    if (!mantenimientoId) {
+      setEvidencias([]);
+      return;
+    }
+
+    try {
+      const res = await API.get(`/evidencias/mantenimiento/${mantenimientoId}`);
+      setEvidencias(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error cargando evidencias:", error);
+      setEvidencias([]);
+    }
+  };
 
   const guardarAvance = async (nuevoEstado = "") => {
     try {
@@ -117,7 +138,7 @@ export default function ModalEjecucionTecnica({
       formData.append("descripcion", descripcionEvidencia || "");
       formData.append("archivo", archivo);
 
-      await API.post(
+      const res = await API.post(
         `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
         formData
       );
@@ -125,6 +146,11 @@ export default function ModalEjecucionTecnica({
       setArchivo(null);
       setDescripcionEvidencia("");
 
+      if (res.data?.evidencia) {
+        setEvidencias((prev) => [res.data.evidencia, ...prev]);
+      }
+
+      await cargarEvidencias();
       await onRefreshDashboard();
 
       if (onRefreshDetalle) {
@@ -149,8 +175,13 @@ export default function ModalEjecucionTecnica({
     if (!confirmar) return;
 
     try {
+      setEliminandoId(evidenciaId);
+
       await API.delete(`/evidencias/${evidenciaId}`);
 
+      setEvidencias((prev) => prev.filter((ev) => String(ev.id) !== String(evidenciaId)));
+
+      await cargarEvidencias();
       await onRefreshDashboard();
 
       if (onRefreshDetalle) {
@@ -161,6 +192,8 @@ export default function ModalEjecucionTecnica({
     } catch (error) {
       console.error(error);
       alert(error.response?.data?.detail || "No se pudo eliminar la evidencia.");
+    } finally {
+      setEliminandoId(null);
     }
   };
 
@@ -328,9 +361,10 @@ export default function ModalEjecucionTecnica({
                             type="button"
                             className="tec-exec-danger"
                             onClick={() => eliminarEvidencia(ev.id)}
+                            disabled={eliminandoId === ev.id}
                           >
                             <Trash2 size={15} />
-                            Eliminar
+                            {eliminandoId === ev.id ? "Eliminando..." : "Eliminar"}
                           </button>
                         </div>
                       </div>

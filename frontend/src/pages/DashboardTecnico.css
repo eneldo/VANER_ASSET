@@ -1542,3 +1542,78 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   EVIDENCIAS DENTRO DEL MODAL DE EJECUCIÓN
+========================================================= */
+
+.tec-evidence-card-pro {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  color: #0f172a;
+}
+
+.tec-evidence-card-preview {
+  width: 100%;
+  height: 145px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tec-evidence-card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tec-evidence-file-preview {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #2563eb;
+  font-weight: 950;
+}
+
+.tec-evidence-card-info {
+  padding: 12px;
+  display: grid;
+  gap: 7px;
+}
+
+.tec-evidence-card-info strong {
+  color: #0f172a;
+  font-weight: 950;
+}
+
+.tec-evidence-card-info span,
+.tec-evidence-card-info small {
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+
+.tec-evidence-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tec-evidence-card-actions button {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tec-exec-danger:disabled,
+.tec-exec-light:disabled,
+.tec-exec-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
