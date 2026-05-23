@@ -1,935 +1,915 @@
-// ============================================================
-// DASHBOARD ADMIN SaaS PRO - SGA Empresarial
-// Fase 33.1
-// Archivo: frontend/src/pages/DashboardAdmin.jsx
+// =========================================================
+// DASHBOARD TÉCNICO PRO - SGA PRO
+// Archivo: frontend/src/pages/DashboardTecnico.jsx
 //
-// Objetivo:
-// - Dashboard ejecutivo para ADMIN.
-// - KPIs SaaS, alertas, gráficas, acciones rápidas y vista rápida.
-// - Responsive PC / tablet / celular.
-// - Compatible con backend actual: empresas, sedes, equipos,
-//   mantenimientos y técnicos.
-// ============================================================
+// Fase A + B:
+// - Bandeja compacta inteligente.
+// - Tabs por estado.
+// - Modal de ejecución técnica.
+// - Histórico de mantenimientos finalizados.
+// =========================================================
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
-import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
+import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
 
 import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  BarChart3,
-  Building2,
-  CalendarClock,
-  CheckCircle2,
-  ClipboardList,
-  Download,
-  Factory,
-  Gauge,
-  LayoutDashboard,
-  Mail,
-  MapPin,
-  MapPinned,
-  MonitorCog,
-  Phone,
-  Plus,
-  RefreshCcw,
-  Search,
-  ShieldAlert,
-  Sparkles,
-  TrendingUp,
-  UserCog,
   Wrench,
+  Play,
+  CheckCircle,
+  UploadCloud,
+  Eye,
+  RefreshCcw,
   X,
+  FileText,
+  Clock,
+  LogOut,
+  ClipboardList,
+  Activity,
+  History,
+  Search,
+  CalendarDays,
+  Building2,
+  MapPin,
 } from "lucide-react";
 
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import "./DashboardTecnico.css";
 
-import "../styles/sidebar.css";
-import "./DashboardAdmin.css";
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  API?.defaults?.baseURL ||
+  window.location.origin;
 
-const COLORS = ["#2563eb", "#06b6d4", "#22c55e", "#f59e0b", "#ef4444", "#7c3aed"];
+function buildFileUrl(url) {
+  if (!url) return "#";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = String(API_BASE).replace(/\/$/, "");
+  return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+}
 
-const ESTADOS_ACTIVOS = ["PROGRAMADO", "ASIGNADO", "EN_PROCESO", "PAUSADO"];
-const ESTADOS_CERRADOS = ["FINALIZADO", "ANULADO"];
+function isPdf(url = "") {
+  return String(url).toLowerCase().includes(".pdf");
+}
 
-const initialState = {
-  empresas: [],
-  sedes: [],
-  equipos: [],
-  mantenimientos: [],
-  tecnicos: [],
-};
+function isImage(url = "") {
+  const lower = String(url).toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
+    lower.includes(ext)
+  );
+}
 
-export default function DashboardAdmin() {
+export default function DashboardTecnico() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [data, setData] = useState(initialState);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
-  const [vista, setVista] = useState("mantenimientos");
+  const [data, setData] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [registrosPorPagina, setRegistrosPorPagina] = useState(10);
-  const [sedeSeleccionada, setSedeSeleccionada] = useState(null);
+  const [filtroEstado, setFiltroEstado] = useState("");
+  const [tabActivo, setTabActivo] = useState("ACTIVOS");
+
+  const [detalle, setDetalle] = useState(null);
+  const [modalEvidencia, setModalEvidencia] = useState(null);
+  const [modalEjecucion, setModalEjecucion] = useState(null);
+  const [modalHistorico, setModalHistorico] = useState(false);
+
+  const [archivo, setArchivo] = useState(null);
+  const [tipoEvidencia, setTipoEvidencia] = useState("ANTES");
+  const [descripcionEvidencia, setDescripcionEvidencia] = useState("");
+  const [evidenciasTecnico, setEvidenciasTecnico] = useState([]);
+  const [cargandoEvidencias, setCargandoEvidencias] = useState(false);
+  const [previewEvidencia, setPreviewEvidencia] = useState(null);
+
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 8;
+
+  const usuarioId = user?.usuario_id || user?.id;
 
   useEffect(() => {
-    cargarDashboard(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (usuarioId) cargarDashboardTecnico();
+  }, [usuarioId]);
 
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [vista, busqueda, registrosPorPagina]);
-
-  async function cargarDashboard(firstLoad = false) {
+  const cargarDashboardTecnico = async () => {
     try {
-      if (firstLoad) setLoading(true);
-      setRefreshing(true);
-      setError("");
+      const res = await API.get(`/dashboard-tecnico/usuario/${usuarioId}`);
+      setData(res.data);
+    } catch (error) {
+      console.error(error);
+      alert("Error cargando portal técnico.");
+    }
+  };
 
-      // Promise.allSettled evita que todo el dashboard se caiga si un módulo falla.
-      const results = await Promise.allSettled([
-        API.get("/empresas/"),
-        API.get("/sedes/"),
-        API.get("/equipos/"),
-        API.get("/mantenimientos/"),
-        API.get("/tecnicos/"),
-      ]);
+  const mantenimientos = data?.mantenimientos || [];
+  const resumen = data?.resumen || {};
 
-      const [empresas, sedes, equipos, mantenimientos, tecnicos] = results.map((result) => {
-        if (result.status === "fulfilled") return Array.isArray(result.value.data) ? result.value.data : [];
-        return [];
-      });
+  const filtrados = useMemo(() => {
+    const q = busqueda.toLowerCase();
 
-      const fallos = results.filter((result) => result.status === "rejected").length;
-      if (fallos > 0) {
-        setError(`Se cargó el dashboard, pero ${fallos} módulo(s) no respondieron correctamente.`);
+    return mantenimientos.filter((m) => {
+      const estado = String(m.estado || "").toUpperCase();
+
+      const texto = `
+        ${m.equipo?.nombre || ""}
+        ${m.empresa?.nombre || ""}
+        ${m.sede?.nombre || ""}
+        ${m.tipo || ""}
+        ${m.estado || ""}
+        ${m.equipo?.codigo_id || ""}
+        ${m.equipo?.serie || ""}
+      `.toLowerCase();
+
+      const textoOk = texto.includes(q);
+      const estadoOk = filtroEstado ? estado === filtroEstado : true;
+
+      let tabOk = true;
+
+      if (tabActivo === "ACTIVOS") {
+        tabOk = ["PROGRAMADO", "ASIGNADO", "EN_PROCESO", "PAUSADO"].includes(estado);
       }
 
-      setData({ empresas, sedes, equipos, mantenimientos, tecnicos });
-    } catch (err) {
-      console.error("Error cargando Dashboard Admin:", err);
-      setError("No fue posible cargar el dashboard. Verifica backend, sesión o conexión.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+      if (tabActivo === "PROGRAMADOS") {
+        tabOk = ["PROGRAMADO", "ASIGNADO"].includes(estado);
+      }
 
-  const empresas = data.empresas;
-  const sedes = data.sedes;
-  const equipos = data.equipos;
-  const mantenimientos = data.mantenimientos;
-  const tecnicos = data.tecnicos;
+      if (tabActivo === "EN_PROCESO") {
+        tabOk = estado === "EN_PROCESO";
+      }
 
-  // =========================================================
-  // DATOS ENRIQUECIDOS
-  // =========================================================
+      if (tabActivo === "PAUSADOS") {
+        tabOk = estado === "PAUSADO";
+      }
 
-  const sedesEnriquecidas = useMemo(() => {
-    return sedes.map((sede) => {
-      const empresa = empresas.find((e) => sameId(e.id, sede.empresa_id));
-      const equiposSede = equipos.filter((equipo) => sameId(equipo.sede_id, sede.id));
-      const mantenimientosSede = mantenimientos.filter((m) =>
-        equiposSede.some((eq) => sameId(eq.id, m.equipo_id))
-      );
+      if (tabActivo === "FINALIZADOS") {
+        tabOk = estado === "FINALIZADO";
+      }
 
-      const pendientes = mantenimientosSede.filter(
-        (m) => !ESTADOS_CERRADOS.includes(normalizeEstado(m.estado))
-      );
-      const finalizados = mantenimientosSede.filter(
-        (m) => normalizeEstado(m.estado) === "FINALIZADO"
-      );
+      if (tabActivo === "TODOS") {
+        tabOk = true;
+      }
 
-      return {
-        ...sede,
-        empresa_nombre: empresa?.nombre || sede.empresa_nombre || "—",
-        empresa_nit: empresa?.nit || "—",
-        total_equipos: equiposSede.length,
-        total_mantenimientos: mantenimientosSede.length,
-        pendientes: pendientes.length,
-        finalizados: finalizados.length,
-        equipos: equiposSede,
-        mantenimientos: mantenimientosSede,
-      };
+      return textoOk && estadoOk && tabOk;
     });
-  }, [sedes, empresas, equipos, mantenimientos]);
+  }, [mantenimientos, busqueda, filtroEstado, tabActivo]);
 
-  const tecnicosEnriquecidos = useMemo(() => {
-    return tecnicos.map((tecnico) => {
-      const usuario = tecnico.usuario || {};
-      const asignados = mantenimientos.filter((m) => sameId(m.tecnico_id, tecnico.id));
-      const activos = asignados.filter((m) => ESTADOS_ACTIVOS.includes(normalizeEstado(m.estado)));
-      const finalizados = asignados.filter((m) => normalizeEstado(m.estado) === "FINALIZADO");
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
 
-      return {
-        ...tecnico,
-        nombre_visible:
-          usuario.nombre_completo ||
-          tecnico.nombre_completo ||
-          tecnico.nombre ||
-          tecnico.nombres ||
-          `Técnico ${String(tecnico.id || "").slice(0, 6)}`,
-        email_visible: usuario.email || tecnico.email || "—",
-        telefono_visible: tecnico.telefono || usuario.telefono || "—",
-        especialidad_visible: tecnico.especialidad || tecnico.cargo || "—",
-        total_mantenimientos: asignados.length,
-        activos: activos.length,
-        finalizados: finalizados.length,
-      };
-    });
-  }, [tecnicos, mantenimientos]);
-
-  const equiposEnriquecidos = useMemo(() => {
-    return equipos.map((equipo) => {
-      const sede = sedesEnriquecidas.find((s) => sameId(s.id, equipo.sede_id));
-      const empresa = empresas.find((e) => sameId(e.id, equipo.empresa_id));
-      const mantEquipo = mantenimientos.filter((m) => sameId(m.equipo_id, equipo.id));
-
-      return {
-        ...equipo,
-        sede_nombre: sede?.nombre || equipo.sede_nombre || "—",
-        empresa_nombre: empresa?.nombre || sede?.empresa_nombre || equipo.empresa_nombre || "—",
-        total_mantenimientos: mantEquipo.length,
-      };
-    });
-  }, [equipos, empresas, sedesEnriquecidas, mantenimientos]);
-
-  const mantenimientosEnriquecidos = useMemo(() => {
-    return mantenimientos.map((m) => {
-      const equipo = equiposEnriquecidos.find((e) => sameId(e.id, m.equipo_id));
-      const tecnico = tecnicosEnriquecidos.find((t) => sameId(t.id, m.tecnico_id));
-
-      return {
-        ...m,
-        estado_normalizado: normalizeEstado(m.estado),
-        equipo_nombre: m.equipo_nombre || equipo?.nombre || "—",
-        empresa_nombre: m.empresa_nombre || equipo?.empresa_nombre || "—",
-        sede_nombre: m.sede_nombre || equipo?.sede_nombre || "—",
-        tecnico_nombre: m.tecnico_nombre || tecnico?.nombre_visible || "—",
-      };
-    });
-  }, [mantenimientos, equiposEnriquecidos, tecnicosEnriquecidos]);
-
-  // =========================================================
-  // MÉTRICAS EJECUTIVAS
-  // =========================================================
-
-  const metricas = useMemo(() => {
-    const finalizados = mantenimientosEnriquecidos.filter((m) => m.estado_normalizado === "FINALIZADO").length;
-    const activos = mantenimientosEnriquecidos.filter((m) => ESTADOS_ACTIVOS.includes(m.estado_normalizado)).length;
-    const anulados = mantenimientosEnriquecidos.filter((m) => m.estado_normalizado === "ANULADO").length;
-    const cumplimiento = mantenimientos.length === 0 ? 0 : Math.round((finalizados / mantenimientos.length) * 100);
-
-    const hoy = startOfDay(new Date());
-    const atrasados = mantenimientosEnriquecidos.filter((m) => {
-      if (!m.fecha_programada) return false;
-      if (ESTADOS_CERRADOS.includes(m.estado_normalizado)) return false;
-      const fecha = startOfDay(new Date(m.fecha_programada));
-      return !Number.isNaN(fecha.getTime()) && fecha < hoy;
-    });
-
-    const proximos7Dias = mantenimientosEnriquecidos.filter((m) => {
-      if (!m.fecha_programada) return false;
-      if (ESTADOS_CERRADOS.includes(m.estado_normalizado)) return false;
-      const fecha = startOfDay(new Date(m.fecha_programada));
-      if (Number.isNaN(fecha.getTime())) return false;
-      const diff = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-      return diff >= 0 && diff <= 7;
-    });
-
-    const criticos = equiposEnriquecidos.filter((e) =>
-      ["ALTA", "CRITICA", "CRÍTICA"].includes(normalizeEstado(e.criticidad))
-    );
-
-    const fueraServicio = equiposEnriquecidos.filter((e) =>
-      ["FUERA_DE_SERVICIO", "FUERA DE SERVICIO", "BAJA"].includes(normalizeEstado(e.estado))
-    );
-
-    const tecnicosActivos = tecnicosEnriquecidos.filter((t) => t.activo !== false).length;
-
-    return {
-      finalizados,
-      activos,
-      anulados,
-      cumplimiento,
-      atrasados,
-      proximos7Dias,
-      criticos,
-      fueraServicio,
-      tecnicosActivos,
-    };
-  }, [mantenimientos, mantenimientosEnriquecidos, equiposEnriquecidos, tecnicosEnriquecidos]);
-
-  const saludOperativa = useMemo(() => {
-    let score = 100;
-    score -= Math.min(metricas.atrasados.length * 5, 35);
-    score -= Math.min(metricas.fueraServicio.length * 4, 25);
-    score -= Math.min(metricas.criticos.length * 2, 20);
-    score += Math.min(metricas.cumplimiento * 0.1, 10);
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }, [metricas]);
-
-  const equiposPorEstado = useMemo(() => {
-    const estados = {};
-    equiposEnriquecidos.forEach((e) => {
-      const estado = e.estado || "SIN ESTADO";
-      estados[estado] = (estados[estado] || 0) + 1;
-    });
-    return Object.entries(estados).map(([name, value]) => ({ name, value }));
-  }, [equiposEnriquecidos]);
-
-  const mantenimientosPorEstado = useMemo(() => {
-    const estados = {};
-    mantenimientosEnriquecidos.forEach((m) => {
-      const estado = m.estado || "SIN ESTADO";
-      estados[estado] = (estados[estado] || 0) + 1;
-    });
-    return Object.entries(estados).map(([name, value]) => ({ name, value }));
-  }, [mantenimientosEnriquecidos]);
-
-  const mantenimientosPorMes = useMemo(() => {
-    const meses = {};
-    mantenimientosEnriquecidos.forEach((m) => {
-      const fecha = m.fecha_programada || m.creado_en || m.created_at;
-      if (!fecha) return;
-      const d = new Date(fecha);
-      if (Number.isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      meses[key] = (meses[key] || 0) + 1;
-    });
-
-    return Object.entries(meses)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-8)
-      .map(([mes, total]) => ({ mes, total }));
-  }, [mantenimientosEnriquecidos]);
-
-  const cargaTecnicos = useMemo(() => {
-    return tecnicosEnriquecidos
-      .filter((t) => t.total_mantenimientos > 0)
-      .map((t) => ({ tecnico: shortName(t.nombre_visible), total: t.total_mantenimientos, activos: t.activos }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 8);
-  }, [tecnicosEnriquecidos]);
-
-  const rankingSedes = useMemo(() => {
-    return sedesEnriquecidas
-      .map((s) => ({ sede: shortName(s.nombre), equipos: s.total_equipos, pendientes: s.pendientes }))
-      .sort((a, b) => b.equipos - a.equipos)
-      .slice(0, 7);
-  }, [sedesEnriquecidas]);
-
-  const datosVista = useMemo(
-    () => ({
-      empresas,
-      sedes: sedesEnriquecidas,
-      equipos: equiposEnriquecidos,
-      mantenimientos: mantenimientosEnriquecidos,
-      tecnicos: tecnicosEnriquecidos,
-      atrasados: metricas.atrasados,
-      proximos: metricas.proximos7Dias,
-      criticos: metricas.criticos,
-      fuera_servicio: metricas.fueraServicio,
-    }),
-    [
-      empresas,
-      sedesEnriquecidas,
-      equiposEnriquecidos,
-      mantenimientosEnriquecidos,
-      tecnicosEnriquecidos,
-      metricas,
-    ]
+  const visibles = filtrados.slice(
+    (pagina - 1) * porPagina,
+    pagina * porPagina
   );
 
-  const dataFiltrada = useMemo(() => {
-    const base = datosVista[vista] || [];
-    const q = busqueda.toLowerCase().trim();
-    if (!q) return base;
-    return base.filter((item) => JSON.stringify(item).toLowerCase().includes(q));
-  }, [datosVista, vista, busqueda]);
+  const cambiarTab = (tab) => {
+    setTabActivo(tab);
+    setFiltroEstado("");
+    setPagina(1);
+  };
 
-  function cambiarVista(nuevaVista) {
-    setVista(nuevaVista);
-    setBusqueda("");
-    setSedeSeleccionada(null);
-  }
+  const filtrarPorCard = (estado) => {
+    setFiltroEstado(estado);
+    setTabActivo("TODOS");
+    setPagina(1);
+  };
 
-  function goTo(path) {
-    navigate(path);
-  }
+  const abrirFormato = (mantenimiento) => {
+    const id = mantenimiento.mantenimiento_id || mantenimiento.id;
 
-  if (loading) {
-    return (
-      <div className="dadmin-pro-shell">
-        <Sidebar user={user} onLogout={logout} />
-        <main className="dadmin-pro-main">
-          <DashboardSkeleton />
-        </main>
-      </div>
+    if (!id) {
+      alert("No se encontró el ID del mantenimiento.");
+      return;
+    }
+
+    navigate(`/tecnico/formato-mantenimiento/${id}`);
+  };
+
+  const verDetalle = async (mantenimiento) => {
+    try {
+      const res = await API.get(
+        `/dashboard-tecnico/mantenimiento/${mantenimiento.mantenimiento_id}/detalle`
+      );
+      setDetalle(res.data);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo cargar el detalle.");
+    }
+  };
+
+  const abrirEjecucionTecnica = async (mantenimiento) => {
+    try {
+      const res = await API.get(
+        `/dashboard-tecnico/mantenimiento/${mantenimiento.mantenimiento_id}/detalle`
+      );
+
+      setModalEjecucion(res.data);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo abrir la ejecución técnica.");
+    }
+  };
+
+  const refrescarDetalleEjecucion = async (mantenimientoId) => {
+    try {
+      const res = await API.get(
+        `/dashboard-tecnico/mantenimiento/${mantenimientoId}/detalle`
+      );
+
+      setModalEjecucion(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cargarEvidenciasMantenimiento = async (mantenimientoId) => {
+    if (!mantenimientoId) {
+      setEvidenciasTecnico([]);
+      return;
+    }
+
+    try {
+      setCargandoEvidencias(true);
+      const res = await API.get(`/evidencias/mantenimiento/${mantenimientoId}`);
+      setEvidenciasTecnico(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error cargando evidencias del técnico:", error);
+      setEvidenciasTecnico([]);
+    } finally {
+      setCargandoEvidencias(false);
+    }
+  };
+
+  const abrirModalEvidencia = async (mantenimiento) => {
+    setModalEvidencia(mantenimiento);
+    setArchivo(null);
+    setTipoEvidencia("ANTES");
+    setDescripcionEvidencia("");
+    await cargarEvidenciasMantenimiento(mantenimiento.mantenimiento_id);
+  };
+
+  const eliminarEvidenciaTecnico = async (evidenciaId) => {
+    const confirmar = window.confirm(
+      "¿Deseas eliminar esta evidencia? Esta acción no se puede deshacer."
     );
+
+    if (!confirmar) return;
+
+    try {
+      await API.delete(`/evidencias/${evidenciaId}`);
+
+      if (modalEvidencia?.mantenimiento_id) {
+        await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
+      }
+
+      await cargarDashboardTecnico();
+      alert("Evidencia eliminada correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "Error eliminando evidencia.");
+    }
+  };
+
+  const subirEvidenciaRapida = async () => {
+    if (!archivo || !modalEvidencia) {
+      alert("Selecciona un archivo.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("usuario_id", usuarioId);
+      formData.append("tipo", tipoEvidencia);
+      formData.append("descripcion", descripcionEvidencia);
+      formData.append("archivo", archivo);
+
+      await API.post(
+        `/dashboard-tecnico/mantenimiento/${modalEvidencia.mantenimiento_id}/evidencia`,
+        formData
+      );
+
+      setArchivo(null);
+      setDescripcionEvidencia("");
+
+      await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
+      await cargarDashboardTecnico();
+      alert("Evidencia subida correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "Error subiendo evidencia.");
+    }
+  };
+
+  if (!data) {
+    return <div className="tec-loading">Cargando dashboard técnico...</div>;
   }
 
   return (
-    <div className="dadmin-pro-shell">
-      <Sidebar user={user} onLogout={logout} />
+    <div className="tec-shell">
+      <aside className="tec-sidebar">
+        <div className="tec-brand">
+          <div className="tec-logo">SGA</div>
+          <div>
+            <h2>SGA PRO</h2>
+            <p>Portal Técnico</p>
+          </div>
+        </div>
 
-      <main className="dadmin-pro-main">
-        <section className="dadmin-hero">
-          <div className="dadmin-hero-copy">
-            <div className="dadmin-kicker">
-              <Sparkles size={15} />
-              SGA EMPRESARIAL · ADMIN SaaS PRO
-            </div>
-            <h1>Centro de control operativo</h1>
-            <p>
-              Monitorea empresas, sedes, equipos, mantenimientos, técnicos, alertas críticas
-              y cumplimiento general desde una vista ejecutiva responsive.
-            </p>
+        <div className="tec-user-card">
+          <strong>{user?.nombre_completo || "Técnico"}</strong>
+          <span>TECNICO</span>
+        </div>
+
+        <nav className="tec-nav">
+          <button className="active">
+            <Wrench size={17} />
+            Mis mantenimientos
+          </button>
+
+          <button onClick={() => setModalHistorico(true)}>
+            <History size={17} />
+            Histórico
+          </button>
+        </nav>
+
+        <button className="tec-logout" onClick={logout}>
+          <LogOut size={16} />
+          Salir
+        </button>
+      </aside>
+
+      <main className="tec-main">
+        <div className="tec-header">
+          <div>
+            <p className="tec-kicker">SGA PRO · PORTAL TÉCNICO</p>
+            <h1>Dashboard Técnico</h1>
+            <p>Gestiona únicamente tus mantenimientos asignados.</p>
           </div>
 
-          <div className="dadmin-hero-actions">
-            <button type="button" className="dadmin-btn ghost" onClick={() => cargarDashboard(false)}>
-              <RefreshCcw size={16} className={refreshing ? "dadmin-spin" : ""} />
-              {refreshing ? "Actualizando" : "Actualizar"}
-            </button>
-            <button type="button" className="dadmin-btn primary" onClick={() => goTo("/admin/mantenimientos")}>
-              <Plus size={16} />
-              Nuevo control
-            </button>
+          <button className="tec-btn-secondary" onClick={cargarDashboardTecnico}>
+            <RefreshCcw size={17} />
+            Actualizar
+          </button>
+        </div>
+
+        <section className="tec-hero">
+          <div>
+            <span>MÓDULO OPERATIVO</span>
+            <h2>Bitácora técnica en tiempo real</h2>
+            <p>Inicia, documenta, pausa y finaliza mantenimientos asignados con trazabilidad automática.</p>
           </div>
-        </section>
 
-        {error && (
-          <div className="dadmin-warning-banner">
-            <AlertTriangle size={17} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <section className="dadmin-executive-grid">
-          <HealthCard score={saludOperativa} cumplimiento={metricas.cumplimiento} />
-
-          <KpiCard title="Empresas" value={empresas.length} icon={<Building2 />} tone="blue" onClick={() => cambiarVista("empresas")} />
-          <KpiCard title="Sedes" value={sedes.length} icon={<MapPin />} tone="cyan" onClick={() => cambiarVista("sedes")} />
-          <KpiCard title="Equipos" value={equipos.length} icon={<MonitorCog />} tone="indigo" onClick={() => cambiarVista("equipos")} />
-          <KpiCard title="Mantenimientos" value={mantenimientos.length} icon={<Wrench />} tone="violet" onClick={() => cambiarVista("mantenimientos")} />
-          <KpiCard title="Técnicos activos" value={metricas.tecnicosActivos} icon={<UserCog />} tone="green" onClick={() => cambiarVista("tecnicos")} />
-        </section>
-
-        <section className="dadmin-alert-grid">
-          <AlertTile title="Atrasados" value={metricas.atrasados.length} icon={<CalendarClock />} tone="warning" onClick={() => cambiarVista("atrasados")} />
-          <AlertTile title="Próximos 7 días" value={metricas.proximos7Dias.length} icon={<ClipboardList />} tone="info" onClick={() => cambiarVista("proximos")} />
-          <AlertTile title="Equipos críticos" value={metricas.criticos.length} icon={<ShieldAlert />} tone="danger" onClick={() => cambiarVista("criticos")} />
-          <AlertTile title="Fuera de servicio" value={metricas.fueraServicio.length} icon={<AlertTriangle />} tone="danger" onClick={() => cambiarVista("fuera_servicio")} />
-          <AlertTile title="Finalizados" value={metricas.finalizados} icon={<CheckCircle2 />} tone="success" onClick={() => cambiarVista("mantenimientos")} />
-        </section>
-
-        <section className="dadmin-quick-actions">
-          <QuickAction icon={<Building2 />} title="Empresas" text="Crear o administrar clientes" onClick={() => goTo("/admin/empresas")} />
-          <QuickAction icon={<MapPin />} title="Sedes" text="Ubicaciones por empresa" onClick={() => goTo("/admin/sedes")} />
-          <QuickAction icon={<MonitorCog />} title="Inventario" text="Equipos y hoja de vida" onClick={() => goTo("/admin/equipos")} />
-          <QuickAction icon={<Wrench />} title="Mantenimientos" text="Programar y asignar" onClick={() => goTo("/admin/mantenimientos")} />
-          <QuickAction icon={<BarChart3 />} title="Reportes" text="Indicadores y exportación" onClick={() => goTo("/admin/reportes")} />
-        </section>
-
-        <section className="dadmin-charts-grid">
-          <ChartCard title="Mantenimientos por mes" subtitle="Tendencia operacional reciente">
-            {mantenimientosPorMes.length ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={mantenimientosPorMes}>
-                  <defs>
-                    <linearGradient id="mantGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="total" stroke="#2563eb" fill="url(#mantGradient)" strokeWidth={3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState text="Sin datos suficientes para la tendencia mensual." />
-            )}
-          </ChartCard>
-
-          <ChartCard title="Equipos por estado" subtitle="Distribución del inventario">
-            {equiposPorEstado.length ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={equiposPorEstado} dataKey="value" nameKey="name" outerRadius={82} innerRadius={44} paddingAngle={3}>
-                    {equiposPorEstado.map((_, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState text="Sin equipos registrados." />
-            )}
-          </ChartCard>
-        </section>
-
-        <section className="dadmin-charts-grid three">
-          <ChartCard title="Estados de mantenimiento" subtitle="Control por ciclo operativo">
-            {mantenimientosPorEstado.length ? (
-              <ResponsiveContainer width="100%" height={235}>
-                <BarChart data={mantenimientosPorEstado}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[10, 10, 0, 0]} fill="#06b6d4" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState text="Sin mantenimientos registrados." />
-            )}
-          </ChartCard>
-
-          <ChartCard title="Carga por técnico" subtitle="Top técnicos por asignaciones">
-            {cargaTecnicos.length ? (
-              <ResponsiveContainer width="100%" height={235}>
-                <BarChart data={cargaTecnicos}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="tecnico" tick={{ fontSize: 10 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="total" radius={[10, 10, 0, 0]} fill="#7c3aed" />
-                  <Bar dataKey="activos" radius={[10, 10, 0, 0]} fill="#22c55e" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState text="Sin asignaciones a técnicos." />
-            )}
-          </ChartCard>
-
-          <ChartCard title="Sedes con más equipos" subtitle="Capacidad instalada">
-            {rankingSedes.length ? (
-              <ResponsiveContainer width="100%" height={235}>
-                <BarChart data={rankingSedes} layout="vertical" margin={{ left: 18, right: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="sede" tick={{ fontSize: 10 }} width={80} />
-                  <Tooltip />
-                  <Bar dataKey="equipos" radius={[0, 10, 10, 0]} fill="#2563eb" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState text="Sin sedes registradas." />
-            )}
-          </ChartCard>
-        </section>
-
-        <section className="dadmin-table-panel">
-          <div className="dadmin-panel-head">
+          <div className="tec-hero-badge">
+            <Activity size={18} />
             <div>
-              <span className="dadmin-section-tag">
-                <Activity size={15} />
-                Vista rápida inteligente
-              </span>
-              <h2>{labelVista(vista)}</h2>
-              <p>Consulta, filtra y navega registros operativos sin salir del dashboard.</p>
-            </div>
-
-            <div className="dadmin-panel-actions">
-              <button type="button" className="dadmin-mini-btn" onClick={() => cambiarVista("mantenimientos")}>
-                <LayoutDashboard size={15} />
-                Resumen operativo
-              </button>
-              <button type="button" className="dadmin-mini-btn" onClick={() => window.print()}>
-                <Download size={15} />
-                Imprimir
-              </button>
+              <strong>Sesión técnica activa</strong>
+              <small>{user?.nombre_completo || "Técnico"}</small>
             </div>
           </div>
+        </section>
 
-          <div className="dadmin-search-row">
-            <div className="dadmin-search-box">
-              <Search size={17} />
+        <section className="tec-cards">
+          <MetricCard title="Total" value={resumen.total_asignados || 0} icon={<Wrench />} onClick={() => cambiarTab("TODOS")} />
+          <MetricCard title="Asignados" value={resumen.asignados || 0} icon={<Clock />} onClick={() => filtrarPorCard("ASIGNADO")} />
+          <MetricCard title="Programados" value={resumen.programados || 0} icon={<Clock />} onClick={() => filtrarPorCard("PROGRAMADO")} />
+          <MetricCard title="En proceso" value={resumen.en_proceso || 0} icon={<Play />} onClick={() => filtrarPorCard("EN_PROCESO")} />
+          <MetricCard title="Finalizados" value={resumen.finalizados || 0} icon={<CheckCircle />} onClick={() => filtrarPorCard("FINALIZADO")} />
+        </section>
+
+        <section className="tec-panel">
+          <div className="tec-panel-header pro">
+            <div>
+              <h2>Mis mantenimientos asignados</h2>
+              <p>{filtrados.length} registros encontrados</p>
+            </div>
+
+            <button className="tec-history-btn" onClick={() => setModalHistorico(true)}>
+              <History size={17} />
+              Ver histórico
+            </button>
+          </div>
+
+          <div className="tec-smart-tabs">
+            <button className={tabActivo === "ACTIVOS" ? "active" : ""} onClick={() => cambiarTab("ACTIVOS")}>
+              Activos
+            </button>
+            <button className={tabActivo === "PROGRAMADOS" ? "active" : ""} onClick={() => cambiarTab("PROGRAMADOS")}>
+              Programados
+            </button>
+            <button className={tabActivo === "EN_PROCESO" ? "active" : ""} onClick={() => cambiarTab("EN_PROCESO")}>
+              En proceso
+            </button>
+            <button className={tabActivo === "PAUSADOS" ? "active" : ""} onClick={() => cambiarTab("PAUSADOS")}>
+              Pausados
+            </button>
+            <button className={tabActivo === "FINALIZADOS" ? "active" : ""} onClick={() => cambiarTab("FINALIZADOS")}>
+              Finalizados
+            </button>
+            <button className={tabActivo === "TODOS" ? "active" : ""} onClick={() => cambiarTab("TODOS")}>
+              Todos
+            </button>
+          </div>
+
+          <section className="tec-toolbar compact">
+            <div className="tec-searchbox">
+              <Search size={16} />
               <input
+                placeholder="Buscar por equipo, empresa, sede, código, serie, tipo o estado..."
                 value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder={`Buscar en ${labelVista(vista).toLowerCase()}...`}
+                onChange={(e) => {
+                  setBusqueda(e.target.value);
+                  setPagina(1);
+                }}
               />
             </div>
-            <span>{dataFiltrada.length} registro(s)</span>
+
+            <select
+              value={filtroEstado}
+              onChange={(e) => {
+                setFiltroEstado(e.target.value);
+                setPagina(1);
+              }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="PROGRAMADO">Programado</option>
+              <option value="ASIGNADO">Asignado</option>
+              <option value="EN_PROCESO">En proceso</option>
+              <option value="PAUSADO">Pausado</option>
+              <option value="FINALIZADO">Finalizado</option>
+            </select>
+          </section>
+
+          <div className="tec-worklist">
+            {visibles.map((m) => (
+              <MantenimientoRow
+                key={m.mantenimiento_id}
+                mantenimiento={m}
+                onDetalle={() => verDetalle(m)}
+                onEvidencia={() => abrirModalEvidencia(m)}
+                onFormato={() => abrirFormato(m)}
+                onIniciar={() => abrirEjecucionTecnica(m)}
+              />
+            ))}
           </div>
 
-          <div className={vista === "sedes" ? "dadmin-master-detail" : ""}>
-            <DataTable
-              tipo={vista}
-              data={dataFiltrada}
-              paginaActual={paginaActual}
-              setPaginaActual={setPaginaActual}
-              registrosPorPagina={registrosPorPagina}
-              setRegistrosPorPagina={setRegistrosPorPagina}
-              onRowClick={(item) => {
-                if (vista === "sedes") setSedeSeleccionada(item);
-              }}
-            />
+          {filtrados.length === 0 && (
+            <div className="tec-empty">No hay mantenimientos en esta vista.</div>
+          )}
 
-            {vista === "sedes" && sedeSeleccionada && (
-              <SedeDetalle sede={sedeSeleccionada} onClose={() => setSedeSeleccionada(null)} />
-            )}
+          <div className="tec-pagination">
+            <button disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>
+              Anterior
+            </button>
+
+            <span>Página {pagina} de {totalPaginas}</span>
+
+            <button disabled={pagina === totalPaginas} onClick={() => setPagina(pagina + 1)}>
+              Siguiente
+            </button>
           </div>
         </section>
       </main>
-    </div>
-  );
-}
 
-// ============================================================
-// COMPONENTES VISUALES
-// ============================================================
+      {detalle && <DetalleModal detalle={detalle} onClose={() => setDetalle(null)} />}
 
-function KpiCard({ title, value, icon, tone, onClick }) {
-  return (
-    <button type="button" className={`dadmin-kpi ${tone}`} onClick={onClick}>
-      <div className="dadmin-kpi-icon">{icon}</div>
-      <div>
-        <span>{title}</span>
-        <strong>{value}</strong>
-      </div>
-      <ArrowRight className="dadmin-kpi-arrow" size={17} />
-    </button>
-  );
-}
+      {modalEjecucion && (
+        <ModalEjecucionTecnica
+          detalle={modalEjecucion}
+          usuarioId={usuarioId}
+          onClose={() => setModalEjecucion(null)}
+          onRefreshDashboard={cargarDashboardTecnico}
+          onRefreshDetalle={refrescarDetalleEjecucion}
+          onAbrirFormato={abrirFormato}
+        />
+      )}
 
-function HealthCard({ score, cumplimiento }) {
-  const estado = score >= 80 ? "Excelente" : score >= 60 ? "Controlado" : score >= 40 ? "Atención" : "Crítico";
+      {modalHistorico && (
+        <HistoricoTecnicoModal
+          usuarioId={usuarioId}
+          onClose={() => setModalHistorico(false)}
+          onDetalle={verDetalle}
+          onFormato={abrirFormato}
+        />
+      )}
 
-  return (
-    <article className="dadmin-health-card">
-      <div className="dadmin-health-top">
-        <div>
-          <span>Salud operativa</span>
-          <strong>{estado}</strong>
+      {modalEvidencia && (
+        <div className="tec-modal-backdrop">
+          <div className="tec-modal">
+            <div className="tec-modal-header">
+              <h2>Subir evidencia</h2>
+              <button onClick={() => setModalEvidencia(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="tec-form">
+              <label>Tipo</label>
+              <select value={tipoEvidencia} onChange={(e) => setTipoEvidencia(e.target.value)}>
+                <option value="ANTES">Antes</option>
+                <option value="DURANTE">Durante</option>
+                <option value="DESPUES">Después</option>
+                <option value="SOPORTE">Soporte</option>
+              </select>
+
+              <label>Archivo</label>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+              />
+
+              <label>Descripción</label>
+              <textarea
+                value={descripcionEvidencia}
+                onChange={(e) => setDescripcionEvidencia(e.target.value)}
+              />
+
+              <button className="tec-btn-primary" onClick={subirEvidenciaRapida}>
+                <UploadCloud size={17} />
+                Subir evidencia
+              </button>
+
+              <div className="tec-evidence-manager">
+                <div className="tec-evidence-manager-head">
+                  <h3>Evidencias cargadas</h3>
+                  <span>{evidenciasTecnico.length} archivo(s)</span>
+                </div>
+
+                {cargandoEvidencias ? (
+                  <div className="tec-empty">Cargando evidencias...</div>
+                ) : evidenciasTecnico.length === 0 ? (
+                  <div className="tec-empty">Aún no hay evidencias para este mantenimiento.</div>
+                ) : (
+                  <div className="tec-evidence-manager-grid">
+                    {evidenciasTecnico.map((ev) => {
+                      const url = buildFileUrl(ev.archivo_url);
+
+                      return (
+                        <article key={ev.id} className="tec-evidence-item">
+                          <div className="tec-evidence-preview">
+                            {isImage(ev.archivo_url) ? (
+                              <img src={url} alt={ev.nombre_original || "Evidencia"} />
+                            ) : (
+                              <div className="tec-evidence-file">
+                                <FileText size={32} />
+                                <span>{isPdf(ev.archivo_url) ? "PDF" : "Archivo"}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="tec-evidence-body">
+                            <strong>{ev.tipo || "SOPORTE"}</strong>
+                            <small>{ev.nombre_original || ev.filename || "Archivo"}</small>
+                            <p>{ev.descripcion || "Sin descripción"}</p>
+
+                            <div className="tec-evidence-actions">
+                              <button
+                                type="button"
+                                className="tec-exec-light"
+                                onClick={() => setPreviewEvidencia({ ...ev, url })}
+                              >
+                                <Eye size={15} />
+                                Ver
+                              </button>
+
+                              <button
+                                type="button"
+                                className="tec-exec-danger"
+                                onClick={() => eliminarEvidenciaTecnico(ev.id)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <Gauge size={26} />
-      </div>
+      )}
 
-      <div className="dadmin-health-score">
-        <div className="dadmin-health-ring" style={{ "--score": `${score}%` }}>
-          <b>{score}</b>
-        </div>
-        <div>
-          <p>Cumplimiento general</p>
-          <h3>{cumplimiento}%</h3>
-          <small>Basado en mantenimientos finalizados frente al total registrado.</small>
-        </div>
-      </div>
-    </article>
-  );
-}
+      {previewEvidencia && (
+        <div className="tec-modal-backdrop">
+          <div className="tec-modal tec-modal-large">
+            <div className="tec-modal-header">
+              <div>
+                <h2>Vista de evidencia</h2>
+                <p>{previewEvidencia.nombre_original || previewEvidencia.filename || "Archivo"}</p>
+              </div>
 
-function AlertTile({ title, value, icon, tone, onClick }) {
-  return (
-    <button type="button" className={`dadmin-alert ${tone}`} onClick={onClick}>
-      <div>{icon}</div>
-      <span>{title}</span>
-      <strong>{value}</strong>
-    </button>
-  );
-}
+              <button onClick={() => setPreviewEvidencia(null)}>
+                <X size={18} />
+              </button>
+            </div>
 
-function QuickAction({ icon, title, text, onClick }) {
-  return (
-    <button type="button" className="dadmin-action" onClick={onClick}>
-      <div>{icon}</div>
-      <span>{title}</span>
-      <p>{text}</p>
-    </button>
-  );
-}
-
-function ChartCard({ title, subtitle, children }) {
-  return (
-    <article className="dadmin-chart-card">
-      <div className="dadmin-chart-head">
-        <div>
-          <h3>{title}</h3>
-          <p>{subtitle}</p>
-        </div>
-      </div>
-      {children}
-    </article>
-  );
-}
-
-function EmptyState({ text }) {
-  return (
-    <div className="dadmin-empty">
-      <Sparkles size={20} />
-      <span>{text}</span>
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="dadmin-skeleton-page">
-      <div className="dadmin-skeleton hero" />
-      <div className="dadmin-skeleton-grid">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="dadmin-skeleton card" />
-        ))}
-      </div>
-      <div className="dadmin-skeleton chart" />
-      <div className="dadmin-skeleton table" />
-    </div>
-  );
-}
-
-function DataTable({
-  tipo,
-  data,
-  onRowClick,
-  paginaActual,
-  setPaginaActual,
-  registrosPorPagina,
-  setRegistrosPorPagina,
-}) {
-  const columnsByType = {
-    empresas: ["nombre", "nit", "telefono", "email", "estado"],
-    sedes: ["nombre", "empresa_nombre", "direccion", "telefono", "total_equipos", "total_mantenimientos"],
-    equipos: ["nombre", "empresa_nombre", "sede_nombre", "estado", "criticidad", "total_mantenimientos"],
-    mantenimientos: ["equipo_nombre", "empresa_nombre", "sede_nombre", "tipo", "estado", "fecha_programada", "tecnico_nombre"],
-    tecnicos: ["nombre_visible", "email_visible", "telefono_visible", "especialidad_visible", "total_mantenimientos", "activos"],
-    atrasados: ["equipo_nombre", "empresa_nombre", "sede_nombre", "tipo", "estado", "fecha_programada", "tecnico_nombre"],
-    proximos: ["equipo_nombre", "empresa_nombre", "sede_nombre", "tipo", "estado", "fecha_programada", "tecnico_nombre"],
-    criticos: ["nombre", "empresa_nombre", "sede_nombre", "estado", "criticidad"],
-    fuera_servicio: ["nombre", "empresa_nombre", "sede_nombre", "estado", "criticidad"],
-  };
-
-  if (!data.length) return <EmptyState text="No hay registros para mostrar en esta vista." />;
-
-  const columns = columnsByType[tipo] || Object.keys(data[0]).slice(0, 7);
-  const totalRegistros = data.length;
-  const totalPaginas = Math.max(1, Math.ceil(totalRegistros / registrosPorPagina));
-  const paginaSegura = Math.min(Math.max(paginaActual, 1), totalPaginas);
-  const inicio = (paginaSegura - 1) * registrosPorPagina;
-  const fin = inicio + registrosPorPagina;
-  const dataPaginada = data.slice(inicio, fin);
-
-  return (
-    <div className="dadmin-table-section">
-      <div className="dadmin-table-toolbar">
-        <div>
-          <strong>Listado SaaS PRO</strong>
-          <span>
-            Mostrando {inicio + 1} - {Math.min(fin, totalRegistros)} de {totalRegistros}
-          </span>
-        </div>
-
-        <label>
-          Filas
-          <select value={registrosPorPagina} onChange={(e) => setRegistrosPorPagina(Number(e.target.value))}>
-            <option value={10}>10</option>
-            <option value={15}>15</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="dadmin-table-wrap">
-        <table className="dadmin-table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th key={column}>{column.replaceAll("_", " ")}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {dataPaginada.map((item, index) => (
-              <tr
-                key={item.id || `${tipo}-${inicio + index}`}
-                className={onRowClick ? "clickable" : ""}
-                onClick={() => onRowClick && onRowClick(item)}
-              >
-                {columns.map((column) => (
-                  <td key={column}>{renderCell(column, item[column])}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPaginas > 1 && (
-        <div className="dadmin-pagination">
-          <button type="button" disabled={paginaSegura === 1} onClick={() => setPaginaActual(1)}>
-            « Primero
-          </button>
-          <button type="button" disabled={paginaSegura === 1} onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}>
-            ‹ Anterior
-          </button>
-          <span>
-            Página <b>{paginaSegura}</b> de <b>{totalPaginas}</b>
-          </span>
-          <button type="button" disabled={paginaSegura === totalPaginas} onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}>
-            Siguiente ›
-          </button>
-          <button type="button" disabled={paginaSegura === totalPaginas} onClick={() => setPaginaActual(totalPaginas)}>
-            Último »
-          </button>
+            {isPdf(previewEvidencia.archivo_url) ? (
+              <iframe
+                src={previewEvidencia.url}
+                title="Evidencia PDF"
+                className="tec-evidence-iframe"
+              />
+            ) : (
+              <img
+                src={previewEvidencia.url}
+                alt="Vista evidencia"
+                className="tec-evidence-big-img"
+              />
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function SedeDetalle({ sede, onClose }) {
+function MetricCard({ title, value, icon, onClick }) {
   return (
-    <aside className="dadmin-side-detail">
-      <div className="dadmin-side-head">
-        <div>
-          <p>Detalle de sede</p>
-          <h3>{sede.nombre}</h3>
-        </div>
-        <button type="button" onClick={onClose}>
-          <X size={16} />
-        </button>
-      </div>
-
-      <div className="dadmin-side-info">
-        <InfoLine icon={<Factory size={15} />} label="Empresa" value={sede.empresa_nombre} />
-        <InfoLine icon={<MapPinned size={15} />} label="Dirección" value={sede.direccion} />
-        <InfoLine icon={<Phone size={15} />} label="Teléfono" value={sede.telefono} />
-        <InfoLine icon={<Mail size={15} />} label="NIT empresa" value={sede.empresa_nit} />
-      </div>
-
-      <div className="dadmin-side-stats">
-        <div><span>Equipos</span><strong>{sede.total_equipos}</strong></div>
-        <div><span>Mantenimientos</span><strong>{sede.total_mantenimientos}</strong></div>
-        <div><span>Pendientes</span><strong>{sede.pendientes}</strong></div>
-        <div><span>Finalizados</span><strong>{sede.finalizados}</strong></div>
-      </div>
-
-      <MiniList
-        title="Equipos de la sede"
-        icon={<MonitorCog size={15} />}
-        items={(sede.equipos || []).slice(0, 8).map((e) => ({ title: e.nombre, text: `${e.estado || "Sin estado"} · ${e.criticidad || "Sin criticidad"}` }))}
-      />
-      <MiniList
-        title="Últimos mantenimientos"
-        icon={<ClipboardList size={15} />}
-        items={(sede.mantenimientos || []).slice(0, 6).map((m) => ({ title: m.tipo, text: `${m.estado || "Sin estado"} · ${formatValue(m.fecha_programada)}` }))}
-      />
-    </aside>
-  );
-}
-
-function InfoLine({ icon, label, value }) {
-  return (
-    <div className="dadmin-info-line">
-      {icon}
+    <button className="tec-card" onClick={onClick}>
+      <div className="tec-card-icon">{icon}</div>
       <div>
-        <span>{label}</span>
-        <strong>{formatValue(value)}</strong>
+        <span>{title}</span>
+        <strong>{value}</strong>
+      </div>
+    </button>
+  );
+}
+
+function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, onIniciar }) {
+  const e = mantenimiento.equipo || {};
+  const empresa = mantenimiento.empresa || {};
+  const sede = mantenimiento.sede || {};
+  const estado = String(mantenimiento.estado || "").toUpperCase();
+
+  return (
+    <article className="tec-work-row">
+      <div className={`tec-work-priority ${statusLineClass(estado)}`} />
+
+      <div className="tec-work-content">
+        <div className="tec-work-main">
+          <div>
+            <div className="tec-work-badges">
+              <span className="tec-type-badge">{mantenimiento.tipo || "MANTENIMIENTO"}</span>
+              <span className={statusClass(estado)}>{estado || "SIN ESTADO"}</span>
+            </div>
+
+            <h3>{e.nombre || "Equipo sin nombre"}</h3>
+
+            <p>
+              <Building2 size={14} />
+              {empresa.nombre || "Empresa no registrada"} · {sede.nombre || "Sede no registrada"}
+            </p>
+          </div>
+
+          <button className="tec-work-primary" onClick={onIniciar}>
+            <Play size={16} />
+            {estado === "EN_PROCESO" ? "Continuar ejecución" : "Iniciar"}
+          </button>
+        </div>
+
+        <div className="tec-work-meta">
+          <InfoMini icon={<CalendarDays size={14} />} label="Programado" value={formatDate(mantenimiento.fecha_programada)} />
+          <InfoMini icon={<MapPin size={14} />} label="Ubicación" value={e.ubicacion || "—"} />
+          <InfoMini icon={<ClipboardList size={14} />} label="Código / Serie" value={`${e.codigo_id || e.inventario || "—"} / ${e.serie || "—"}`} />
+          <InfoMini icon={<Activity size={14} />} label="Estado equipo" value={e.estado || "—"} />
+        </div>
+
+        <div className="tec-work-actions">
+          <button onClick={onDetalle}>
+            <Eye size={15} />
+            Detalle
+          </button>
+
+          <button onClick={onEvidencia}>
+            <UploadCloud size={15} />
+            Evidencia
+          </button>
+
+          <button className="dark" onClick={onFormato}>
+            <ClipboardList size={15} />
+            Bitácora
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
+  const [historico, setHistorico] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const [empresa, setEmpresa] = useState("");
+  const [sede, setSede] = useState("");
+  const [equipo, setEquipo] = useState("");
+
+  const cargarHistorico = async () => {
+    try {
+      setCargando(true);
+
+      const params = new URLSearchParams();
+
+      if (desde) params.append("desde", desde);
+      if (hasta) params.append("hasta", hasta);
+      if (empresa) params.append("empresa", empresa);
+      if (sede) params.append("sede", sede);
+      if (equipo) params.append("equipo", equipo);
+
+      const res = await API.get(
+        `/dashboard-tecnico/usuario/${usuarioId}/historico?${params.toString()}`
+      );
+
+      setHistorico(res.data.historico || []);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo cargar el histórico.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarHistorico();
+  }, []);
+
+  return (
+    <div className="tec-modal-backdrop">
+      <div className="tec-modal tec-history-modal">
+        <div className="tec-modal-header">
+          <div>
+            <h2>Histórico de mantenimientos realizados</h2>
+            <p>{historico.length} mantenimientos finalizados</p>
+          </div>
+
+          <button onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="tec-history-filters">
+          <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+          <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          <input placeholder="Empresa" value={empresa} onChange={(e) => setEmpresa(e.target.value)} />
+          <input placeholder="Sede" value={sede} onChange={(e) => setSede(e.target.value)} />
+          <input placeholder="Equipo" value={equipo} onChange={(e) => setEquipo(e.target.value)} />
+
+          <button onClick={cargarHistorico}>
+            <Search size={15} />
+            Filtrar
+          </button>
+        </div>
+
+        {cargando ? (
+          <div className="tec-empty">Cargando histórico...</div>
+        ) : (
+          <div className="tec-history-table-wrap">
+            <table className="tec-history-table">
+              <thead>
+                <tr>
+                  <th>Fecha finalización</th>
+                  <th>Equipo</th>
+                  <th>Empresa / Sede</th>
+                  <th>Tipo</th>
+                  <th>Resultado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {historico.map((m) => (
+                  <tr key={m.mantenimiento_id}>
+                    <td>{formatDate(m.fecha_finalizacion || m.fecha_fin)}</td>
+                    <td>
+                      <strong>{m.equipo?.nombre || "Equipo"}</strong>
+                      <span>{m.equipo?.codigo_id || m.equipo?.inventario || "Sin código"}</span>
+                    </td>
+                    <td>
+                      <strong>{m.empresa?.nombre || "Empresa"}</strong>
+                      <span>{m.sede?.nombre || "Sede"}</span>
+                    </td>
+                    <td>{m.tipo || "—"}</td>
+                    <td>{m.resultado_final || m.observaciones || "Sin resultado registrado"}</td>
+                    <td>
+                      <div className="tec-history-actions">
+                        <button onClick={() => onDetalle(m)}>Detalle</button>
+                        <button onClick={() => onFormato(m)}>Bitácora</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                {historico.length === 0 && (
+                  <tr>
+                    <td colSpan="6">
+                      <div className="tec-empty">No hay mantenimientos finalizados con estos filtros.</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function MiniList({ title, icon, items }) {
+function DetalleModal({ detalle, onClose }) {
+  const mantenimiento = detalle.mantenimiento || {};
+  const equipo = detalle.equipo_basico || {};
+  const evidencias = detalle.evidencias || [];
+
   return (
-    <div className="dadmin-mini-list">
-      <h4>{icon}{title}</h4>
-      {items.length ? items.map((item, index) => (
-        <div key={`${item.title}-${index}`} className="dadmin-mini-item">
-          <strong>{item.title}</strong>
-          <span>{item.text}</span>
+    <div className="tec-modal-backdrop">
+      <div className="tec-modal tec-modal-large">
+        <div className="tec-modal-header">
+          <h2>Detalle del mantenimiento</h2>
+          <button onClick={onClose}><X size={18} /></button>
         </div>
-      )) : <p>Sin registros.</p>}
+
+        <div className="tec-detail-grid">
+          <Info title="Equipo" value={equipo.nombre} />
+          <Info title="Marca" value={equipo.marca} />
+          <Info title="Modelo" value={equipo.modelo} />
+          <Info title="Serie" value={equipo.serie} />
+          <Info title="Ubicación" value={equipo.ubicacion} />
+          <Info title="Tipo" value={mantenimiento.tipo} />
+          <Info title="Estado" value={mantenimiento.estado} />
+          <Info title="Resultado final" value={mantenimiento.resultado_final} />
+          <Info title="Observaciones" value={mantenimiento.observaciones} />
+        </div>
+
+        <h3>Evidencias</h3>
+
+        <div className="tec-evidence-grid">
+          {evidencias.map((ev) => (
+            <a
+              key={ev.id}
+              className="tec-evidence-card"
+              href={getFileUrl(ev.archivo_url)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FileText size={24} />
+              <strong>{ev.tipo}</strong>
+              <span>{ev.nombre_original || "Archivo"}</span>
+            </a>
+          ))}
+
+          {evidencias.length === 0 && <div className="tec-empty">Sin evidencias.</div>}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
-
-function sameId(a, b) {
-  return String(a ?? "") === String(b ?? "");
+function Info({ title, value }) {
+  return (
+    <div className="tec-info">
+      <span>{title}</span>
+      <strong>{value || "—"}</strong>
+    </div>
+  );
 }
 
-function normalizeEstado(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replaceAll("-", "_")
-    .replaceAll(" ", "_");
+function InfoMini({ icon, label, value }) {
+  return (
+    <div className="tec-info-mini">
+      <div>{icon}</div>
+      <span>{label}</span>
+      <strong>{value || "—"}</strong>
+    </div>
+  );
 }
 
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+function statusClass(estado) {
+  const value = String(estado || "").toUpperCase();
+  if (value === "FINALIZADO") return "tec-status ok";
+  if (value === "PAUSADO") return "tec-status warning";
+  if (value === "EN_PROCESO") return "tec-status progress";
+  if (value === "PROGRAMADO") return "tec-status programado";
+  return "tec-status";
 }
 
-function shortName(value) {
-  const text = String(value || "—");
-  return text.length > 18 ? `${text.slice(0, 18)}…` : text;
+function statusLineClass(estado) {
+  const value = String(estado || "").toUpperCase();
+  if (value === "FINALIZADO") return "line-ok";
+  if (value === "PAUSADO") return "line-warning";
+  if (value === "EN_PROCESO") return "line-progress";
+  if (value === "PROGRAMADO") return "line-programado";
+  return "line-default";
 }
 
-function labelVista(vista) {
-  const labels = {
-    empresas: "Empresas",
-    sedes: "Sedes",
-    equipos: "Equipos",
-    mantenimientos: "Mantenimientos",
-    tecnicos: "Técnicos",
-    atrasados: "Mantenimientos atrasados",
-    proximos: "Próximos 7 días",
-    criticos: "Equipos críticos",
-    fuera_servicio: "Equipos fuera de servicio",
-  };
-  return labels[vista] || "Vista rápida";
+function formatDate(value) {
+  if (!value) return "Sin fecha";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
 }
 
-function renderCell(column, value) {
-  if (["estado", "criticidad", "estado_normalizado"].includes(column)) {
-    return <span className={`dadmin-status ${normalizeEstado(value).toLowerCase()}`}>{formatValue(value)}</span>;
-  }
-  return formatValue(value);
-}
-
-function formatValue(value) {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "boolean") return value ? "Sí" : "No";
-
-  if (typeof value === "string" && (value.includes("T") || /^\d{4}-\d{2}-\d{2}/.test(value))) {
-    const d = new Date(value);
-    if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("es-CO");
-  }
-
-  return String(value);
+function getFileUrl(url) {
+  if (!url) return "#";
+  if (url.startsWith("http")) return url;
+  return `http://127.0.0.1:8000${url}`;
 }

@@ -1,9 +1,15 @@
 """
 ===========================================================
-SERVICIO DE EVIDENCIAS
+SERVICIO DE EVIDENCIAS PRO
+Archivo: backend/app/services/evidencia_service.py
+
+FIX:
+- Mantener mismo nombre UUID
+- Guardar correctamente en uploads/evidencias
 ===========================================================
 """
 
+import os
 import shutil
 from fastapi import UploadFile
 
@@ -15,8 +21,26 @@ from app.middleware.file_security import (
     generate_secure_filename
 )
 
-from app.utils.secure_files import build_secure_path
+# ===========================================================
+# RUTA SEGURA
+# ===========================================================
 
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+UPLOAD_DIR = os.path.join(
+    BASE_DIR,
+    "uploads",
+    "evidencias"
+)
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+# ===========================================================
+# GUARDAR ARCHIVO
+# ===========================================================
 
 async def save_secure_file(file: UploadFile):
 
@@ -31,17 +55,24 @@ async def save_secure_file(file: UploadFile):
     await validate_size(file)
 
     # =======================================================
-    # SANITIZAR
+    # LIMPIAR NOMBRE
     # =======================================================
 
     clean_name = sanitize_filename(file.filename)
 
     secure_name = generate_secure_filename(clean_name)
 
-    secure_path = build_secure_path(secure_name)
+    # =======================================================
+    # RUTA FINAL
+    # =======================================================
+
+    secure_path = os.path.join(
+        UPLOAD_DIR,
+        secure_name
+    )
 
     # =======================================================
-    # GUARDAR ARCHIVO
+    # GUARDAR
     # =======================================================
 
     with open(secure_path, "wb") as buffer:

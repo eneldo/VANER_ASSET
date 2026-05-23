@@ -37,6 +37,29 @@ import {
 
 import "./DashboardTecnico.css";
 
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  API?.defaults?.baseURL ||
+  window.location.origin;
+
+function buildFileUrl(url) {
+  if (!url) return "#";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = String(API_BASE).replace(/\/$/, "");
+  return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
+}
+
+function isPdf(url = "") {
+  return String(url).toLowerCase().includes(".pdf");
+}
+
+function isImage(url = "") {
+  const lower = String(url).toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
+    lower.includes(ext)
+  );
+}
+
 export default function DashboardTecnico() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -54,6 +77,9 @@ export default function DashboardTecnico() {
   const [archivo, setArchivo] = useState(null);
   const [tipoEvidencia, setTipoEvidencia] = useState("ANTES");
   const [descripcionEvidencia, setDescripcionEvidencia] = useState("");
+  const [evidenciasTecnico, setEvidenciasTecnico] = useState([]);
+  const [cargandoEvidencias, setCargandoEvidencias] = useState(false);
+  const [previewEvidencia, setPreviewEvidencia] = useState(null);
 
   const [pagina, setPagina] = useState(1);
   const porPagina = 8;
@@ -193,6 +219,54 @@ export default function DashboardTecnico() {
     }
   };
 
+  const cargarEvidenciasMantenimiento = async (mantenimientoId) => {
+    if (!mantenimientoId) {
+      setEvidenciasTecnico([]);
+      return;
+    }
+
+    try {
+      setCargandoEvidencias(true);
+      const res = await API.get(`/evidencias/mantenimiento/${mantenimientoId}`);
+      setEvidenciasTecnico(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error cargando evidencias del técnico:", error);
+      setEvidenciasTecnico([]);
+    } finally {
+      setCargandoEvidencias(false);
+    }
+  };
+
+  const abrirModalEvidencia = async (mantenimiento) => {
+    setModalEvidencia(mantenimiento);
+    setArchivo(null);
+    setTipoEvidencia("ANTES");
+    setDescripcionEvidencia("");
+    await cargarEvidenciasMantenimiento(mantenimiento.mantenimiento_id);
+  };
+
+  const eliminarEvidenciaTecnico = async (evidenciaId) => {
+    const confirmar = window.confirm(
+      "¿Deseas eliminar esta evidencia? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmar) return;
+
+    try {
+      await API.delete(`/evidencias/${evidenciaId}`);
+
+      if (modalEvidencia?.mantenimiento_id) {
+        await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
+      }
+
+      await cargarDashboardTecnico();
+      alert("Evidencia eliminada correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.detail || "Error eliminando evidencia.");
+    }
+  };
+
   const subirEvidenciaRapida = async () => {
     if (!archivo || !modalEvidencia) {
       alert("Selecciona un archivo.");
@@ -211,10 +285,10 @@ export default function DashboardTecnico() {
         formData
       );
 
-      setModalEvidencia(null);
       setArchivo(null);
       setDescripcionEvidencia("");
 
+      await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
       await cargarDashboardTecnico();
       alert("Evidencia subida correctamente.");
     } catch (error) {
@@ -368,7 +442,7 @@ export default function DashboardTecnico() {
                 key={m.mantenimiento_id}
                 mantenimiento={m}
                 onDetalle={() => verDetalle(m)}
-                onEvidencia={() => setModalEvidencia(m)}
+                onEvidencia={() => abrirModalEvidencia(m)}
                 onFormato={() => abrirFormato(m)}
                 onIniciar={() => abrirEjecucionTecnica(m)}
               />
@@ -451,7 +525,97 @@ export default function DashboardTecnico() {
                 <UploadCloud size={17} />
                 Subir evidencia
               </button>
+
+              <div className="tec-evidence-manager">
+                <div className="tec-evidence-manager-head">
+                  <h3>Evidencias cargadas</h3>
+                  <span>{evidenciasTecnico.length} archivo(s)</span>
+                </div>
+
+                {cargandoEvidencias ? (
+                  <div className="tec-empty">Cargando evidencias...</div>
+                ) : evidenciasTecnico.length === 0 ? (
+                  <div className="tec-empty">Aún no hay evidencias para este mantenimiento.</div>
+                ) : (
+                  <div className="tec-evidence-manager-grid">
+                    {evidenciasTecnico.map((ev) => {
+                      const url = buildFileUrl(ev.archivo_url);
+
+                      return (
+                        <article key={ev.id} className="tec-evidence-item">
+                          <div className="tec-evidence-preview">
+                            {isImage(ev.archivo_url) ? (
+                              <img src={url} alt={ev.nombre_original || "Evidencia"} />
+                            ) : (
+                              <div className="tec-evidence-file">
+                                <FileText size={32} />
+                                <span>{isPdf(ev.archivo_url) ? "PDF" : "Archivo"}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="tec-evidence-body">
+                            <strong>{ev.tipo || "SOPORTE"}</strong>
+                            <small>{ev.nombre_original || ev.filename || "Archivo"}</small>
+                            <p>{ev.descripcion || "Sin descripción"}</p>
+
+                            <div className="tec-evidence-actions">
+                              <button
+                                type="button"
+                                className="tec-exec-light"
+                                onClick={() => setPreviewEvidencia({ ...ev, url })}
+                              >
+                                <Eye size={15} />
+                                Ver
+                              </button>
+
+                              <button
+                                type="button"
+                                className="tec-exec-danger"
+                                onClick={() => eliminarEvidenciaTecnico(ev.id)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {previewEvidencia && (
+        <div className="tec-modal-backdrop">
+          <div className="tec-modal tec-modal-large">
+            <div className="tec-modal-header">
+              <div>
+                <h2>Vista de evidencia</h2>
+                <p>{previewEvidencia.nombre_original || previewEvidencia.filename || "Archivo"}</p>
+              </div>
+
+              <button onClick={() => setPreviewEvidencia(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {isPdf(previewEvidencia.archivo_url) ? (
+              <iframe
+                src={previewEvidencia.url}
+                title="Evidencia PDF"
+                className="tec-evidence-iframe"
+              />
+            ) : (
+              <img
+                src={previewEvidencia.url}
+                alt="Vista evidencia"
+                className="tec-evidence-big-img"
+              />
+            )}
           </div>
         </div>
       )}
