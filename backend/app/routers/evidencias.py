@@ -14,6 +14,7 @@ Funciones:
 """
 
 import os
+from pathlib import Path
 from uuid import UUID
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -31,10 +32,11 @@ router = APIRouter(prefix="/evidencias", tags=["Evidencias PRO"])
 # CONFIGURACIÓN DE RUTA DE ARCHIVOS
 # ===========================================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "evidencias")
+BASE_DIR = Path(__file__).resolve().parent.parent
+UPLOADS_DIR = BASE_DIR / "uploads"
+UPLOAD_DIR = UPLOADS_DIR / "evidencias"
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ===========================================================
@@ -185,9 +187,9 @@ async def subir_evidencia(
 @router.get("/descargar/{filename}")
 def descargar_archivo(filename: str):
     safe_name = os.path.basename(filename)
-    path = os.path.join(UPLOAD_DIR, safe_name)
+    path = UPLOAD_DIR / safe_name
 
-    if not os.path.exists(path):
+    if not path.exists():
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
     return FileResponse(path)
@@ -211,8 +213,8 @@ def eliminar_evidencia(
     filename = os.path.basename(evidencia.archivo_url or "")
     path = os.path.join(UPLOAD_DIR, filename)
 
-    if os.path.exists(path):
-        os.remove(path)
+    if path.exists():
+        path.unlink()
 
     db.delete(evidencia)
     db.commit()

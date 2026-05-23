@@ -1403,3 +1403,142 @@
     min-width: 820px;
   }
 }
+/* =========================================================
+   EVIDENCIAS DEL TÉCNICO - VER / ELIMINAR
+========================================================= */
+
+.tec-evidence-manager {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.tec-evidence-manager-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tec-evidence-manager-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.tec-evidence-manager-head span {
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.tec-evidence-manager-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.tec-evidence-item {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 25px rgba(15, 23, 42, 0.06);
+}
+
+.tec-evidence-preview {
+  height: 145px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tec-evidence-preview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.tec-evidence-file {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #2563eb;
+  font-weight: 950;
+}
+
+.tec-evidence-body {
+  padding: 12px;
+  display: grid;
+  gap: 7px;
+}
+
+.tec-evidence-body strong {
+  color: #0f172a;
+  font-weight: 950;
+}
+
+.tec-evidence-body small {
+  color: #64748b;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.tec-evidence-body p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  min-height: 30px;
+}
+
+.tec-evidence-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tec-evidence-actions button {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tec-evidence-big-img {
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.tec-evidence-iframe {
+  width: 100%;
+  height: 75vh;
+  border: none;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+@media (max-width: 760px) {
+  .tec-evidence-manager-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-evidence-actions {
+    grid-template-columns: 1fr;
+  }
+}
