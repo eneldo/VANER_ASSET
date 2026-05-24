@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLoader from "./components/AppLoader";
+import ConfiguracionesPage from "./pages/admin/ConfiguracionesPage";
 
 import "./styles/performance-pro.css";
 
@@ -62,6 +63,7 @@ function App() {
           <Route path="/admin/categorias" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CategoriasPage /></ProtectedRoute>} />
           <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UsuariosPage /></ProtectedRoute>} />
           <Route path="/admin/tecnicos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><TecnicosPage /></ProtectedRoute>} />
+          <Route path="/admin/configuraciones" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ConfiguracionesPage /></ProtectedRoute>} />
           <Route path="/admin/equipos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EquiposPage /></ProtectedRoute>} />
           <Route path="/admin/equipos/:equipoId/hoja-vida" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><HojaVidaEquipoPage /></ProtectedRoute>} />
           <Route path="/admin/mantenimientos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><MantenimientosPage /></ProtectedRoute>} />
