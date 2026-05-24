@@ -2,22 +2,12 @@
 ===========================================================
 SERVICIO DE EVIDENCIAS PRO
 Archivo: backend/app/services/evidencia_service.py
-
-Responsabilidad:
-- Validar archivos de evidencia.
-- Generar un nombre seguro único.
-- Guardar físicamente el archivo en app/uploads/evidencias.
-- Retornar el mismo nombre que realmente se guardó en disco.
-
-IMPORTANTE PRODUCCIÓN:
-- No usar rutas relativas frágiles.
-- No generar doble nombre.
-- La BD debe guardar /uploads/evidencias/<filename>.
 ===========================================================
 """
 
 from pathlib import Path
 import shutil
+import os
 
 from fastapi import UploadFile
 
@@ -29,26 +19,27 @@ from app.middleware.file_security import (
     generate_secure_filename,
 )
 
-# backend/app
-BASE_DIR = Path(__file__).resolve().parent.parent
+# ===========================================================
+# RUTA PRODUCCIÓN DOCKER
+# ===========================================================
 
-# backend/app/uploads/evidencias
-UPLOADS_DIR = BASE_DIR / "uploads"
-EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
+DOCKER_UPLOADS = Path("/app/uploads")
+DOCKER_EVIDENCIAS = DOCKER_UPLOADS / "evidencias"
 
-EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
+# Crear carpetas automáticamente
+DOCKER_EVIDENCIAS.mkdir(parents=True, exist_ok=True)
 
+UPLOADS_DIR = DOCKER_UPLOADS
+EVIDENCIAS_DIR = DOCKER_EVIDENCIAS
+
+
+# ===========================================================
+# GUARDAR ARCHIVO
+# ===========================================================
 
 async def save_secure_file(file: UploadFile) -> dict:
     """
-    Guarda una evidencia de forma segura y retorna el nombre final real.
-
-    Return:
-        {
-            "filename": "uuid.ext",
-            "path": "/app/app/uploads/evidencias/uuid.ext",
-            "public_url": "/uploads/evidencias/uuid.ext"
-        }
+    Guarda archivo de forma segura.
     """
 
     if not file or not file.filename:
@@ -75,14 +66,15 @@ async def save_secure_file(file: UploadFile) -> dict:
     }
 
 
+# ===========================================================
+# OBTENER RUTA SEGURA
+# ===========================================================
+
 def get_evidencia_path(filename_or_url: str) -> Path:
-    """
-    Convierte un filename o archivo_url en ruta física segura.
-    """
 
     safe_name = Path(filename_or_url or "").name
 
     if not safe_name:
-        raise ValueError("Nombre de archivo inválido")
+        raise ValueError("Nombre inválido")
 
     return EVIDENCIAS_DIR / safe_name
