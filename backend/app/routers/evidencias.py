@@ -59,6 +59,7 @@ def serializar_evidencia(e: Evidencia):
         "descripcion": e.descripcion,
         "nombre_original": e.nombre_original,
         "archivo_url": archivo_url,
+        "descarga_url": f"/evidencias/descargar/{filename}" if filename else "",
         "filename": filename,
         "created_at": e.created_at.isoformat() if e.created_at else None,
     }

@@ -25,11 +25,11 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
-      UPLOAD_DIR: ${UPLOAD_DIR}
+      UPLOAD_DIR: /app/uploads
     depends_on:
       - postgres
     volumes:
-      - ./backend/app/uploads:/app/app/uploads
+      - ./backend/app/uploads:/app/uploads
     ports:
       - "8000:8000"
 

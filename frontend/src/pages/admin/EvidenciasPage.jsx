@@ -44,6 +44,31 @@ function buildFileUrl(url) {
   return `${base}/${url}`;
 }
 
+function buildDownloadUrl(evidencia) {
+  if (!evidencia) return "";
+
+  if (evidencia.descarga_url) {
+    return buildFileUrl(evidencia.descarga_url);
+  }
+
+  const filename =
+    evidencia.filename ||
+    String(evidencia.archivo_url || "").split("/").filter(Boolean).pop();
+
+  return filename ? buildFileUrl(`/evidencias/descargar/${filename}`) : "";
+}
+
+function handleImageFallback(event, fallbackUrl) {
+  const img = event.currentTarget;
+
+  if (fallbackUrl && img.src !== fallbackUrl) {
+    img.src = fallbackUrl;
+    return;
+  }
+
+  img.style.display = "none";
+}
+
 function esPdf(url = "") {
   return String(url).toLowerCase().includes(".pdf");
 }
@@ -280,6 +305,7 @@ export default function EvidenciasPage() {
           <div style={styles.grid}>
             {filtradas.map((e) => {
               const url = buildFileUrl(e.archivo_url);
+              const fallbackUrl = buildDownloadUrl(e);
 
               return (
                 <div key={e.id} style={styles.evidenceCard}>
@@ -295,9 +321,7 @@ export default function EvidenciasPage() {
                         alt={e.nombre_original || "Evidencia"}
                         style={styles.img}
                         loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                        }}
+                        onError={(event) => handleImageFallback(event, fallbackUrl)}
                       />
                     ) : (
                       <div style={styles.pdfBox}>
@@ -328,7 +352,7 @@ export default function EvidenciasPage() {
                     <div style={styles.actions}>
                       <button
                         style={styles.viewBtn}
-                        onClick={() => setPreview({ ...e, url })}
+                        onClick={() => setPreview({ ...e, url, fallbackUrl })}
                       >
                         <Eye size={15} />
                         Ver
@@ -387,6 +411,7 @@ export default function EvidenciasPage() {
                 src={preview.url}
                 alt={preview.nombre_original || "Evidencia"}
                 style={styles.bigImg}
+                onError={(event) => handleImageFallback(event, preview.fallbackUrl)}
               />
             )}
           </div>

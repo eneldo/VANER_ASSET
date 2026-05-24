@@ -90,12 +90,18 @@ app.add_middleware(AuditMiddleware)
 # =========================================================
 # ARCHIVOS ESTÁTICOS / UPLOADS
 # =========================================================
+# PRODUCCIÓN DOCKER:
+# - Las evidencias deben vivir en /app/uploads/evidencias.
+# - docker-compose.yml monta ./backend/app/uploads -> /app/uploads.
+# - La URL pública queda: https://api.sga.vaner.cloud/uploads/evidencias/<archivo>
+# =========================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
+UPLOADS_DIR = os.getenv("UPLOAD_DIR") or "/app/uploads"
+UPLOADS_DIR = os.path.abspath(UPLOADS_DIR)
 
-os.makedirs(UPLOADS_DIR, exist_ok=True)
-os.makedirs(os.path.join(UPLOADS_DIR, "evidencias"), exist_ok=True)
+EVIDENCIAS_DIR = os.path.join(UPLOADS_DIR, "evidencias")
+
+os.makedirs(EVIDENCIAS_DIR, exist_ok=True)
 
 app.mount(
     "/uploads",

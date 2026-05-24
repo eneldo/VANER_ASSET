@@ -2,14 +2,20 @@
 ===========================================================
 SERVICIO DE EVIDENCIAS PRO
 Archivo: backend/app/services/evidencia_service.py
+
+FIX PRODUCCIÓN:
+- Unifica la ruta física con main.py.
+- Guarda en /app/uploads/evidencias dentro del contenedor.
+- docker-compose.yml persiste esa ruta con volumen.
+- Retorna URL pública /uploads/evidencias/<archivo>.
 ===========================================================
 """
 
-from pathlib import Path
-import shutil
 import os
+import shutil
+from pathlib import Path
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from app.middleware.file_security import (
     sanitize_filename,
@@ -20,30 +26,36 @@ from app.middleware.file_security import (
 )
 
 # ===========================================================
-# RUTA PRODUCCIÓN DOCKER
+# RUTA ÚNICA DE UPLOADS
+# ===========================================================
+# En Docker/Dokploy usa /app/uploads.
+# En local puedes usar UPLOAD_DIR desde .env si lo necesitas.
 # ===========================================================
 
-DOCKER_UPLOADS = Path("/app/uploads")
-DOCKER_EVIDENCIAS = DOCKER_UPLOADS / "evidencias"
+UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/uploads").resolve()
+EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
 
-# Crear carpetas automáticamente
-DOCKER_EVIDENCIAS.mkdir(parents=True, exist_ok=True)
-
-UPLOADS_DIR = DOCKER_UPLOADS
-EVIDENCIAS_DIR = DOCKER_EVIDENCIAS
+EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ===========================================================
-# GUARDAR ARCHIVO
+# GUARDAR ARCHIVO SEGURO
 # ===========================================================
 
 async def save_secure_file(file: UploadFile) -> dict:
     """
-    Guarda archivo de forma segura.
+    Valida y guarda una evidencia.
+
+    Retorna:
+    {
+        "filename": "uuid.ext",
+        "path": "/app/uploads/evidencias/uuid.ext",
+        "public_url": "/uploads/evidencias/uuid.ext"
+    }
     """
 
     if not file or not file.filename:
-        raise ValueError("Archivo no recibido")
+        raise HTTPException(status_code=400, detail="Archivo no recibido")
 
     validate_extension(file.filename)
     validate_mime(file)
@@ -54,10 +66,17 @@ async def save_secure_file(file: UploadFile) -> dict:
 
     final_path = EVIDENCIAS_DIR / secure_name
 
-    file.file.seek(0)
+    try:
+        file.file.seek(0)
 
-    with final_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        with final_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"No se pudo guardar la evidencia en disco: {exc}",
+        )
 
     return {
         "filename": secure_name,
@@ -67,14 +86,17 @@ async def save_secure_file(file: UploadFile) -> dict:
 
 
 # ===========================================================
-# OBTENER RUTA SEGURA
+# OBTENER RUTA FÍSICA SEGURA
 # ===========================================================
 
 def get_evidencia_path(filename_or_url: str) -> Path:
+    """
+    Recibe un nombre o URL y devuelve la ruta segura del archivo.
+    """
 
     safe_name = Path(filename_or_url or "").name
 
     if not safe_name:
-        raise ValueError("Nombre inválido")
+        raise ValueError("Nombre de archivo inválido")
 
     return EVIDENCIAS_DIR / safe_name

@@ -45,8 +45,8 @@ COPY . .
 # CREAR CARPETAS
 # =========================================================
 
-RUN mkdir -p app/uploads/evidencias
-RUN mkdir -p app/exports
+RUN mkdir -p /app/uploads/evidencias
+RUN mkdir -p /app/exports
 
 # =========================================================
 # PUERTO
