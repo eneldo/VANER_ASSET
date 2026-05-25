@@ -9,7 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLoader from "./components/AppLoader";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
-import ConfiguracionInteligentePage from "./pages/admin/ConfiguracionInteligentePage";
+import ConfiguracionInteligentePage from "./pages/admin/ConfiguracionPage";
 
 import "./styles/performance-pro.css";
 
