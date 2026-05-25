@@ -51,6 +51,8 @@ from app.routers import formatos_mantenimiento
 from app.routers import formatos_dinamicos
 from app.routers import bitacoras_dinamicas
 from app.routers import configuracion
+from app.routers import configuracion_saas
+
 
 
 
@@ -135,6 +137,7 @@ app.include_router(formatos_mantenimiento.router)
 app.include_router(formatos_dinamicos.router)
 app.include_router(bitacoras_dinamicas.router)
 app.include_router(configuracion.router)
+app.include_router(configuracion_saas.router)
 # Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
 

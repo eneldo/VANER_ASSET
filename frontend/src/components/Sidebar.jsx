@@ -1,7 +1,7 @@
 // =========================================================
 // SIDEBAR RESPONSIVE PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// Fase 32.2
+// Fase 34.1 - Configuración Inteligente SaaS
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ import {
   UserCog,
   ShieldCheck,
   X,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -67,7 +68,11 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
 
   return (
     <aside className={`sga-sidebar ${isOpen ? "open" : ""}`}>
-      <button className="sga-sidebar-close" onClick={closeMobile} aria-label="Cerrar menú">
+      <button
+        className="sga-sidebar-close"
+        onClick={closeMobile}
+        aria-label="Cerrar menú"
+      >
         <X size={20} />
       </button>
 
@@ -82,31 +87,102 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
       <p className="sga-menu-title">MÓDULO PRINCIPAL</p>
 
       <nav className="sga-menu">
-        <NavLink to={esTecnico ? "/tecnico/dashboard" : "/admin/dashboard"} onClick={closeMobile} className={itemClass}>
+        <NavLink
+          to={esTecnico ? "/tecnico/dashboard" : "/admin/dashboard"}
+          onClick={closeMobile}
+          className={itemClass}
+        >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </NavLink>
 
         {esAdmin && (
           <>
-            <NavLink to="/admin/empresas" onClick={closeMobile} className={itemClass}><Building2 size={18} /><span>Empresas / Cliente</span></NavLink>
-            <NavLink to="/admin/sedes" onClick={closeMobile} className={itemClass}><MapPin size={18} /><span>Sedes</span></NavLink>
-            <NavLink to="/admin/categorias" onClick={closeMobile} className={itemClass}><Tags size={18} /><span>Categorías</span></NavLink>
-            <NavLink to="/admin/tecnicos" onClick={closeMobile} className={itemClass}><UserCog size={18} /><span>Técnicos</span></NavLink>
-            <NavLink to="/admin/usuarios" onClick={closeMobile} className={itemClass}><Users size={18} /><span>Usuarios y Permisos</span></NavLink>
-            <NavLink to="/admin/equipos" onClick={closeMobile} className={itemClass}><MonitorCog size={18} /><span>Equipos</span></NavLink>
-            <NavLink to="/admin/mantenimientos" onClick={closeMobile} className={itemClass}><Wrench size={18} /><span>Mantenimientos</span></NavLink>
-            <NavLink to="/admin/evidencias" onClick={closeMobile} className={itemClass}><Image size={18} /><span>Evidencias</span></NavLink>
-            <NavLink to="/admin/reportes" onClick={closeMobile} className={itemClass}><FileText size={18} /><span>Reportes PRO</span></NavLink>
-            <NavLink to="/admin/auditoria" onClick={closeMobile} className={itemClass}><ShieldCheck size={18} /><span>Auditoría PRO</span></NavLink>
-            <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}><Settings size={18} /><span>Configuración</span></NavLink>
+            <NavLink to="/admin/empresas" onClick={closeMobile} className={itemClass}>
+              <Building2 size={18} />
+              <span>Empresas / Cliente</span>
+            </NavLink>
+
+            <NavLink to="/admin/sedes" onClick={closeMobile} className={itemClass}>
+              <MapPin size={18} />
+              <span>Sedes</span>
+            </NavLink>
+
+            <NavLink to="/admin/categorias" onClick={closeMobile} className={itemClass}>
+              <Tags size={18} />
+              <span>Categorías</span>
+            </NavLink>
+
+            <NavLink to="/admin/tecnicos" onClick={closeMobile} className={itemClass}>
+              <UserCog size={18} />
+              <span>Técnicos</span>
+            </NavLink>
+
+            <NavLink to="/admin/usuarios" onClick={closeMobile} className={itemClass}>
+              <Users size={18} />
+              <span>Usuarios y Permisos</span>
+            </NavLink>
+
+            <NavLink to="/admin/equipos" onClick={closeMobile} className={itemClass}>
+              <MonitorCog size={18} />
+              <span>Equipos</span>
+            </NavLink>
+
+            <NavLink to="/admin/mantenimientos" onClick={closeMobile} className={itemClass}>
+              <Wrench size={18} />
+              <span>Mantenimientos</span>
+            </NavLink>
+
+            <NavLink to="/admin/evidencias" onClick={closeMobile} className={itemClass}>
+              <Image size={18} />
+              <span>Evidencias</span>
+            </NavLink>
+
+            <NavLink to="/admin/reportes" onClick={closeMobile} className={itemClass}>
+              <FileText size={18} />
+              <span>Reportes PRO</span>
+            </NavLink>
+
+            <NavLink to="/admin/auditoria" onClick={closeMobile} className={itemClass}>
+              <ShieldCheck size={18} />
+              <span>Auditoría PRO</span>
+            </NavLink>
+
+            <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}>
+              <Settings size={18} />
+              <span>Configuración</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/configuracion-inteligente"
+              onClick={closeMobile}
+              className={itemClass}
+            >
+              <SlidersHorizontal size={18} />
+              <span>Configuración Inteligente</span>
+            </NavLink>
           </>
         )}
 
         {esTecnico && (
           <>
-            <NavLink to="/tecnico/mantenimientos" onClick={closeMobile} className={itemClass}><Wrench size={18} /><span>Mis mantenimientos</span></NavLink>
-            <NavLink to="/tecnico/evidencias" onClick={closeMobile} className={itemClass}><Image size={18} /><span>Evidencias</span></NavLink>
+            <NavLink
+              to="/tecnico/mantenimientos"
+              onClick={closeMobile}
+              className={itemClass}
+            >
+              <Wrench size={18} />
+              <span>Mis mantenimientos</span>
+            </NavLink>
+
+            <NavLink
+              to="/tecnico/evidencias"
+              onClick={closeMobile}
+              className={itemClass}
+            >
+              <Image size={18} />
+              <span>Evidencias</span>
+            </NavLink>
           </>
         )}
       </nav>
