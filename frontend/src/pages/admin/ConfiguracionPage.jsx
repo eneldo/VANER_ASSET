@@ -25,7 +25,7 @@ import AdminLayout from "./AdminLayout";
 import { configuracionApi } from "../../api/configuracionApi";
 import "../../styles/configuracion-saas-pro.css";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
 const DEFAULT_CONFIG = {
   nombre_plataforma: "SGA SaaS PRO",
@@ -133,7 +133,8 @@ export default function ConfiguracionPage() {
       const data = await configuracionApi.obtener();
       setConfig({ ...DEFAULT_CONFIG, ...data });
     } catch (error) {
-      showMessage("error", "No fue posible cargar la configuración.");
+      const statusText = error?.status ? `HTTP ${error.status} - ` : "";
+      showMessage("error", `${statusText}${error?.message || "No fue posible cargar la configuración."}`);
     } finally {
       setLoading(false);
     }
@@ -179,7 +180,7 @@ export default function ConfiguracionPage() {
       setLogoPreview(null);
       showMessage("success", "Logo subido correctamente.");
     } catch (error) {
-      showMessage("error", error?.response?.data?.detail || "No fue posible subir el logo.");
+      showMessage("error", error?.message || "No fue posible subir el logo.");
     } finally {
       setSaving(false);
     }
@@ -192,7 +193,7 @@ export default function ConfiguracionPage() {
       setConfig({ ...DEFAULT_CONFIG, ...saved });
       showMessage("success", "Configuración guardada en PostgreSQL.");
     } catch (error) {
-      showMessage("error", error?.response?.data?.detail || "No fue posible guardar la configuración.");
+      showMessage("error", error?.message || "No fue posible guardar la configuración.");
     } finally {
       setSaving(false);
     }
@@ -213,7 +214,7 @@ export default function ConfiguracionPage() {
       });
       showMessage("success", "Correo de prueba enviado correctamente.");
     } catch (error) {
-      showMessage("error", error?.response?.data?.detail || "No fue posible enviar el correo de prueba.");
+      showMessage("error", error?.message || "No fue posible enviar el correo de prueba.");
     } finally {
       setSaving(false);
     }
@@ -225,7 +226,7 @@ export default function ConfiguracionPage() {
       await configuracionApi.probarBackup();
       showMessage("success", "Configuración de backup validada correctamente.");
     } catch (error) {
-      showMessage("error", error?.response?.data?.detail || "No fue posible validar el backup.");
+      showMessage("error", error?.message || "No fue posible validar el backup.");
     } finally {
       setSaving(false);
     }

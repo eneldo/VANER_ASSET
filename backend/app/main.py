@@ -102,8 +102,10 @@ UPLOADS_DIR = os.getenv("UPLOAD_DIR") or "/app/uploads"
 UPLOADS_DIR = os.path.abspath(UPLOADS_DIR)
 
 EVIDENCIAS_DIR = os.path.join(UPLOADS_DIR, "evidencias")
+LOGOS_DIR = os.path.join(UPLOADS_DIR, "logos")
 
 os.makedirs(EVIDENCIAS_DIR, exist_ok=True)
+os.makedirs(LOGOS_DIR, exist_ok=True)
 
 app.mount(
     "/uploads",
