@@ -1,15 +1,13 @@
-"""
-===========================================================
-FASE 32.3 — MÓDULO COORDINADOR PRO MULTIEMPRESA
-Archivo: backend/app/routers/coordinador.py
-
-Reglas:
-- ADMIN puede ver todo.
-- COORDINADOR solo puede ver la empresa asignada en usuario.empresa_id.
-- Los técnicos se filtran por la empresa del usuario técnico.
-- Los equipos, sedes, mantenimientos e informes se filtran por empresa.
-===========================================================
-"""
+# ===========================================================
+# ROUTER: COORDINADOR PRO
+# Archivo: backend/app/routers/coordinador.py
+# Fase: Portal Coordinador PRO
+#
+# Objetivo:
+# - Dar al rol COORDINADOR un portal operativo sin afectar módulos ADMIN.
+# - Filtrar siempre por empresa_id del usuario coordinador.
+# - ADMIN puede usar estas rutas y ver todo.
+# ===========================================================
 
 from datetime import datetime
 from typing import Optional
@@ -21,24 +19,59 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models.mantenimiento import Mantenimiento
-from app.models.equipo import Equipo
-from app.models.empresa import Empresa
-from app.models.sede import Sede
-from app.models.tecnico import Tecnico
-from app.models.usuario import Usuario
 from app.routers.auth import obtener_usuario_actual
 
+from app.models.usuario import Usuario
+from app.models.empresa import Empresa
+from app.models.sede import Sede
+from app.models.categoria import Categoria
+from app.models.equipo import Equipo
+from app.models.equipo_hoja_vida import EquipoHojaVida
+from app.models.tecnico import Tecnico
+from app.models.mantenimiento import Mantenimiento
+from app.models.evidencia import Evidencia
 
-router = APIRouter(
-    prefix="/coordinador",
-    tags=["Coordinador PRO"],
-)
+
+router = APIRouter(prefix="/coordinador", tags=["Coordinador PRO"])
 
 
 # ===========================================================
 # SCHEMAS INTERNOS
 # ===========================================================
+
+class EquipoCreate(BaseModel):
+    nombre: str
+    empresa_id: Optional[UUID] = None
+    sede_id: UUID
+    categoria_id: Optional[UUID] = None
+    marca: Optional[str] = None
+    modelo: Optional[str] = None
+    serie: Optional[str] = None
+    ubicacion: Optional[str] = None
+    invima: Optional[str] = None
+    codigo_id: Optional[str] = None
+    inventario: Optional[str] = None
+    estado: Optional[str] = "OPERATIVO"
+    criticidad: Optional[str] = "MEDIA"
+    activo: Optional[bool] = True
+
+
+class EquipoUpdate(BaseModel):
+    nombre: Optional[str] = None
+    empresa_id: Optional[UUID] = None
+    sede_id: Optional[UUID] = None
+    categoria_id: Optional[UUID] = None
+    marca: Optional[str] = None
+    modelo: Optional[str] = None
+    serie: Optional[str] = None
+    ubicacion: Optional[str] = None
+    invima: Optional[str] = None
+    codigo_id: Optional[str] = None
+    inventario: Optional[str] = None
+    estado: Optional[str] = None
+    criticidad: Optional[str] = None
+    activo: Optional[bool] = None
+
 
 class MantenimientoCreate(BaseModel):
     equipo_id: UUID
@@ -50,6 +83,9 @@ class MantenimientoCreate(BaseModel):
     fecha_programada: Optional[datetime] = None
     descripcion: Optional[str] = None
     observaciones: Optional[str] = None
+    estado_inicial: Optional[str] = None
+    acciones_realizadas: Optional[str] = None
+    resultado_final: Optional[str] = None
     costo: Optional[float] = None
 
 
@@ -63,23 +99,73 @@ class MantenimientoUpdate(BaseModel):
     fecha_programada: Optional[datetime] = None
     descripcion: Optional[str] = None
     observaciones: Optional[str] = None
+    estado_inicial: Optional[str] = None
+    acciones_realizadas: Optional[str] = None
+    resultado_final: Optional[str] = None
     costo: Optional[float] = None
+
+
+class HojaVidaUpdate(BaseModel):
+    adquisicion: Optional[str] = None
+    costo: Optional[float] = None
+    fecha_compra: Optional[str] = None
+    fecha_instalacion: Optional[str] = None
+    proveedor: Optional[str] = None
+    pais_fabricacion: Optional[str] = None
+    fecha_fabricacion: Optional[str] = None
+    vida_util: Optional[str] = None
+    requiere_calibracion: Optional[bool] = None
+    rango_voltaje: Optional[str] = None
+    rango_presion: Optional[str] = None
+    gas_refrigerante: Optional[str] = None
+    capacidad: Optional[str] = None
+    rango_corriente: Optional[str] = None
+    rango_velocidad: Optional[str] = None
+    rango_potencia: Optional[str] = None
+    rango_temperatura: Optional[str] = None
+    frecuencia: Optional[str] = None
+    rango_humedad: Optional[str] = None
+    otros: Optional[str] = None
+    manual_operacion: Optional[bool] = None
+    manual_mantenimiento: Optional[bool] = None
+    manual_partes: Optional[bool] = None
+    manual_despiece: Optional[bool] = None
+    plano_electronico: Optional[bool] = None
+    plano_electrico: Optional[bool] = None
+    plano_neumatico: Optional[bool] = None
+    plano_mecanico: Optional[bool] = None
+    clase_diagnostico: Optional[bool] = None
+    clase_prevencion: Optional[bool] = None
+    clase_rehabilitacion: Optional[bool] = None
+    clase_analisis: Optional[bool] = None
+    riesgo_bajo: Optional[bool] = None
+    riesgo_moderado: Optional[bool] = None
+    riesgo_alto: Optional[bool] = None
+    riesgo_elevado: Optional[bool] = None
 
 
 # ===========================================================
 # HELPERS
 # ===========================================================
 
-def _rol(usuario: Usuario):
+def _rol(usuario: Usuario) -> str:
     return str(getattr(usuario, "rol", "") or "").upper()
 
 
-def _es_admin(usuario: Usuario):
+def _es_admin(usuario: Usuario) -> bool:
     return _rol(usuario) == "ADMIN"
 
 
-def _es_coordinador(usuario: Usuario):
+def _es_coordinador(usuario: Usuario) -> bool:
     return _rol(usuario) == "COORDINADOR"
+
+
+def _validar_rol(usuario: Usuario):
+    if not (_es_admin(usuario) or _es_coordinador(usuario)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso permitido solo para ADMIN o COORDINADOR",
+        )
 
 
 def _empresa_usuario(usuario: Usuario):
@@ -87,10 +173,7 @@ def _empresa_usuario(usuario: Usuario):
 
 
 def _validar_coordinador_con_empresa(usuario: Usuario):
-    """
-    El coordinador debe tener empresa_id.
-    """
-
+    _validar_rol(usuario)
     if _es_coordinador(usuario) and not _empresa_usuario(usuario):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -101,16 +184,10 @@ def _validar_coordinador_con_empresa(usuario: Usuario):
 def _fecha_iso(valor):
     if not valor:
         return None
-
     try:
         return valor.isoformat()
     except Exception:
         return str(valor)
-
-
-def _set_if_exists(obj, campo, valor):
-    if hasattr(obj, campo):
-        setattr(obj, campo, valor)
 
 
 def _nombre_objeto(obj):
@@ -118,34 +195,16 @@ def _nombre_objeto(obj):
         return None
 
     usuario = getattr(obj, "usuario", None)
-
     if usuario:
-        for campo in [
-            "nombre_completo",
-            "nombre",
-            "nombres",
-            "username",
-            "email",
-            "correo",
-        ]:
+        for campo in ["nombre_completo", "nombre", "username", "email"]:
             valor = getattr(usuario, campo, None)
             if valor:
                 return str(valor)
 
     for campo in [
-        "nombre_completo",
-        "nombre",
-        "nombres",
-        "name",
-        "username",
-        "email",
-        "correo",
-        "codigo",
-        "codigo_inventario",
-        "serie",
-        "documento",
-        "especialidad",
-        "cargo",
+        "nombre", "nombre_completo", "codigo_id", "inventario",
+        "codigo_inventario", "codigo", "serie", "documento",
+        "especialidad", "cargo", "username", "email"
     ]:
         valor = getattr(obj, campo, None)
         if valor:
@@ -154,17 +213,206 @@ def _nombre_objeto(obj):
     return str(getattr(obj, "id", "Sin nombre"))
 
 
+def _aplicar_empresa(query, modelo, usuario: Usuario):
+    """
+    Filtro genérico por empresa_id.
+    ADMIN ve todo. COORDINADOR solo su empresa.
+    """
+
+    if _es_admin(usuario):
+        return query
+
+    _validar_coordinador_con_empresa(usuario)
+
+    if hasattr(modelo, "empresa_id"):
+        return query.filter(modelo.empresa_id == _empresa_usuario(usuario))
+
+    return query
+
+
+def _query_mantenimientos_base(db: Session):
+    query = db.query(Mantenimiento)
+
+    relaciones = []
+    for rel in ["equipo", "tecnico", "empresa", "sede"]:
+        if hasattr(Mantenimiento, rel):
+            relaciones.append(joinedload(getattr(Mantenimiento, rel)))
+
+    if relaciones:
+        query = query.options(*relaciones)
+
+    return query
+
+
+def _aplicar_filtro_empresa_mantenimientos(query, usuario: Usuario):
+    if _es_admin(usuario):
+        return query
+
+    _validar_coordinador_con_empresa(usuario)
+    empresa_id = _empresa_usuario(usuario)
+
+    if hasattr(Mantenimiento, "equipo_id") and hasattr(Equipo, "empresa_id"):
+        query = query.outerjoin(Equipo, Mantenimiento.equipo_id == Equipo.id)
+        if hasattr(Mantenimiento, "empresa_id"):
+            return query.filter(
+                or_(
+                    Mantenimiento.empresa_id == empresa_id,
+                    Equipo.empresa_id == empresa_id,
+                )
+            )
+        return query.filter(Equipo.empresa_id == empresa_id)
+
+    if hasattr(Mantenimiento, "empresa_id"):
+        return query.filter(Mantenimiento.empresa_id == empresa_id)
+
+    return query
+
+
+def _query_equipos_por_usuario(db: Session, usuario: Usuario):
+    return _aplicar_empresa(db.query(Equipo), Equipo, usuario)
+
+
+def _query_sedes_por_usuario(db: Session, usuario: Usuario):
+    return _aplicar_empresa(db.query(Sede), Sede, usuario)
+
+
+def _query_empresas_por_usuario(db: Session, usuario: Usuario):
+    query = db.query(Empresa)
+    if _es_admin(usuario):
+        return query
+    _validar_coordinador_con_empresa(usuario)
+    return query.filter(Empresa.id == _empresa_usuario(usuario))
+
+
+def _query_categorias(db: Session):
+    return db.query(Categoria)
+
+
+def _query_tecnicos_por_usuario(db: Session, usuario: Usuario):
+    query = db.query(Tecnico)
+    if hasattr(Tecnico, "usuario"):
+        query = query.options(joinedload(Tecnico.usuario))
+
+    if _es_admin(usuario):
+        return query
+
+    _validar_coordinador_con_empresa(usuario)
+
+    if hasattr(Tecnico, "usuario_id"):
+        return (
+            query.join(Usuario, Tecnico.usuario_id == Usuario.id)
+            .filter(Usuario.empresa_id == _empresa_usuario(usuario))
+        )
+
+    return query
+
+
+def _validar_equipo_pertenece_empresa(db: Session, equipo_id, usuario: Usuario) -> Equipo:
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+    if not equipo:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+
+    if not _es_admin(usuario):
+        _validar_coordinador_con_empresa(usuario)
+        if getattr(equipo, "empresa_id", None) != _empresa_usuario(usuario):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El equipo no pertenece a la empresa del coordinador",
+            )
+
+    return equipo
+
+
+def _validar_sede_pertenece_empresa(db: Session, sede_id, usuario: Usuario):
+    if not sede_id or _es_admin(usuario):
+        return
+
+    _validar_coordinador_con_empresa(usuario)
+    sede = db.query(Sede).filter(Sede.id == sede_id).first()
+
+    if not sede or getattr(sede, "empresa_id", None) != _empresa_usuario(usuario):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La sede no pertenece a la empresa del coordinador",
+        )
+
+
+def _validar_tecnico_pertenece_empresa(db: Session, tecnico_id, usuario: Usuario):
+    if not tecnico_id or _es_admin(usuario):
+        return
+
+    _validar_coordinador_con_empresa(usuario)
+
+    tecnico = (
+        db.query(Tecnico)
+        .join(Usuario, Tecnico.usuario_id == Usuario.id)
+        .filter(Tecnico.id == tecnico_id, Usuario.empresa_id == _empresa_usuario(usuario))
+        .first()
+    )
+
+    if not tecnico:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El técnico no pertenece a la empresa del coordinador",
+        )
+
+
 def _orden_mantenimiento():
     if hasattr(Mantenimiento, "created_at"):
         return Mantenimiento.created_at.desc()
-
     if hasattr(Mantenimiento, "creado_en"):
         return Mantenimiento.creado_en.desc()
-
     if hasattr(Mantenimiento, "fecha_programada"):
         return Mantenimiento.fecha_programada.desc()
-
     return Mantenimiento.id.desc()
+
+
+def _serializar_catalogo(obj):
+    usuario = getattr(obj, "usuario", None)
+    nombre = _nombre_objeto(obj)
+
+    return {
+        "id": str(getattr(obj, "id", "")),
+        "nombre": nombre,
+        "nombre_completo": nombre,
+        "usuario_nombre": nombre,
+        "email": getattr(usuario, "email", None) if usuario else getattr(obj, "email", None),
+        "username": getattr(usuario, "username", None) if usuario else getattr(obj, "username", None),
+        "codigo": getattr(obj, "codigo", None),
+        "codigo_id": getattr(obj, "codigo_id", None),
+        "codigo_inventario": getattr(obj, "inventario", None) or getattr(obj, "codigo_inventario", None),
+        "inventario": getattr(obj, "inventario", None),
+        "serie": getattr(obj, "serie", None),
+        "empresa_id": str(getattr(obj, "empresa_id", "")) if getattr(obj, "empresa_id", None) else None,
+        "sede_id": str(getattr(obj, "sede_id", "")) if getattr(obj, "sede_id", None) else None,
+        "categoria_id": str(getattr(obj, "categoria_id", "")) if getattr(obj, "categoria_id", None) else None,
+        "marca": getattr(obj, "marca", None),
+        "modelo": getattr(obj, "modelo", None),
+        "ubicacion": getattr(obj, "ubicacion", None),
+        "estado": getattr(obj, "estado", None),
+        "criticidad": getattr(obj, "criticidad", None),
+        "activo": getattr(obj, "activo", None),
+    }
+
+
+def _serializar_equipo(equipo: Equipo, db: Session = None):
+    data = _serializar_catalogo(equipo)
+
+    empresa = db.query(Empresa).filter(Empresa.id == equipo.empresa_id).first() if db and getattr(equipo, "empresa_id", None) else None
+    sede = db.query(Sede).filter(Sede.id == equipo.sede_id).first() if db and getattr(equipo, "sede_id", None) else None
+    categoria = db.query(Categoria).filter(Categoria.id == equipo.categoria_id).first() if db and getattr(equipo, "categoria_id", None) else None
+    hoja = db.query(EquipoHojaVida).filter(EquipoHojaVida.equipo_id == equipo.id).first() if db else None
+
+    data.update({
+        "empresa_nombre": empresa.nombre if empresa else None,
+        "sede_nombre": sede.nombre if sede else None,
+        "categoria_nombre": categoria.nombre if categoria else None,
+        "tiene_hoja_vida": bool(hoja),
+        "created_at": _fecha_iso(getattr(equipo, "created_at", None)),
+        "updated_at": _fecha_iso(getattr(equipo, "updated_at", None)),
+    })
+
+    return data
 
 
 def _serializar_mantenimiento(m):
@@ -198,9 +446,11 @@ def _serializar_mantenimiento(m):
 
         "descripcion": getattr(m, "descripcion", None),
         "observaciones": getattr(m, "observaciones", None),
+        "estado_inicial": getattr(m, "estado_inicial", None) or getattr(m, "estado_inicial_equipo", None),
+        "acciones_realizadas": getattr(m, "acciones_realizadas", None),
+        "resultado_final": getattr(m, "resultado_final", None),
         "observacion_estado": getattr(m, "observacion_estado", None),
         "motivo_anulacion": getattr(m, "motivo_anulacion", None),
-
         "costo": float(m.costo) if getattr(m, "costo", None) else 0,
 
         "created_at": _fecha_iso(getattr(m, "created_at", None)),
@@ -210,193 +460,53 @@ def _serializar_mantenimiento(m):
     }
 
 
-def _serializar_catalogo(obj):
-    nombre = _nombre_objeto(obj)
-    usuario = getattr(obj, "usuario", None)
+def _serializar_hoja(hoja):
+    if not hoja:
+        return None
+
+    campos = [
+        "id", "equipo_id", "adquisicion", "costo", "fecha_compra", "fecha_instalacion",
+        "proveedor", "pais_fabricacion", "fecha_fabricacion", "vida_util",
+        "requiere_calibracion", "rango_voltaje", "rango_presion", "gas_refrigerante",
+        "capacidad", "rango_corriente", "rango_velocidad", "rango_potencia",
+        "rango_temperatura", "frecuencia", "rango_humedad", "otros",
+        "manual_operacion", "manual_mantenimiento", "manual_partes", "manual_despiece",
+        "plano_electronico", "plano_electrico", "plano_neumatico", "plano_mecanico",
+        "clase_diagnostico", "clase_prevencion", "clase_rehabilitacion", "clase_analisis",
+        "riesgo_bajo", "riesgo_moderado", "riesgo_alto", "riesgo_elevado",
+        "created_at", "updated_at",
+    ]
+
+    data = {}
+    for campo in campos:
+        valor = getattr(hoja, campo, None)
+        if campo in ["id", "equipo_id"] and valor:
+            data[campo] = str(valor)
+        elif "fecha" in campo or campo in ["created_at", "updated_at"]:
+            data[campo] = _fecha_iso(valor)
+        elif campo == "costo" and valor is not None:
+            data[campo] = float(valor)
+        else:
+            data[campo] = valor
+    return data
+
+
+def _serializar_evidencia(e, db: Session):
+    equipo = db.query(Equipo).filter(Equipo.id == e.equipo_id).first() if getattr(e, "equipo_id", None) else None
+    mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == e.mantenimiento_id).first() if getattr(e, "mantenimiento_id", None) else None
 
     return {
-        "id": str(getattr(obj, "id", "")),
-        "nombre": nombre,
-        "nombre_completo": nombre,
-        "usuario_nombre": nombre,
-        "email": getattr(usuario, "email", None) if usuario else getattr(obj, "email", None),
-        "username": getattr(usuario, "username", None) if usuario else getattr(obj, "username", None),
-        "codigo": getattr(obj, "codigo", None),
-        "codigo_inventario": getattr(obj, "codigo_inventario", None),
-        "serie": getattr(obj, "serie", None),
-        "empresa_id": str(getattr(obj, "empresa_id", "")) if getattr(obj, "empresa_id", None) else None,
+        "id": str(e.id),
+        "tipo": getattr(e, "tipo", None),
+        "archivo_url": getattr(e, "archivo_url", None),
+        "nombre_original": getattr(e, "nombre_original", None),
+        "descripcion": getattr(e, "descripcion", None),
+        "equipo_id": str(e.equipo_id) if getattr(e, "equipo_id", None) else None,
+        "equipo_nombre": _nombre_objeto(equipo) if equipo else "Sin equipo",
+        "mantenimiento_id": str(e.mantenimiento_id) if getattr(e, "mantenimiento_id", None) else None,
+        "mantenimiento_tipo": getattr(mantenimiento, "tipo", None) if mantenimiento else None,
+        "created_at": _fecha_iso(getattr(e, "created_at", None)),
     }
-
-
-def _query_mantenimientos_base(db: Session):
-    query = db.query(Mantenimiento)
-
-    relaciones = []
-
-    for rel in ["equipo", "tecnico", "empresa", "sede"]:
-        if hasattr(Mantenimiento, rel):
-            relaciones.append(joinedload(getattr(Mantenimiento, rel)))
-
-    if relaciones:
-        query = query.options(*relaciones)
-
-    return query
-
-
-def _aplicar_filtro_empresa_mantenimientos(query, usuario: Usuario):
-    """
-    Filtra mantenimientos por empresa cuando el usuario es COORDINADOR.
-
-    Se usa doble validación:
-    - Mantenimiento.empresa_id
-    - Equipo.empresa_id
-
-    Así cubrimos mantenimientos antiguos que no tengan empresa_id,
-    pero cuyo equipo sí pertenece a una empresa.
-    """
-
-    if _es_admin(usuario):
-        return query
-
-    _validar_coordinador_con_empresa(usuario)
-
-    empresa_id = _empresa_usuario(usuario)
-
-    if hasattr(Mantenimiento, "equipo_id") and hasattr(Equipo, "empresa_id"):
-        query = query.outerjoin(Equipo, Mantenimiento.equipo_id == Equipo.id)
-
-        if hasattr(Mantenimiento, "empresa_id"):
-            return query.filter(
-                or_(
-                    Mantenimiento.empresa_id == empresa_id,
-                    Equipo.empresa_id == empresa_id,
-                )
-            )
-
-        return query.filter(Equipo.empresa_id == empresa_id)
-
-    if hasattr(Mantenimiento, "empresa_id"):
-        return query.filter(Mantenimiento.empresa_id == empresa_id)
-
-    return query
-
-
-def _query_equipos_por_usuario(db: Session, usuario: Usuario):
-    query = db.query(Equipo)
-
-    if _es_admin(usuario):
-        return query
-
-    _validar_coordinador_con_empresa(usuario)
-
-    if hasattr(Equipo, "empresa_id"):
-        query = query.filter(Equipo.empresa_id == _empresa_usuario(usuario))
-
-    return query
-
-
-def _query_sedes_por_usuario(db: Session, usuario: Usuario):
-    query = db.query(Sede)
-
-    if _es_admin(usuario):
-        return query
-
-    _validar_coordinador_con_empresa(usuario)
-
-    if hasattr(Sede, "empresa_id"):
-        query = query.filter(Sede.empresa_id == _empresa_usuario(usuario))
-
-    return query
-
-
-def _query_empresas_por_usuario(db: Session, usuario: Usuario):
-    query = db.query(Empresa)
-
-    if _es_admin(usuario):
-        return query
-
-    _validar_coordinador_con_empresa(usuario)
-
-    return query.filter(Empresa.id == _empresa_usuario(usuario))
-
-
-def _query_tecnicos_por_usuario(db: Session, usuario: Usuario):
-    """
-    Técnicos filtrados por la empresa del usuario asociado al técnico.
-
-    Tabla tecnicos:
-        tecnico.usuario_id -> usuarios.id
-
-    Tabla usuarios:
-        usuarios.empresa_id = empresa del técnico.
-    """
-
-    query = db.query(Tecnico).join(Usuario, Tecnico.usuario_id == Usuario.id)
-
-    if hasattr(Tecnico, "usuario"):
-        query = query.options(joinedload(Tecnico.usuario))
-
-    if _es_admin(usuario):
-        return query
-
-    _validar_coordinador_con_empresa(usuario)
-
-    return query.filter(Usuario.empresa_id == _empresa_usuario(usuario))
-
-
-def _validar_equipo_pertenece_empresa(db: Session, equipo_id, usuario: Usuario):
-    if _es_admin(usuario):
-        return
-
-    _validar_coordinador_con_empresa(usuario)
-
-    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
-
-    if not equipo:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado")
-
-    if getattr(equipo, "empresa_id", None) != _empresa_usuario(usuario):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El equipo no pertenece a la empresa del coordinador",
-        )
-
-
-def _validar_tecnico_pertenece_empresa(db: Session, tecnico_id, usuario: Usuario):
-    if not tecnico_id or _es_admin(usuario):
-        return
-
-    _validar_coordinador_con_empresa(usuario)
-
-    tecnico = (
-        db.query(Tecnico)
-        .join(Usuario, Tecnico.usuario_id == Usuario.id)
-        .filter(
-            Tecnico.id == tecnico_id,
-            Usuario.empresa_id == _empresa_usuario(usuario),
-        )
-        .first()
-    )
-
-    if not tecnico:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El técnico no pertenece a la empresa del coordinador",
-        )
-
-
-def _resumen_mantenimientos(mantenimientos):
-    por_estado = {}
-    por_tipo = {}
-
-    for m in mantenimientos:
-        estado = getattr(m, "estado", None) or "SIN_ESTADO"
-        tipo = getattr(m, "tipo", None) or "SIN_TIPO"
-
-        por_estado[estado] = por_estado.get(estado, 0) + 1
-        por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
-
-    return por_estado, por_tipo
 
 
 # ===========================================================
@@ -408,486 +518,40 @@ def dashboard_coordinador(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
-    query = _aplicar_filtro_empresa_mantenimientos(
+    _validar_rol(usuario_actual)
+
+    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
         _query_mantenimientos_base(db),
         usuario_actual,
-    )
+    ).all()
 
-    mantenimientos = query.all()
+    equipos = _query_equipos_por_usuario(db, usuario_actual).all()
+    tecnicos = _query_tecnicos_por_usuario(db, usuario_actual).all()
 
-    total_mantenimientos = len(mantenimientos)
-    programados = len([m for m in mantenimientos if m.estado == "PROGRAMADO"])
-    asignados = len([m for m in mantenimientos if m.estado == "ASIGNADO"])
-    en_proceso = len([m for m in mantenimientos if m.estado == "EN_PROCESO"])
-    finalizados = len([m for m in mantenimientos if m.estado == "FINALIZADO"])
-    anulados = len([m for m in mantenimientos if m.estado == "ANULADO"])
+    por_estado = {}
+    por_tipo = {}
 
-    total_equipos = _query_equipos_por_usuario(db, usuario_actual).count()
-    total_tecnicos = _query_tecnicos_por_usuario(db, usuario_actual).count()
-
-    recientes = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .order_by(_orden_mantenimiento())
-        .limit(8)
-        .all()
-    )
+    for m in mantenimientos:
+        estado = getattr(m, "estado", None) or "SIN_ESTADO"
+        tipo = getattr(m, "tipo", None) or "SIN_TIPO"
+        por_estado[estado] = por_estado.get(estado, 0) + 1
+        por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
 
     return {
-        "total_mantenimientos": total_mantenimientos,
-        "programados": programados,
-        "asignados": asignados,
-        "en_proceso": en_proceso,
-        "finalizados": finalizados,
-        "anulados": anulados,
-        "total_equipos": total_equipos,
-        "total_tecnicos": total_tecnicos,
-        "mantenimientos_recientes": [
-            _serializar_mantenimiento(m) for m in recientes
-        ],
         "metricas": {
-            "total_mantenimientos": total_mantenimientos,
-            "programados": programados,
-            "asignados": asignados,
-            "en_proceso": en_proceso,
-            "finalizados": finalizados,
-            "anulados": anulados,
-            "total_equipos": total_equipos,
-            "total_tecnicos": total_tecnicos,
+            "total_mantenimientos": len(mantenimientos),
+            "programados": por_estado.get("PROGRAMADO", 0),
+            "asignados": por_estado.get("ASIGNADO", 0),
+            "en_proceso": por_estado.get("EN_PROCESO", 0),
+            "pausados": por_estado.get("PAUSADO", 0),
+            "finalizados": por_estado.get("FINALIZADO", 0),
+            "anulados": por_estado.get("ANULADO", 0),
+            "equipos": len(equipos),
+            "tecnicos": len(tecnicos),
         },
-        "recientes": [_serializar_mantenimiento(m) for m in recientes],
-    }
-
-
-# ===========================================================
-# LISTAR MANTENIMIENTOS
-# ===========================================================
-
-@router.get("/mantenimientos")
-def listar_mantenimientos_coordinador(
-    estado: Optional[str] = Query(None),
-    empresa_id: Optional[str] = Query(None),
-    sede_id: Optional[str] = Query(None),
-    tecnico_id: Optional[str] = Query(None),
-    equipo_id: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    query = _aplicar_filtro_empresa_mantenimientos(
-        _query_mantenimientos_base(db),
-        usuario_actual,
-    )
-
-    if estado:
-        query = query.filter(Mantenimiento.estado == estado)
-
-    if empresa_id and _es_admin(usuario_actual) and hasattr(Mantenimiento, "empresa_id"):
-        query = query.filter(Mantenimiento.empresa_id == empresa_id)
-
-    if sede_id and hasattr(Mantenimiento, "sede_id"):
-        query = query.filter(Mantenimiento.sede_id == sede_id)
-
-    if tecnico_id and hasattr(Mantenimiento, "tecnico_id"):
-        query = query.filter(Mantenimiento.tecnico_id == tecnico_id)
-
-    if equipo_id and hasattr(Mantenimiento, "equipo_id"):
-        query = query.filter(Mantenimiento.equipo_id == equipo_id)
-
-    mantenimientos = query.order_by(_orden_mantenimiento()).all()
-
-    return [_serializar_mantenimiento(m) for m in mantenimientos]
-
-
-# ===========================================================
-# CREAR MANTENIMIENTO
-# ===========================================================
-
-@router.post("/mantenimientos")
-def crear_mantenimiento_coordinador(
-    data: MantenimientoCreate,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    _validar_equipo_pertenece_empresa(db, data.equipo_id, usuario_actual)
-    _validar_tecnico_pertenece_empresa(db, data.tecnico_id, usuario_actual)
-
-    equipo = db.query(Equipo).filter(Equipo.id == data.equipo_id).first()
-
-    if not equipo:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado")
-
-    empresa_final = data.empresa_id
-
-    if not _es_admin(usuario_actual):
-        empresa_final = _empresa_usuario(usuario_actual)
-    elif not empresa_final:
-        empresa_final = getattr(equipo, "empresa_id", None)
-
-    sede_final = data.sede_id or getattr(equipo, "sede_id", None)
-
-    nuevo = Mantenimiento(
-        equipo_id=data.equipo_id,
-        tipo=data.tipo,
-        estado=data.estado or "PROGRAMADO",
-        tecnico_id=data.tecnico_id,
-        fecha_programada=data.fecha_programada,
-        descripcion=data.descripcion,
-        observaciones=data.observaciones,
-        costo=data.costo,
-    )
-
-    _set_if_exists(nuevo, "empresa_id", empresa_final)
-    _set_if_exists(nuevo, "sede_id", sede_final)
-
-    if data.tecnico_id:
-        _set_if_exists(nuevo, "fecha_asignacion", datetime.utcnow())
-
-        if not data.estado or data.estado == "PROGRAMADO":
-            nuevo.estado = "ASIGNADO"
-
-    db.add(nuevo)
-    db.commit()
-    db.refresh(nuevo)
-
-    return {
-        "message": "Mantenimiento creado correctamente",
-        "mantenimiento": _serializar_mantenimiento(nuevo),
-    }
-
-
-# ===========================================================
-# EDITAR MANTENIMIENTO
-# ===========================================================
-
-@router.put("/mantenimientos/{mantenimiento_id}")
-def editar_mantenimiento_coordinador(
-    mantenimiento_id: UUID,
-    data: MantenimientoUpdate,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    mantenimiento = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .filter(Mantenimiento.id == mantenimiento_id)
-        .first()
-    )
-
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
-
-    campos = data.model_dump(exclude_unset=True)
-
-    if "equipo_id" in campos and campos["equipo_id"]:
-        _validar_equipo_pertenece_empresa(db, campos["equipo_id"], usuario_actual)
-
-    if "tecnico_id" in campos and campos["tecnico_id"]:
-        _validar_tecnico_pertenece_empresa(db, campos["tecnico_id"], usuario_actual)
-
-    for campo, valor in campos.items():
-        if campo == "empresa_id" and not _es_admin(usuario_actual):
-            continue
-
-        if hasattr(mantenimiento, campo):
-            setattr(mantenimiento, campo, valor)
-
-    if not _es_admin(usuario_actual):
-        _set_if_exists(mantenimiento, "empresa_id", _empresa_usuario(usuario_actual))
-
-    if campos.get("tecnico_id"):
-        _set_if_exists(mantenimiento, "fecha_asignacion", datetime.utcnow())
-
-    _set_if_exists(mantenimiento, "actualizado_en", datetime.utcnow())
-    _set_if_exists(mantenimiento, "updated_at", datetime.utcnow())
-
-    db.commit()
-    db.refresh(mantenimiento)
-
-    return {
-        "message": "Mantenimiento actualizado correctamente",
-        "mantenimiento": _serializar_mantenimiento(mantenimiento),
-    }
-
-
-# ===========================================================
-# ASIGNAR TÉCNICO
-# ===========================================================
-
-@router.put("/mantenimientos/{mantenimiento_id}/asignar")
-def asignar_tecnico(
-    mantenimiento_id: UUID,
-    tecnico_id: UUID,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    mantenimiento = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .filter(Mantenimiento.id == mantenimiento_id)
-        .first()
-    )
-
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
-
-    _validar_tecnico_pertenece_empresa(db, tecnico_id, usuario_actual)
-
-    tecnico = db.query(Tecnico).filter(Tecnico.id == tecnico_id).first()
-
-    if not tecnico:
-        raise HTTPException(status_code=404, detail="Técnico no encontrado")
-
-    mantenimiento.tecnico_id = tecnico_id
-    mantenimiento.estado = "ASIGNADO"
-
-    _set_if_exists(mantenimiento, "fecha_asignacion", datetime.utcnow())
-    _set_if_exists(mantenimiento, "actualizado_en", datetime.utcnow())
-    _set_if_exists(mantenimiento, "updated_at", datetime.utcnow())
-
-    db.commit()
-    db.refresh(mantenimiento)
-
-    return {
-        "message": "Técnico asignado correctamente",
-        "mantenimiento": _serializar_mantenimiento(mantenimiento),
-    }
-
-
-# ===========================================================
-# CAMBIAR ESTADO
-# ===========================================================
-
-@router.put("/mantenimientos/{mantenimiento_id}/estado")
-def cambiar_estado_mantenimiento(
-    mantenimiento_id: UUID,
-    nuevo_estado: str,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    estados_permitidos = [
-        "PROGRAMADO",
-        "ASIGNADO",
-        "EN_PROCESO",
-        "PAUSADO",
-        "FINALIZADO",
-        "ANULADO",
-    ]
-
-    if nuevo_estado not in estados_permitidos:
-        raise HTTPException(status_code=400, detail="Estado no permitido")
-
-    mantenimiento = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .filter(Mantenimiento.id == mantenimiento_id)
-        .first()
-    )
-
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
-
-    mantenimiento.estado = nuevo_estado
-
-    if nuevo_estado == "EN_PROCESO":
-        _set_if_exists(mantenimiento, "fecha_inicio", datetime.utcnow())
-
-    if nuevo_estado == "FINALIZADO":
-        _set_if_exists(mantenimiento, "fecha_finalizacion", datetime.utcnow())
-        _set_if_exists(mantenimiento, "fecha_fin", datetime.utcnow())
-
-    if nuevo_estado == "PAUSADO":
-        _set_if_exists(mantenimiento, "fecha_pausa", datetime.utcnow())
-
-    _set_if_exists(mantenimiento, "actualizado_en", datetime.utcnow())
-    _set_if_exists(mantenimiento, "updated_at", datetime.utcnow())
-
-    db.commit()
-    db.refresh(mantenimiento)
-
-    return {
-        "message": "Estado actualizado correctamente",
-        "mantenimiento": _serializar_mantenimiento(mantenimiento),
-    }
-
-
-# ===========================================================
-# REPROGRAMAR
-# ===========================================================
-
-@router.put("/mantenimientos/{mantenimiento_id}/reprogramar")
-def reprogramar_mantenimiento(
-    mantenimiento_id: UUID,
-    fecha_programada: datetime,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    mantenimiento = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .filter(Mantenimiento.id == mantenimiento_id)
-        .first()
-    )
-
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
-
-    mantenimiento.fecha_programada = fecha_programada
-    mantenimiento.estado = "PROGRAMADO"
-
-    _set_if_exists(mantenimiento, "actualizado_en", datetime.utcnow())
-    _set_if_exists(mantenimiento, "updated_at", datetime.utcnow())
-
-    db.commit()
-    db.refresh(mantenimiento)
-
-    return {
-        "message": "Mantenimiento reprogramado correctamente",
-        "mantenimiento": _serializar_mantenimiento(mantenimiento),
-    }
-
-
-# ===========================================================
-# ANULAR
-# ===========================================================
-
-@router.delete("/mantenimientos/{mantenimiento_id}")
-def eliminar_mantenimiento_coordinador(
-    mantenimiento_id: UUID,
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    mantenimiento = (
-        _aplicar_filtro_empresa_mantenimientos(
-            _query_mantenimientos_base(db),
-            usuario_actual,
-        )
-        .filter(Mantenimiento.id == mantenimiento_id)
-        .first()
-    )
-
-    if not mantenimiento:
-        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
-
-    mantenimiento.estado = "ANULADO"
-
-    _set_if_exists(
-        mantenimiento,
-        "motivo_anulacion",
-        "Anulado desde módulo Coordinador",
-    )
-    _set_if_exists(mantenimiento, "actualizado_en", datetime.utcnow())
-    _set_if_exists(mantenimiento, "updated_at", datetime.utcnow())
-
-    db.commit()
-    db.refresh(mantenimiento)
-
-    return {
-        "message": "Mantenimiento anulado correctamente",
-        "mantenimiento": _serializar_mantenimiento(mantenimiento),
-    }
-
-
-# ===========================================================
-# CRONOGRAMA
-# ===========================================================
-
-@router.get("/cronograma")
-def cronograma_coordinador(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    query = _aplicar_filtro_empresa_mantenimientos(
-        _query_mantenimientos_base(db),
-        usuario_actual,
-    )
-
-    if hasattr(Mantenimiento, "fecha_programada"):
-        mantenimientos = query.order_by(Mantenimiento.fecha_programada.asc()).all()
-    else:
-        mantenimientos = query.order_by(_orden_mantenimiento()).all()
-
-    return [_serializar_mantenimiento(m) for m in mantenimientos]
-
-
-# ===========================================================
-# INFORMES
-# ===========================================================
-
-@router.get("/informes")
-def obtener_informes_coordinador(
-    equipo_id: Optional[str] = Query(None),
-    estado: Optional[str] = Query(None),
-    tipo: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    query = _aplicar_filtro_empresa_mantenimientos(
-        _query_mantenimientos_base(db),
-        usuario_actual,
-    )
-
-    if equipo_id and hasattr(Mantenimiento, "equipo_id"):
-        query = query.filter(Mantenimiento.equipo_id == equipo_id)
-
-    if estado:
-        query = query.filter(Mantenimiento.estado == estado)
-
-    if tipo:
-        query = query.filter(Mantenimiento.tipo == tipo)
-
-    mantenimientos = query.order_by(_orden_mantenimiento()).all()
-
-    por_estado, por_tipo = _resumen_mantenimientos(mantenimientos)
-    registros = [_serializar_mantenimiento(m) for m in mantenimientos]
-
-    equipo_nombre = None
-
-    if equipo_id:
-        equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
-        equipo_nombre = _nombre_objeto(equipo) if equipo else None
-
-    return {
-        "total": len(registros),
-        "equipo_id": equipo_id,
-        "equipo_nombre": equipo_nombre,
         "por_estado": por_estado,
         "por_tipo": por_tipo,
-        "mantenimientos": registros,
-    }
-
-
-@router.get("/informes/resumen")
-def resumen_informes(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
-):
-    query = _aplicar_filtro_empresa_mantenimientos(
-        _query_mantenimientos_base(db),
-        usuario_actual,
-    )
-
-    mantenimientos = query.all()
-    por_estado, por_tipo = _resumen_mantenimientos(mantenimientos)
-
-    return {
-        "por_estado": [
-            {"estado": estado, "total": total}
-            for estado, total in por_estado.items()
-        ],
-        "por_tipo": [
-            {"tipo": tipo, "total": total}
-            for tipo, total in por_tipo.items()
-        ],
+        "mantenimientos_recientes": [_serializar_mantenimiento(m) for m in mantenimientos[:10]],
     }
 
 
@@ -900,14 +564,411 @@ def catalogos_coordinador(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
+    _validar_rol(usuario_actual)
+
     empresas = _query_empresas_por_usuario(db, usuario_actual).all()
     sedes = _query_sedes_por_usuario(db, usuario_actual).all()
     equipos = _query_equipos_por_usuario(db, usuario_actual).all()
     tecnicos = _query_tecnicos_por_usuario(db, usuario_actual).all()
+    categorias = _query_categorias(db).all()
 
     return {
         "empresas": [_serializar_catalogo(e) for e in empresas],
         "sedes": [_serializar_catalogo(s) for s in sedes],
-        "equipos": [_serializar_catalogo(e) for e in equipos],
+        "equipos": [_serializar_equipo(e, db) for e in equipos],
         "tecnicos": [_serializar_catalogo(t) for t in tecnicos],
+        "categorias": [_serializar_catalogo(c) for c in categorias],
+    }
+
+
+# ===========================================================
+# INVENTARIO / EQUIPOS
+# ===========================================================
+
+@router.get("/equipos")
+def listar_equipos_coordinador(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+    equipos = _query_equipos_por_usuario(db, usuario_actual).order_by(Equipo.created_at.desc()).all()
+    return [_serializar_equipo(e, db) for e in equipos]
+
+
+@router.post("/equipos", status_code=201)
+def crear_equipo_coordinador(
+    data: EquipoCreate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+    _validar_sede_pertenece_empresa(db, data.sede_id, usuario_actual)
+
+    empresa_id = data.empresa_id if _es_admin(usuario_actual) else _empresa_usuario(usuario_actual)
+    if not empresa_id:
+        raise HTTPException(status_code=400, detail="No fue posible determinar la empresa del equipo")
+
+    payload = data.model_dump(exclude_unset=True)
+    payload["empresa_id"] = empresa_id
+
+    nuevo = Equipo(**payload)
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+
+    return _serializar_equipo(nuevo, db)
+
+
+@router.put("/equipos/{equipo_id}")
+def actualizar_equipo_coordinador(
+    equipo_id: UUID,
+    data: EquipoUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    equipo = _validar_equipo_pertenece_empresa(db, equipo_id, usuario_actual)
+    payload = data.model_dump(exclude_unset=True)
+
+    if not _es_admin(usuario_actual):
+        payload.pop("empresa_id", None)
+
+    if payload.get("sede_id"):
+        _validar_sede_pertenece_empresa(db, payload["sede_id"], usuario_actual)
+
+    for campo, valor in payload.items():
+        if hasattr(equipo, campo):
+            setattr(equipo, campo, valor)
+
+    db.commit()
+    db.refresh(equipo)
+    return _serializar_equipo(equipo, db)
+
+
+# ===========================================================
+# HOJA DE VIDA
+# ===========================================================
+
+@router.get("/equipos/{equipo_id}/hoja-vida")
+def obtener_hoja_vida_coordinador(
+    equipo_id: UUID,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    equipo = _validar_equipo_pertenece_empresa(db, equipo_id, usuario_actual)
+
+    empresa = db.query(Empresa).filter(Empresa.id == equipo.empresa_id).first()
+    sede = db.query(Sede).filter(Sede.id == equipo.sede_id).first()
+    categoria = db.query(Categoria).filter(Categoria.id == equipo.categoria_id).first() if equipo.categoria_id else None
+    hoja = db.query(EquipoHojaVida).filter(EquipoHojaVida.equipo_id == equipo_id).first()
+
+    return {
+        "encabezado": {
+            "empresa_nombre": empresa.nombre if empresa else None,
+            "empresa_logo_url": empresa.logo_url if empresa else None,
+            "sede_nombre": sede.nombre if sede else None,
+        },
+        "equipo_basico": {
+            **_serializar_equipo(equipo, db),
+            "categoria": categoria.nombre if categoria else None,
+        },
+        "hoja_vida_tecnica": _serializar_hoja(hoja),
+    }
+
+
+@router.put("/equipos/{equipo_id}/hoja-vida")
+def actualizar_hoja_vida_coordinador(
+    equipo_id: UUID,
+    data: HojaVidaUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_equipo_pertenece_empresa(db, equipo_id, usuario_actual)
+
+    hoja = db.query(EquipoHojaVida).filter(EquipoHojaVida.equipo_id == equipo_id).first()
+
+    if not hoja:
+        hoja = EquipoHojaVida(equipo_id=equipo_id)
+        db.add(hoja)
+        db.flush()
+
+    payload = data.model_dump(exclude_unset=True)
+
+    for campo, valor in payload.items():
+        if hasattr(hoja, campo):
+            setattr(hoja, campo, valor)
+
+    db.commit()
+    db.refresh(hoja)
+
+    return _serializar_hoja(hoja)
+
+
+# ===========================================================
+# MANTENIMIENTOS
+# ===========================================================
+
+@router.get("/mantenimientos")
+def listar_mantenimientos(
+    estado: Optional[str] = Query(default=None),
+    equipo_id: Optional[UUID] = Query(default=None),
+    tecnico_id: Optional[UUID] = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+
+    query = _aplicar_filtro_empresa_mantenimientos(
+        _query_mantenimientos_base(db),
+        usuario_actual,
+    )
+
+    if estado:
+        query = query.filter(Mantenimiento.estado == estado)
+    if equipo_id:
+        query = query.filter(Mantenimiento.equipo_id == equipo_id)
+    if tecnico_id:
+        query = query.filter(Mantenimiento.tecnico_id == tecnico_id)
+
+    mantenimientos = query.order_by(_orden_mantenimiento()).all()
+    return [_serializar_mantenimiento(m) for m in mantenimientos]
+
+
+@router.post("/mantenimientos", status_code=201)
+def crear_mantenimiento(
+    data: MantenimientoCreate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    equipo = _validar_equipo_pertenece_empresa(db, data.equipo_id, usuario_actual)
+    _validar_tecnico_pertenece_empresa(db, data.tecnico_id, usuario_actual)
+
+    payload = data.model_dump(exclude_unset=True)
+    payload["empresa_id"] = data.empresa_id if _es_admin(usuario_actual) and data.empresa_id else equipo.empresa_id
+    payload["sede_id"] = data.sede_id or getattr(equipo, "sede_id", None)
+    payload["estado"] = payload.get("estado") or "PROGRAMADO"
+
+    nuevo = Mantenimiento(**payload)
+    db.add(nuevo)
+    db.commit()
+    db.refresh(nuevo)
+
+    return _serializar_mantenimiento(nuevo)
+
+
+@router.put("/mantenimientos/{mantenimiento_id}")
+def actualizar_mantenimiento(
+    mantenimiento_id: UUID,
+    data: MantenimientoUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    query = _aplicar_filtro_empresa_mantenimientos(
+        _query_mantenimientos_base(db).filter(Mantenimiento.id == mantenimiento_id),
+        usuario_actual,
+    )
+
+    mantenimiento = query.first()
+    if not mantenimiento:
+        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+
+    payload = data.model_dump(exclude_unset=True)
+
+    if payload.get("equipo_id"):
+        equipo = _validar_equipo_pertenece_empresa(db, payload["equipo_id"], usuario_actual)
+        payload["empresa_id"] = getattr(equipo, "empresa_id", None)
+        payload["sede_id"] = payload.get("sede_id") or getattr(equipo, "sede_id", None)
+
+    if payload.get("tecnico_id"):
+        _validar_tecnico_pertenece_empresa(db, payload["tecnico_id"], usuario_actual)
+
+    if not _es_admin(usuario_actual):
+        payload.pop("empresa_id", None)
+
+    for campo, valor in payload.items():
+        if hasattr(mantenimiento, campo):
+            setattr(mantenimiento, campo, valor)
+
+    db.commit()
+    db.refresh(mantenimiento)
+
+    return _serializar_mantenimiento(mantenimiento)
+
+
+@router.put("/mantenimientos/{mantenimiento_id}/asignar")
+def asignar_tecnico(
+    mantenimiento_id: UUID,
+    tecnico_id: UUID = Query(...),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_tecnico_pertenece_empresa(db, tecnico_id, usuario_actual)
+
+    mantenimiento = _aplicar_filtro_empresa_mantenimientos(
+        db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id),
+        usuario_actual,
+    ).first()
+
+    if not mantenimiento:
+        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+
+    mantenimiento.tecnico_id = tecnico_id
+    mantenimiento.estado = "ASIGNADO"
+    if hasattr(mantenimiento, "fecha_asignacion"):
+        mantenimiento.fecha_asignacion = datetime.utcnow()
+
+    db.commit()
+    db.refresh(mantenimiento)
+
+    return _serializar_mantenimiento(mantenimiento)
+
+
+@router.put("/mantenimientos/{mantenimiento_id}/estado")
+def cambiar_estado(
+    mantenimiento_id: UUID,
+    estado: str = Query(...),
+    observacion: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimiento = _aplicar_filtro_empresa_mantenimientos(
+        db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id),
+        usuario_actual,
+    ).first()
+
+    if not mantenimiento:
+        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+
+    mantenimiento.estado = estado
+    if observacion and hasattr(mantenimiento, "observacion_estado"):
+        mantenimiento.observacion_estado = observacion
+
+    if estado == "EN_PROCESO" and hasattr(mantenimiento, "fecha_inicio"):
+        mantenimiento.fecha_inicio = mantenimiento.fecha_inicio or datetime.utcnow()
+    if estado == "FINALIZADO":
+        if hasattr(mantenimiento, "fecha_fin"):
+            mantenimiento.fecha_fin = datetime.utcnow()
+        if hasattr(mantenimiento, "fecha_finalizacion"):
+            mantenimiento.fecha_finalizacion = datetime.utcnow()
+
+    db.commit()
+    db.refresh(mantenimiento)
+
+    return _serializar_mantenimiento(mantenimiento)
+
+
+@router.put("/mantenimientos/{mantenimiento_id}/reprogramar")
+def reprogramar(
+    mantenimiento_id: UUID,
+    fecha_programada: datetime,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimiento = _aplicar_filtro_empresa_mantenimientos(
+        db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id),
+        usuario_actual,
+    ).first()
+
+    if not mantenimiento:
+        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+
+    mantenimiento.fecha_programada = fecha_programada
+    db.commit()
+    db.refresh(mantenimiento)
+
+    return _serializar_mantenimiento(mantenimiento)
+
+
+@router.delete("/mantenimientos/{mantenimiento_id}")
+def eliminar_mantenimiento(
+    mantenimiento_id: UUID,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimiento = _aplicar_filtro_empresa_mantenimientos(
+        db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id),
+        usuario_actual,
+    ).first()
+
+    if not mantenimiento:
+        raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+
+    db.delete(mantenimiento)
+    db.commit()
+
+    return {"message": "Mantenimiento eliminado correctamente"}
+
+
+# ===========================================================
+# CRONOGRAMA / EVIDENCIAS / INFORMES
+# ===========================================================
+
+@router.get("/cronograma")
+def cronograma(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
+        _query_mantenimientos_base(db),
+        usuario_actual,
+    ).order_by(Mantenimiento.fecha_programada.asc()).all()
+
+    return [_serializar_mantenimiento(m) for m in mantenimientos]
+
+
+@router.get("/evidencias")
+def evidencias_coordinador(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+
+    query = db.query(Evidencia)
+
+    if not _es_admin(usuario_actual):
+        _validar_coordinador_con_empresa(usuario_actual)
+        query = (
+            query.join(Equipo, Evidencia.equipo_id == Equipo.id)
+            .filter(Equipo.empresa_id == _empresa_usuario(usuario_actual))
+        )
+
+    evidencias = query.order_by(Evidencia.created_at.desc()).all()
+    return [_serializar_evidencia(e, db) for e in evidencias]
+
+
+@router.get("/informes")
+def informes(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
+        _query_mantenimientos_base(db),
+        usuario_actual,
+    ).order_by(_orden_mantenimiento()).all()
+
+    return [_serializar_mantenimiento(m) for m in mantenimientos]
+
+
+@router.get("/informes/resumen")
+def resumen_informes(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
+        _query_mantenimientos_base(db),
+        usuario_actual,
+    ).all()
+
+    por_estado = {}
+    por_tipo = {}
+
+    for m in mantenimientos:
+        estado = getattr(m, "estado", None) or "SIN_ESTADO"
+        tipo = getattr(m, "tipo", None) or "SIN_TIPO"
+        por_estado[estado] = por_estado.get(estado, 0) + 1
+        por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
+
+    return {
+        "total": len(mantenimientos),
+        "por_estado": por_estado,
+        "por_tipo": por_tipo,
     }

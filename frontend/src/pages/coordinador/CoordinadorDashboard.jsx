@@ -1,6 +1,6 @@
 /*
 ===========================================================
-FASE 32 — DASHBOARD COORDINADOR INTELIGENTE PRO
+DASHBOARD COORDINADOR PRO
 Archivo: frontend/src/pages/coordinador/CoordinadorDashboard.jsx
 ===========================================================
 */
@@ -18,13 +18,31 @@ import {
   Wrench,
   Users,
   RefreshCw,
+  PackageSearch,
+  AlertTriangle,
 } from "lucide-react";
 import "../../styles/coordinador.css";
+
+const estadoClass = (estado) => `coord-badge ${String(estado || "sin").toLowerCase()}`;
+
+const fmtFecha = (fecha) => {
+  if (!fecha) return "Sin fecha";
+  try {
+    return new Date(fecha).toLocaleDateString("es-CO", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  } catch {
+    return "Sin fecha";
+  }
+};
 
 export default function CoordinadorDashboard() {
   const navigate = useNavigate();
 
   const [mantenimientos, setMantenimientos] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
   const [catalogos, setCatalogos] = useState({ equipos: [], tecnicos: [] });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -34,11 +52,13 @@ export default function CoordinadorDashboard() {
       setCargando(true);
       setError("");
 
-      const [resMantenimientos, resCatalogos] = await Promise.all([
+      const [resDashboard, resMantenimientos, resCatalogos] = await Promise.all([
+        API.get("/coordinador/dashboard"),
         API.get("/coordinador/mantenimientos"),
         API.get("/coordinador/catalogos"),
       ]);
 
+      setDashboard(resDashboard.data || null);
       setMantenimientos(resMantenimientos.data || []);
       setCatalogos(resCatalogos.data || { equipos: [], tecnicos: [] });
     } catch (err) {
@@ -54,179 +74,134 @@ export default function CoordinadorDashboard() {
   }, []);
 
   const metricas = useMemo(() => {
+    const m = dashboard?.metricas || {};
     return {
-      total: mantenimientos.length,
-      programados: mantenimientos.filter((m) => m.estado === "PROGRAMADO").length,
-      asignados: mantenimientos.filter((m) => m.estado === "ASIGNADO").length,
-      enProceso: mantenimientos.filter((m) => m.estado === "EN_PROCESO").length,
-      finalizados: mantenimientos.filter((m) => m.estado === "FINALIZADO").length,
-      anulados: mantenimientos.filter((m) => m.estado === "ANULADO").length,
-      equipos: catalogos?.equipos?.length || 0,
-      tecnicos: catalogos?.tecnicos?.length || 0,
+      total: m.total_mantenimientos ?? mantenimientos.length,
+      programados: m.programados ?? mantenimientos.filter((x) => x.estado === "PROGRAMADO").length,
+      asignados: m.asignados ?? mantenimientos.filter((x) => x.estado === "ASIGNADO").length,
+      enProceso: m.en_proceso ?? mantenimientos.filter((x) => x.estado === "EN_PROCESO").length,
+      finalizados: m.finalizados ?? mantenimientos.filter((x) => x.estado === "FINALIZADO").length,
+      anulados: m.anulados ?? mantenimientos.filter((x) => x.estado === "ANULADO").length,
+      equipos: m.equipos ?? catalogos.equipos.length,
+      tecnicos: m.tecnicos ?? catalogos.tecnicos.length,
     };
-  }, [mantenimientos, catalogos]);
+  }, [dashboard, mantenimientos, catalogos]);
 
-  const irAMantenimientos = (estado = "") => {
-    if (estado) {
-      navigate(`/coordinador/mantenimientos?estado=${estado}`);
-    } else {
-      navigate("/coordinador/mantenimientos");
-    }
-  };
+  const recientes = useMemo(() => mantenimientos.slice(0, 8), [mantenimientos]);
 
   const kpis = [
-    {
-      label: "Total mantenimientos",
-      value: metricas.total,
-      icon: ClipboardList,
-      className: "blue",
-      onClick: () => irAMantenimientos(),
-    },
-    {
-      label: "Programados",
-      value: metricas.programados,
-      icon: Clock,
-      className: "cyan",
-      onClick: () => irAMantenimientos("PROGRAMADO"),
-    },
-    {
-      label: "Asignados",
-      value: metricas.asignados,
-      icon: UserCheck,
-      className: "indigo",
-      onClick: () => irAMantenimientos("ASIGNADO"),
-    },
-    {
-      label: "En proceso",
-      value: metricas.enProceso,
-      icon: PlayCircle,
-      className: "amber",
-      onClick: () => irAMantenimientos("EN_PROCESO"),
-    },
-    {
-      label: "Finalizados",
-      value: metricas.finalizados,
-      icon: CheckCircle2,
-      className: "green",
-      onClick: () => irAMantenimientos("FINALIZADO"),
-    },
-    {
-      label: "Anulados",
-      value: metricas.anulados,
-      icon: XCircle,
-      className: "red",
-      onClick: () => irAMantenimientos("ANULADO"),
-    },
-    {
-      label: "Equipos",
-      value: metricas.equipos,
-      icon: Wrench,
-      className: "purple",
-      onClick: () => navigate("/coordinador/mantenimientos"),
-    },
-    {
-      label: "Técnicos",
-      value: metricas.tecnicos,
-      icon: Users,
-      className: "slate",
-      onClick: () => navigate("/coordinador/mantenimientos"),
-    },
+    { label: "Total mantenimientos", value: metricas.total, icon: ClipboardList, to: "/coordinador/mantenimientos", tone: "blue" },
+    { label: "Programados", value: metricas.programados, icon: Clock, to: "/coordinador/mantenimientos?estado=PROGRAMADO", tone: "amber" },
+    { label: "Asignados", value: metricas.asignados, icon: UserCheck, to: "/coordinador/mantenimientos?estado=ASIGNADO", tone: "cyan" },
+    { label: "En proceso", value: metricas.enProceso, icon: PlayCircle, to: "/coordinador/mantenimientos?estado=EN_PROCESO", tone: "indigo" },
+    { label: "Finalizados", value: metricas.finalizados, icon: CheckCircle2, to: "/coordinador/mantenimientos?estado=FINALIZADO", tone: "green" },
+    { label: "Anulados", value: metricas.anulados, icon: XCircle, to: "/coordinador/mantenimientos?estado=ANULADO", tone: "red" },
+    { label: "Equipos", value: metricas.equipos, icon: PackageSearch, to: "/coordinador/equipos", tone: "violet" },
+    { label: "Técnicos", value: metricas.tecnicos, icon: Users, to: "/coordinador/mantenimientos", tone: "slate" },
   ];
-
-  if (cargando) {
-    return <div className="coord-loading">Cargando dashboard operativo...</div>;
-  }
 
   return (
     <div className="coord-page">
-      <div className="coord-page-header">
+      <div className="coord-hero">
         <div>
           <span className="coord-eyebrow">SGA PRO · PANEL OPERATIVO</span>
           <h2>Dashboard Coordinador</h2>
-          <p>
-            Control centralizado de mantenimientos, técnicos, estados y operación diaria.
-          </p>
+          <p>Control centralizado de mantenimientos, técnicos, estados, inventario y operación diaria.</p>
         </div>
 
-        <button className="coord-primary-btn" onClick={cargarDashboard}>
+        <button className="coord-btn secondary" onClick={cargarDashboard}>
           <RefreshCw size={17} />
           Actualizar
         </button>
       </div>
 
-      {error && <div className="coord-alert error">{error}</div>}
+      {error && (
+        <div className="coord-alert error">
+          <AlertTriangle size={18} />
+          {error}
+        </div>
+      )}
 
       <div className="coord-kpi-grid">
-        {kpis.map((item) => {
-          const Icon = item.icon;
-
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
           return (
             <button
-              type="button"
-              className={`coord-kpi coord-kpi-click ${item.className}`}
-              key={item.label}
-              onClick={item.onClick}
+              key={kpi.label}
+              className={`coord-kpi ${kpi.tone}`}
+              onClick={() => navigate(kpi.to)}
             >
               <div className="coord-kpi-icon">
-                <Icon size={24} />
+                <Icon size={22} />
               </div>
-
               <div>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
+                <strong>{cargando ? "..." : kpi.value}</strong>
+                <span>{kpi.label}</span>
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className="coord-card">
-        <div className="coord-card-header">
-          <div>
-            <h3>Mantenimientos recientes</h3>
-            <p>Últimos registros operativos del módulo coordinador.</p>
+      <div className="coord-grid two">
+        <section className="coord-card">
+          <div className="coord-card-header">
+            <div>
+              <h3>Mantenimientos recientes</h3>
+              <p>Últimos registros operativos del módulo coordinador.</p>
+            </div>
+            <Wrench size={22} />
           </div>
-        </div>
 
-        <div className="coord-table-wrap">
-          <table className="coord-table">
-            <thead>
-              <tr>
-                <th>Equipo</th>
-                <th>Técnico</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-                <th>Fecha programada</th>
-                <th>Observaciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {mantenimientos.length === 0 ? (
+          <div className="coord-table-wrap compact">
+            <table className="coord-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" className="coord-empty">
-                    No hay mantenimientos recientes.
-                  </td>
+                  <th>Equipo</th>
+                  <th>Técnico</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
                 </tr>
-              ) : (
-                mantenimientos.slice(0, 8).map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.equipo_nombre || m.equipo || "Sin equipo"}</td>
-                    <td>{m.tecnico_nombre || m.tecnico || "Sin técnico"}</td>
-                    <td>{m.tipo || "Sin tipo"}</td>
-                    <td>
-                      <span className={`coord-status ${String(m.estado || "").toLowerCase()}`}>
-                        {m.estado || "SIN ESTADO"}
-                      </span>
-                    </td>
-                    <td>{m.fecha_programada || "Sin fecha"}</td>
-                    <td>{m.observaciones || "Sin observaciones"}</td>
+              </thead>
+              <tbody>
+                {recientes.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="coord-empty">No hay mantenimientos registrados.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  recientes.map((m) => (
+                    <tr key={m.id}>
+                      <td>{m.equipo_nombre || "Sin equipo"}</td>
+                      <td>{m.tecnico_nombre || "Sin técnico"}</td>
+                      <td>{m.tipo || "N/A"}</td>
+                      <td><span className={estadoClass(m.estado)}>{m.estado || "N/A"}</span></td>
+                      <td>{fmtFecha(m.fecha_programada)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="coord-card">
+          <div className="coord-card-header">
+            <div>
+              <h3>Accesos rápidos</h3>
+              <p>Operaciones frecuentes del coordinador.</p>
+            </div>
+            <PackageSearch size={22} />
+          </div>
+
+          <div className="coord-quick-actions">
+            <button onClick={() => navigate("/coordinador/mantenimientos")}>Crear / editar mantenimientos</button>
+            <button onClick={() => navigate("/coordinador/equipos")}>Ver inventario de equipos</button>
+            <button onClick={() => navigate("/coordinador/hoja-vida")}>Consultar hojas de vida</button>
+            <button onClick={() => navigate("/coordinador/evidencias")}>Revisar evidencias</button>
+            <button onClick={() => navigate("/coordinador/informes")}>Generar reportes</button>
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -1,23 +1,24 @@
 // ============================================================
 // PÁGINA: CoordinadorMantenimientos.jsx
-// Ruta: frontend/src/pages/coordinador/CoordinadorMantenimientos.jsx
-// Módulo: Coordinador - Gestión de Mantenimientos PRO
+// Módulo: Coordinador - Crear, editar, eliminar y filtrar mantenimientos
 // ============================================================
 
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
 import "../../styles/coordinador.css";
 import { useSearchParams } from "react-router-dom";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Save,
+  X,
+  RefreshCw,
+  Search,
+  CalendarClock,
+} from "lucide-react";
 
-const ESTADOS = [
-  "PROGRAMADO",
-  "ASIGNADO",
-  "EN_PROCESO",
-  "PAUSADO",
-  "FINALIZADO",
-  "ANULADO",
-];
-
+const ESTADOS = ["PROGRAMADO", "ASIGNADO", "EN_PROCESO", "PAUSADO", "FINALIZADO", "ANULADO"];
 const TIPOS = ["PREVENTIVO", "CORRECTIVO", "PREDICTIVO", "INSPECCION"];
 
 const formInicial = {
@@ -27,71 +28,59 @@ const formInicial = {
   tipo: "PREVENTIVO",
   estado: "PROGRAMADO",
   fecha_programada: "",
+  descripcion: "",
   observaciones: "",
+  costo: "",
 };
+
+const fmtFecha = (fecha) => {
+  if (!fecha) return "Sin fecha";
+  try {
+    return new Date(fecha).toLocaleDateString("es-CO");
+  } catch {
+    return "Sin fecha";
+  }
+};
+
+const estadoClass = (estado) => `coord-badge ${String(estado || "sin").toLowerCase()}`;
 
 export default function CoordinadorMantenimientos() {
   const [searchParams] = useSearchParams();
   const estadoURL = searchParams.get("estado") || "";
+
   const [mantenimientos, setMantenimientos] = useState([]);
   const [equipos, setEquipos] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
-
   const [form, setForm] = useState(formInicial);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState(estadoURL);
-  useEffect(() => {
-  setFiltroEstado(estadoURL);
-  setPagina(1);
-}, [estadoURL]);
-
   const [filtroTecnico, setFiltroTecnico] = useState("");
   const [pagina, setPagina] = useState(1);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
   const registrosPorPagina = 8;
-  // Convierte fecha ISO a formato válido para input type="date"
-  const fechaParaInputDate = (fecha) => {
-    if (!fecha) return "";
-    return String(fecha).split("T")[0];
-  };
 
-  // Nombre definitivo del técnico para selects, filtros y tabla
-  const mostrarNombreTecnico = (tecnico) => {
-    if (!tecnico) return "Sin técnico";
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
-    return (
-      tecnico.nombre_completo ||
-      tecnico.nombre ||
-      tecnico.usuario_nombre ||
-      tecnico.email ||
-      tecnico.correo ||
-      tecnico.username ||
-      `Técnico ${String(tecnico.id || "").slice(0, 8)}`
-    );
-  };
+  useEffect(() => {
+    setFiltroEstado(estadoURL);
+    setPagina(1);
+  }, [estadoURL]);
 
-  const mostrarNombreEquipo = (equipo) => {
-    if (!equipo) return "Sin equipo";
-
-    return (
-      equipo.nombre ||
-      equipo.equipo_nombre ||
-      equipo.codigo_inventario ||
-      equipo.codigo ||
-      equipo.serie ||
-      `Equipo ${String(equipo.id || "").slice(0, 8)}`
-    );
+  const mostrarMensaje = (tipo, texto) => {
+    setMensaje({ tipo, texto });
+    setTimeout(() => setMensaje(null), 3500);
   };
 
   const cargarDatos = async () => {
     try {
       setCargando(true);
-
       const [resMantenimientos, resCatalogos] = await Promise.all([
         API.get("/coordinador/mantenimientos"),
         API.get("/coordinador/catalogos"),
@@ -108,513 +97,322 @@ export default function CoordinadorMantenimientos() {
     }
   };
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const mostrarMensaje = (tipo, texto) => {
-    setMensaje({ tipo, texto });
-
-    setTimeout(() => {
-      setMensaje(null);
-    }, 3500);
+  const fechaParaInputDate = (fecha) => {
+    if (!fecha) return "";
+    return String(fecha).split("T")[0];
   };
-
-  const obtenerNombreTecnico = (mantenimiento) => {
-    if (mantenimiento.tecnico_nombre) return mantenimiento.tecnico_nombre;
-    if (mantenimiento.nombre_tecnico) return mantenimiento.nombre_tecnico;
-
-    const tecnico = tecnicos.find(
-      (t) => String(t.id) === String(mantenimiento.tecnico_id)
-    );
-
-    return mostrarNombreTecnico(tecnico);
-  };
-
-  const obtenerNombreEquipo = (mantenimiento) => {
-    if (mantenimiento.equipo_nombre) return mantenimiento.equipo_nombre;
-    if (mantenimiento.nombre_equipo) return mantenimiento.nombre_equipo;
-
-    const equipo = equipos.find(
-      (e) => String(e.id) === String(mantenimiento.equipo_id)
-    );
-
-    return mostrarNombreEquipo(equipo);
-  };
-
-  const mantenimientosFiltrados = useMemo(() => {
-    return mantenimientos.filter((m) => {
-      const texto = `
-        ${obtenerNombreEquipo(m)}
-        ${obtenerNombreTecnico(m)}
-        ${m.tipo || ""}
-        ${m.estado || ""}
-        ${m.observaciones || ""}
-      `.toLowerCase();
-
-      const coincideBusqueda = texto.includes(busqueda.toLowerCase());
-
-      const coincideEstado = filtroEstado
-        ? String(m.estado) === String(filtroEstado)
-        : true;
-
-      const coincideTecnico = filtroTecnico
-        ? String(m.tecnico_id) === String(filtroTecnico)
-        : true;
-
-      return coincideBusqueda && coincideEstado && coincideTecnico;
-    });
-  }, [mantenimientos, busqueda, filtroEstado, filtroTecnico, tecnicos, equipos]);
-
-  const totalPaginas = Math.ceil(
-    mantenimientosFiltrados.length / registrosPorPagina
-  );
-
-  const mantenimientosPaginados = mantenimientosFiltrados.slice(
-    (pagina - 1) * registrosPorPagina,
-    pagina * registrosPorPagina
-  );
 
   const abrirCrear = () => {
-    setModoEdicion(false);
     setForm(formInicial);
+    setModoEdicion(false);
     setModalAbierto(true);
   };
 
-  const abrirEditar = (mantenimiento) => {
-    setModoEdicion(true);
-
+  const abrirEditar = (m) => {
     setForm({
-      id: mantenimiento.id,
-      equipo_id: mantenimiento.equipo_id || "",
-      tecnico_id: mantenimiento.tecnico_id || "",
-      tipo: mantenimiento.tipo || "PREVENTIVO",
-      estado: mantenimiento.estado || "PROGRAMADO",
-      fecha_programada: fechaParaInputDate(mantenimiento.fecha_programada),
-      observaciones: mantenimiento.observaciones || "",
+      id: m.id,
+      equipo_id: m.equipo_id || "",
+      tecnico_id: m.tecnico_id || "",
+      tipo: m.tipo || "PREVENTIVO",
+      estado: m.estado || "PROGRAMADO",
+      fecha_programada: fechaParaInputDate(m.fecha_programada),
+      descripcion: m.descripcion || "",
+      observaciones: m.observaciones || "",
+      costo: m.costo || "",
     });
-
+    setModoEdicion(true);
     setModalAbierto(true);
   };
 
   const cerrarModal = () => {
     setModalAbierto(false);
-    setModoEdicion(false);
     setForm(formInicial);
+    setModoEdicion(false);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const guardarMantenimiento = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault();
 
     if (!form.equipo_id) {
-      mostrarMensaje("error", "Debes seleccionar un equipo.");
-      return;
-    }
-
-    if (!form.tecnico_id) {
-      mostrarMensaje("error", "Debes seleccionar un técnico.");
+      mostrarMensaje("error", "Selecciona un equipo.");
       return;
     }
 
     try {
+      setCargando(true);
+
       const payload = {
         equipo_id: form.equipo_id,
-        tecnico_id: form.tecnico_id,
+        tecnico_id: form.tecnico_id || null,
         tipo: form.tipo,
         estado: form.estado,
-        fecha_programada: form.fecha_programada || null,
-        observaciones: form.observaciones,
+        fecha_programada: form.fecha_programada ? `${form.fecha_programada}T08:00:00` : null,
+        descripcion: form.descripcion || null,
+        observaciones: form.observaciones || null,
+        costo: form.costo ? Number(form.costo) : null,
       };
 
-      if (modoEdicion) {
+      if (modoEdicion && form.id) {
         await API.put(`/coordinador/mantenimientos/${form.id}`, payload);
-
         mostrarMensaje("success", "Mantenimiento actualizado correctamente.");
       } else {
         await API.post("/coordinador/mantenimientos", payload);
-
-        mostrarMensaje("success", "Mantenimiento asignado correctamente.");
+        mostrarMensaje("success", "Mantenimiento creado correctamente.");
       }
 
       cerrarModal();
-      cargarDatos();
+      await cargarDatos();
     } catch (error) {
       console.error("Error guardando mantenimiento:", error);
-      mostrarMensaje("error", "No se pudo guardar el mantenimiento.");
+      mostrarMensaje("error", error?.response?.data?.detail || "No se pudo guardar el mantenimiento.");
+    } finally {
+      setCargando(false);
     }
   };
 
-  const eliminarMantenimiento = async (id) => {
-    const confirmar = window.confirm(
-      "¿Seguro que deseas eliminar o anular este mantenimiento?"
-    );
-
+  const eliminar = async (id) => {
+    const confirmar = window.confirm("¿Seguro que deseas eliminar este mantenimiento?");
     if (!confirmar) return;
 
     try {
+      setCargando(true);
       await API.delete(`/coordinador/mantenimientos/${id}`);
-
       mostrarMensaje("success", "Mantenimiento eliminado correctamente.");
-      cargarDatos();
+      await cargarDatos();
     } catch (error) {
       console.error("Error eliminando mantenimiento:", error);
-      mostrarMensaje("error", "No se pudo eliminar el mantenimiento.");
+      mostrarMensaje("error", error?.response?.data?.detail || "No se pudo eliminar el mantenimiento.");
+    } finally {
+      setCargando(false);
     }
   };
 
-  const cambiarEstadoRapido = async (mantenimiento, nuevoEstado) => {
+  const cambiarEstadoRapido = async (m, estado) => {
     try {
-      await API.put(`/coordinador/mantenimientos/${mantenimiento.id}`, {
-        equipo_id: mantenimiento.equipo_id,
-        tecnico_id: mantenimiento.tecnico_id,
-        tipo: mantenimiento.tipo,
-        estado: nuevoEstado,
-        fecha_programada: mantenimiento.fecha_programada,
-        observaciones: mantenimiento.observaciones,
+      await API.put(`/coordinador/mantenimientos/${m.id}`, {
+        equipo_id: m.equipo_id,
+        tecnico_id: m.tecnico_id || null,
+        tipo: m.tipo,
+        estado,
+        fecha_programada: m.fecha_programada || null,
+        descripcion: m.descripcion || null,
+        observaciones: m.observaciones || null,
       });
-
-      mostrarMensaje("success", `Estado cambiado a ${nuevoEstado}.`);
-      cargarDatos();
+      mostrarMensaje("success", `Estado actualizado a ${estado}.`);
+      await cargarDatos();
     } catch (error) {
       console.error("Error cambiando estado:", error);
       mostrarMensaje("error", "No se pudo cambiar el estado.");
     }
   };
 
-  const claseEstado = (estado) => {
-    const normalizado = String(estado || "").toLowerCase();
-    return `estado-badge estado-${normalizado}`;
-  };
+  const mantenimientosFiltrados = useMemo(() => {
+    const texto = busqueda.toLowerCase();
+
+    return mantenimientos.filter((m) => {
+      const coincideTexto = `${m.equipo_nombre || ""} ${m.tecnico_nombre || ""} ${m.tipo || ""} ${m.estado || ""} ${m.observaciones || ""}`
+        .toLowerCase()
+        .includes(texto);
+
+      const coincideEstado = filtroEstado ? m.estado === filtroEstado : true;
+      const coincideTecnico = filtroTecnico ? String(m.tecnico_id) === String(filtroTecnico) : true;
+
+      return coincideTexto && coincideEstado && coincideTecnico;
+    });
+  }, [mantenimientos, busqueda, filtroEstado, filtroTecnico]);
+
+  const totalPaginas = Math.max(1, Math.ceil(mantenimientosFiltrados.length / registrosPorPagina));
+  const inicio = (pagina - 1) * registrosPorPagina;
+  const visibles = mantenimientosFiltrados.slice(inicio, inicio + registrosPorPagina);
 
   return (
-    <div className="coordinador-page">
-      <div className="coordinador-header">
+    <div className="coord-page">
+      <div className="coord-hero">
         <div>
-          <p className="coordinador-subtitle">Panel Coordinador</p>
-          <h1>Gestión de Mantenimientos</h1>
-          <p className="coordinador-description">
-            Asigna técnicos, edita mantenimientos y controla el estado operativo.
-          </p>
+          <span className="coord-eyebrow">OPERACIÓN · MANTENIMIENTOS</span>
+          <h2>Mantenimientos Coordinador</h2>
+          <p>Crear, editar, eliminar, asignar técnico y controlar estados de mantenimientos.</p>
         </div>
 
-        <button className="btn-primary-pro" onClick={abrirCrear}>
-          + Asignar nuevo
-        </button>
-      </div>
-
-      {mensaje && (
-        <div className={`alert-pro alert-${mensaje.tipo}`}>
-          {mensaje.texto}
-        </div>
-      )}
-
-      <div className="coordinador-kpis">
-        <div className="kpi-card">
-          <span>Total</span>
-          <strong>{mantenimientos.length}</strong>
-        </div>
-
-        <div className="kpi-card">
-          <span>Asignados</span>
-          <strong>
-            {mantenimientos.filter((m) => m.estado === "ASIGNADO").length}
-          </strong>
-        </div>
-
-        <div className="kpi-card">
-          <span>En proceso</span>
-          <strong>
-            {mantenimientos.filter((m) => m.estado === "EN_PROCESO").length}
-          </strong>
-        </div>
-
-        <div className="kpi-card">
-          <span>Finalizados</span>
-          <strong>
-            {mantenimientos.filter((m) => m.estado === "FINALIZADO").length}
-          </strong>
+        <div className="coord-actions">
+          <button className="coord-btn secondary" onClick={cargarDatos}>
+            <RefreshCw size={17} />
+            Actualizar
+          </button>
+          <button className="coord-btn primary" onClick={abrirCrear}>
+            <Plus size={17} />
+            Nuevo mantenimiento
+          </button>
         </div>
       </div>
 
-      <div className="coordinador-panel">
-        <div className="coordinador-filtros">
+      {mensaje && <div className={`coord-alert ${mensaje.tipo}`}>{mensaje.texto}</div>}
+
+      <div className="coord-filters">
+        <div className="coord-search">
+          <Search size={18} />
           <input
-            type="text"
-            placeholder="Buscar por equipo, técnico, tipo o estado..."
+            placeholder="Buscar por equipo, técnico, tipo, estado u observación..."
             value={busqueda}
             onChange={(e) => {
               setBusqueda(e.target.value);
               setPagina(1);
             }}
           />
-
-          <select
-            value={filtroEstado}
-            onChange={(e) => {
-              setFiltroEstado(e.target.value);
-              setPagina(1);
-            }}
-          >
-            <option value="">Todos los estados</option>
-            {ESTADOS.map((estado) => (
-              <option key={estado} value={estado}>
-                {estado}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filtroTecnico}
-            onChange={(e) => {
-              setFiltroTecnico(e.target.value);
-              setPagina(1);
-            }}
-          >
-            <option value="">Todos los técnicos</option>
-            {tecnicos.map((tecnico) => (
-              <option key={tecnico.id} value={tecnico.id}>
-                {mostrarNombreTecnico(tecnico)}
-              </option>
-            ))}
-          </select>
         </div>
 
-        <div className="tabla-wrapper-pro">
-          {cargando ? (
-            <div className="loading-pro">Cargando mantenimientos...</div>
-          ) : (
-            <table className="tabla-coordinador">
-              <thead>
-                <tr>
-                  <th>Equipo</th>
-                  <th>Técnico</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th>Fecha programada</th>
-                  <th>Observaciones</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
+        <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}>
+          <option value="">Todos los estados</option>
+          {ESTADOS.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
+        </select>
 
-              <tbody>
-                {mantenimientosPaginados.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="empty-table">
-                      No hay mantenimientos para mostrar.
-                    </td>
-                  </tr>
-                ) : (
-                  mantenimientosPaginados.map((m) => (
-                    <tr key={m.id}>
-                      <td>
-                        <strong>{obtenerNombreEquipo(m)}</strong>
-                      </td>
-
-                      <td>
-                        <span className="tecnico-pill">
-                          {obtenerNombreTecnico(m)}
-                        </span>
-                      </td>
-
-                      <td>{m.tipo || "Sin tipo"}</td>
-
-                      <td>
-                        <select
-                          className={claseEstado(m.estado)}
-                          value={m.estado || "PROGRAMADO"}
-                          onChange={(e) =>
-                            cambiarEstadoRapido(m, e.target.value)
-                          }
-                        >
-                          {ESTADOS.map((estado) => (
-                            <option key={estado} value={estado}>
-                              {estado}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-
-                      <td>{m.fecha_programada || "Sin fecha"}</td>
-
-                      <td className="observacion-cell">
-                        {m.observaciones || "Sin observaciones"}
-                      </td>
-
-                      <td>
-                        <div className="acciones-tabla">
-                          <button
-                            className="btn-table btn-edit"
-                            onClick={() => abrirEditar(m)}
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            className="btn-table btn-delete"
-                            onClick={() => eliminarMantenimiento(m.id)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div className="paginacion-pro">
-          <button
-            disabled={pagina === 1}
-            onClick={() => setPagina((prev) => prev - 1)}
-          >
-            Anterior
-          </button>
-
-          <span>
-            Página {pagina} de {totalPaginas || 1}
-          </span>
-
-          <button
-            disabled={pagina === totalPaginas || totalPaginas === 0}
-            onClick={() => setPagina((prev) => prev + 1)}
-          >
-            Siguiente
-          </button>
-        </div>
+        <select value={filtroTecnico} onChange={(e) => { setFiltroTecnico(e.target.value); setPagina(1); }}>
+          <option value="">Todos los técnicos</option>
+          {tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre || t.nombre_completo}</option>)}
+        </select>
       </div>
 
-      {modalAbierto && (
-        <div className="modal-overlay-pro">
-          <div className="modal-pro">
-            <div className="modal-header-pro">
-              <div>
-                <h2>
-                  {modoEdicion
-                    ? "Editar mantenimiento"
-                    : "Asignar nuevo mantenimiento"}
-                </h2>
-                <p>
-                  Selecciona equipo, técnico responsable, tipo y estado del
-                  mantenimiento.
-                </p>
-              </div>
+      <section className="coord-card">
+        <div className="coord-card-header">
+          <div>
+            <h3>Listado profesional de mantenimientos</h3>
+            <p>{mantenimientosFiltrados.length} registros encontrados.</p>
+          </div>
+          <CalendarClock size={22} />
+        </div>
 
-              <button className="modal-close" onClick={cerrarModal}>
-                ×
-              </button>
+        <div className="coord-table-wrap">
+          <table className="coord-table">
+            <thead>
+              <tr>
+                <th>Equipo</th>
+                <th>Técnico</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Observaciones</th>
+                <th className="right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="coord-empty">No hay mantenimientos con los filtros seleccionados.</td>
+                </tr>
+              ) : (
+                visibles.map((m) => (
+                  <tr key={m.id}>
+                    <td>
+                      <strong>{m.equipo_nombre || "Sin equipo"}</strong>
+                      <small>{m.sede_nombre || ""}</small>
+                    </td>
+                    <td>{m.tecnico_nombre || "Sin técnico"}</td>
+                    <td>{m.tipo || "N/A"}</td>
+                    <td>
+                      <select
+                        className="coord-status-select"
+                        value={m.estado || "PROGRAMADO"}
+                        onChange={(e) => cambiarEstadoRapido(m, e.target.value)}
+                      >
+                        {ESTADOS.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
+                      </select>
+                    </td>
+                    <td>{fmtFecha(m.fecha_programada)}</td>
+                    <td>{m.observaciones || m.descripcion || "Sin observaciones"}</td>
+                    <td className="coord-row-actions">
+                      <button title="Editar" onClick={() => abrirEditar(m)}><Pencil size={16} /></button>
+                      <button title="Eliminar" className="danger" onClick={() => eliminar(m.id)}><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="coord-pagination">
+          <button disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>Anterior</button>
+          <span>Página {pagina} de {totalPaginas}</span>
+          <button disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>Siguiente</button>
+        </div>
+      </section>
+
+      {modalAbierto && (
+        <div className="coord-modal-backdrop">
+          <div className="coord-modal large">
+            <div className="coord-modal-header">
+              <div>
+                <h3>{modoEdicion ? "Editar mantenimiento" : "Nuevo mantenimiento"}</h3>
+                <p>Formulario operativo del coordinador.</p>
+              </div>
+              <button onClick={cerrarModal}><X size={18} /></button>
             </div>
 
-            <form className="form-pro" onSubmit={guardarMantenimiento}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Equipo</label>
-                  <select
-                    name="equipo_id"
-                    value={form.equipo_id}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleccionar equipo</option>
-                    {equipos.map((equipo) => (
-                      <option key={equipo.id} value={equipo.id}>
-                        {mostrarNombreEquipo(equipo)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <form onSubmit={guardar} className="coord-form-grid">
+              <label>
+                Equipo
+                <select value={form.equipo_id} onChange={(e) => setForm({ ...form, equipo_id: e.target.value })} required>
+                  <option value="">Seleccionar equipo</option>
+                  {equipos.map((eq) => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre || eq.codigo_inventario || eq.serie}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-                <div className="form-group">
-                  <label>Técnico</label>
-                  <select
-                    name="tecnico_id"
-                    value={form.tecnico_id}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleccionar técnico</option>
-                    {tecnicos.map((tecnico) => (
-                      <option key={tecnico.id} value={tecnico.id}>
-                        {mostrarNombreTecnico(tecnico)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <label>
+                Técnico
+                <select value={form.tecnico_id} onChange={(e) => setForm({ ...form, tecnico_id: e.target.value })}>
+                  <option value="">Sin técnico</option>
+                  {tecnicos.map((t) => (
+                    <option key={t.id} value={t.id}>{t.nombre || t.nombre_completo}</option>
+                  ))}
+                </select>
+              </label>
 
-                <div className="form-group">
-                  <label>Tipo de mantenimiento</label>
-                  <select
-                    name="tipo"
-                    value={form.tipo}
-                    onChange={handleChange}
-                  >
-                    {TIPOS.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <label>
+                Tipo
+                <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                  {TIPOS.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+                </select>
+              </label>
 
-                <div className="form-group">
-                  <label>Estado</label>
-                  <select
-                    name="estado"
-                    value={form.estado}
-                    onChange={handleChange}
-                  >
-                    {ESTADOS.map((estado) => (
-                      <option key={estado} value={estado}>
-                        {estado}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <label>
+                Estado
+                <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+                  {ESTADOS.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
+                </select>
+              </label>
 
-                <div className="form-group">
-                  <label>Fecha programada</label>
-                  <input
-                    type="date"
-                    name="fecha_programada"
-                    value={form.fecha_programada || ""}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
+              <label>
+                Fecha programada
+                <input type="date" value={form.fecha_programada} onChange={(e) => setForm({ ...form, fecha_programada: e.target.value })} />
+              </label>
 
-              <div className="form-group">
-                <label>Observaciones</label>
-                <textarea
-                  name="observaciones"
-                  value={form.observaciones}
-                  onChange={handleChange}
-                  placeholder="Describe las actividades, prioridad o indicaciones para el técnico..."
-                  rows="4"
-                />
-              </div>
+              <label>
+                Costo
+                <input type="number" min="0" step="0.01" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} />
+              </label>
 
-              <div className="modal-actions-pro">
-                <button
-                  type="button"
-                  className="btn-secondary-pro"
-                  onClick={cerrarModal}
-                >
+              <label className="span-2">
+                Descripción
+                <textarea rows="3" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+              </label>
+
+              <label className="span-2">
+                Observaciones
+                <textarea rows="3" value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} />
+              </label>
+
+              <div className="coord-modal-actions span-2">
+                <button type="button" className="coord-btn secondary" onClick={cerrarModal}>
+                  <X size={17} />
                   Cancelar
                 </button>
-
-                <button type="submit" className="btn-primary-pro">
-                  {modoEdicion ? "Guardar cambios" : "Asignar mantenimiento"}
+                <button type="submit" className="coord-btn primary" disabled={cargando}>
+                  <Save size={17} />
+                  Guardar
                 </button>
               </div>
             </form>

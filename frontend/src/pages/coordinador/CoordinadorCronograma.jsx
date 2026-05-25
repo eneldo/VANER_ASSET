@@ -1,14 +1,28 @@
 /*
 ===========================================================
-FASE 32 — CRONOGRAMA COORDINADOR PRO
+COORDINADOR — CRONOGRAMA PRO
 Archivo: frontend/src/pages/coordinador/CoordinadorCronograma.jsx
 ===========================================================
 */
 
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { CalendarDays, Clock, ClipboardList, Search } from "lucide-react";
+import { CalendarDays, RefreshCw, Search } from "lucide-react";
 import "../../styles/coordinador.css";
+
+const fmtFechaLarga = (fecha) => {
+  if (!fecha) return "Sin fecha programada";
+  try {
+    return new Date(fecha).toLocaleDateString("es-CO", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "2-digit",
+    });
+  } catch {
+    return "Sin fecha programada";
+  }
+};
 
 export default function CoordinadorCronograma() {
   const [mantenimientos, setMantenimientos] = useState([]);
@@ -17,18 +31,16 @@ export default function CoordinadorCronograma() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    cargarCronograma();
+  }, []);
+
   const cargarCronograma = async () => {
     try {
       setCargando(true);
       setError("");
-
-      try {
-        const res = await API.get("/coordinador/cronograma");
-        setMantenimientos(res.data || []);
-      } catch {
-        const res = await API.get("/coordinador/mantenimientos");
-        setMantenimientos(res.data || []);
-      }
+      const res = await API.get("/coordinador/cronograma");
+      setMantenimientos(res.data || []);
     } catch (err) {
       console.error("Error cargando cronograma:", err);
       setError("No se pudo cargar el cronograma.");
@@ -37,47 +49,37 @@ export default function CoordinadorCronograma() {
     }
   };
 
-  useEffect(() => {
-    cargarCronograma();
-  }, []);
-
-  const listaFiltrada = useMemo(() => {
-    return mantenimientos
-      .filter((m) => {
-        const texto = `
-          ${m.equipo_nombre || ""}
-          ${m.tecnico_nombre || ""}
-          ${m.tipo || ""}
-          ${m.estado || ""}
-          ${m.observaciones || ""}
-        `.toLowerCase();
-
-        const coincideBusqueda = texto.includes(busqueda.toLowerCase());
-        const coincideEstado = estado ? m.estado === estado : true;
-
-        return coincideBusqueda && coincideEstado;
-      })
-      .sort((a, b) => {
-        const fa = a.fecha_programada ? new Date(a.fecha_programada) : new Date("2999-01-01");
-        const fb = b.fecha_programada ? new Date(b.fecha_programada) : new Date("2999-01-01");
-        return fa - fb;
-      });
+  const filtrados = useMemo(() => {
+    const texto = busqueda.toLowerCase();
+    return mantenimientos.filter((m) => {
+      const coincideTexto = `${m.equipo_nombre || ""} ${m.tecnico_nombre || ""} ${m.tipo || ""} ${m.estado || ""}`
+        .toLowerCase()
+        .includes(texto);
+      const coincideEstado = estado ? m.estado === estado : true;
+      return coincideTexto && coincideEstado;
+    });
   }, [mantenimientos, busqueda, estado]);
 
-  if (cargando) {
-    return <div className="coord-loading">Cargando cronograma...</div>;
-  }
+  const agrupados = useMemo(() => {
+    return filtrados.reduce((acc, m) => {
+      const key = m.fecha_programada ? String(m.fecha_programada).split("T")[0] : "Sin fecha";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(m);
+      return acc;
+    }, {});
+  }, [filtrados]);
 
   return (
     <div className="coord-page">
-      <div className="coord-page-header">
+      <div className="coord-hero">
         <div>
-          <span className="coord-eyebrow">Agenda operativa</span>
+          <span className="coord-eyebrow">PLANEACIÓN · CRONOGRAMA</span>
           <h2>Cronograma de Mantenimientos</h2>
-          <p>Vista organizada por fecha programada, técnico, equipo y estado.</p>
+          <p>Vista operativa por fecha, equipo, técnico y estado.</p>
         </div>
 
-        <button className="coord-primary-btn" onClick={cargarCronograma}>
+        <button className="coord-btn secondary" onClick={cargarCronograma}>
+          <RefreshCw size={17} />
           Actualizar
         </button>
       </div>
@@ -88,8 +90,7 @@ export default function CoordinadorCronograma() {
         <div className="coord-search">
           <Search size={18} />
           <input
-            type="text"
-            placeholder="Buscar por equipo, técnico, tipo u observación..."
+            placeholder="Buscar por equipo, técnico, tipo o estado..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
@@ -107,52 +108,34 @@ export default function CoordinadorCronograma() {
       </div>
 
       <div className="coord-timeline">
-        {listaFiltrada.length === 0 ? (
-          <div className="coord-empty-card">
-            <CalendarDays size={36} />
-            <h3>No hay mantenimientos en el cronograma</h3>
-            <p>Cuando existan mantenimientos programados aparecerán en esta vista.</p>
-          </div>
+        {Object.keys(agrupados).length === 0 ? (
+          <section className="coord-card">
+            <p className="coord-empty">{cargando ? "Cargando cronograma..." : "No hay mantenimientos programados."}</p>
+          </section>
         ) : (
-          listaFiltrada.map((m) => (
-            <article className="coord-timeline-item" key={m.id}>
-              <div className="coord-timeline-date">
+          Object.entries(agrupados).map(([fecha, items]) => (
+            <section className="coord-card" key={fecha}>
+              <div className="coord-card-header">
+                <div>
+                  <h3>{fecha === "Sin fecha" ? "Sin fecha programada" : fmtFechaLarga(fecha)}</h3>
+                  <p>{items.length} mantenimiento(s)</p>
+                </div>
                 <CalendarDays size={22} />
-                <strong>{m.fecha_programada || "Sin fecha"}</strong>
-                <span>{m.estado || "SIN ESTADO"}</span>
               </div>
 
-              <div className="coord-timeline-body">
-                <div className="coord-timeline-title">
-                  <ClipboardList size={20} />
-                  <h3>{m.equipo_nombre || m.equipo || "Mantenimiento"}</h3>
-                </div>
-
-                <div className="coord-timeline-grid">
-                  <p>
-                    <strong>Tipo:</strong> {m.tipo || "Sin tipo"}
-                  </p>
-
-                  <p>
-                    <strong>Técnico:</strong>{" "}
-                    {m.tecnico_nombre || m.tecnico || m.tecnico_id || "Sin técnico"}
-                  </p>
-
-                  <p>
-                    <strong>Estado:</strong>{" "}
-                    <span className={`coord-status ${String(m.estado || "").toLowerCase()}`}>
-                      {m.estado || "SIN ESTADO"}
-                    </span>
-                  </p>
-
-                  <p>
-                    <Clock size={16} />
-                    <strong> Observaciones:</strong>{" "}
-                    {m.observaciones || "Sin observaciones"}
-                  </p>
-                </div>
+              <div className="coord-timeline-list">
+                {items.map((m) => (
+                  <div className="coord-timeline-item" key={m.id}>
+                    <div className="coord-timeline-dot" />
+                    <div>
+                      <strong>{m.equipo_nombre || "Sin equipo"}</strong>
+                      <span>{m.tecnico_nombre || "Sin técnico"} · {m.tipo || "N/A"}</span>
+                    </div>
+                    <span className={`coord-badge ${String(m.estado || "").toLowerCase()}`}>{m.estado || "N/A"}</span>
+                  </div>
+                ))}
               </div>
-            </article>
+            </section>
           ))
         )}
       </div>

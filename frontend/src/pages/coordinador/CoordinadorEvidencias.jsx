@@ -2,23 +2,24 @@
 ===========================================================
 COORDINADOR — EVIDENCIAS PRO
 Archivo: frontend/src/pages/coordinador/CoordinadorEvidencias.jsx
-Permiso usado: EVIDENCIAS_VER
 ===========================================================
 */
 
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { Image, RefreshCw, Search, ExternalLink } from "lucide-react";
+import { Image, RefreshCw, Search, ExternalLink, FileImage } from "lucide-react";
 import "../../styles/coordinador.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export default function CoordinadorEvidencias() {
   const [evidencias, setEvidencias] = useState([]);
-  const [permisos, setPermisos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [pagina, setPagina] = useState(1);
+
+  const registrosPorPagina = 12;
 
   useEffect(() => {
     cargarDatos();
@@ -28,12 +29,8 @@ export default function CoordinadorEvidencias() {
     try {
       setCargando(true);
       setError("");
-      const [resEvidencias, resPermisos] = await Promise.all([
-        API.get("/evidencias/"),
-        API.get("/permisos/me"),
-      ]);
+      const resEvidencias = await API.get("/coordinador/evidencias");
       setEvidencias(resEvidencias.data || []);
-      setPermisos(resPermisos.data?.permisos_finales || []);
     } catch (err) {
       console.error("Error cargando evidencias:", err);
       setError("No se pudieron cargar las evidencias.");
@@ -42,16 +39,17 @@ export default function CoordinadorEvidencias() {
     }
   };
 
-  const tienePermiso = (...codigos) => codigos.some((c) => permisos.includes(c));
-
   const evidenciasFiltradas = useMemo(() => {
     const texto = busqueda.toLowerCase();
     return evidencias.filter((e) =>
-      `${e.tipo || ""} ${e.descripcion || ""} ${e.nombre_original || ""} ${e.equipo_id || ""} ${e.mantenimiento_id || ""}`
+      `${e.tipo || ""} ${e.descripcion || ""} ${e.nombre_original || ""} ${e.equipo_nombre || ""} ${e.mantenimiento_tipo || ""}`
         .toLowerCase()
         .includes(texto)
     );
   }, [evidencias, busqueda]);
+
+  const totalPaginas = Math.max(1, Math.ceil(evidenciasFiltradas.length / registrosPorPagina));
+  const visibles = evidenciasFiltradas.slice((pagina - 1) * registrosPorPagina, pagina * registrosPorPagina);
 
   const urlArchivo = (archivoUrl) => {
     if (!archivoUrl) return "";
@@ -59,20 +57,20 @@ export default function CoordinadorEvidencias() {
     return `${API_URL}${archivoUrl}`;
   };
 
-  if (!tienePermiso("EVIDENCIAS_VER")) {
-    return <div className="coord-alert error">No tienes permiso para ver evidencias.</div>;
-  }
+  const esImagen = (archivo) => /\.(png|jpg|jpeg|webp|gif)$/i.test(archivo || "");
 
   return (
     <div className="coord-page">
-      <div className="coord-page-header">
+      <div className="coord-hero">
         <div>
-          <span className="coord-eyebrow">Evidencias</span>
-          <h2>Evidencias de mantenimientos</h2>
-          <p>Consulta imágenes, PDFs y soportes cargados por técnicos.</p>
+          <span className="coord-eyebrow">SOPORTES · EVIDENCIAS</span>
+          <h2>Evidencias</h2>
+          <p>Consulta evidencias fotográficas y documentos asociados a mantenimientos y equipos.</p>
         </div>
-        <button className="coord-secondary-btn" onClick={cargarDatos}>
-          <RefreshCw size={17} /> Actualizar
+
+        <button className="coord-btn secondary" onClick={cargarDatos}>
+          <RefreshCw size={17} />
+          Actualizar
         </button>
       </div>
 
@@ -81,56 +79,58 @@ export default function CoordinadorEvidencias() {
       <div className="coord-filters">
         <div className="coord-search">
           <Search size={18} />
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por tipo, descripción o archivo..." />
+          <input
+            type="text"
+            placeholder="Buscar por equipo, tipo, archivo o descripción..."
+            value={busqueda}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              setPagina(1);
+            }}
+          />
         </div>
       </div>
 
-      <div className="coord-card">
-        <div className="coord-card-header">
-          <div>
-            <h3>Galería de evidencias</h3>
-            <p>{evidenciasFiltradas.length} evidencias encontradas.</p>
-          </div>
-          <Image size={26} />
-        </div>
-
-        {cargando ? (
-          <div className="coord-loading">Cargando evidencias...</div>
-        ) : evidenciasFiltradas.length === 0 ? (
-          <div className="coord-empty-card">
-            <Image size={34} />
-            <h3>No hay evidencias</h3>
-            <p>Cuando los técnicos carguen soportes aparecerán aquí.</p>
+      <div className="coord-card-grid evidencias">
+        {visibles.length === 0 ? (
+          <div className="coord-card">
+            <p className="coord-empty">{cargando ? "Cargando evidencias..." : "No hay evidencias disponibles."}</p>
           </div>
         ) : (
-          <div className="coord-gallery-grid">
-            {evidenciasFiltradas.map((ev) => {
-              const url = urlArchivo(ev.archivo_url);
-              const esImagen = /\.(png|jpg|jpeg|webp|gif)$/i.test(url);
-              return (
-                <article className="coord-evidence-card" key={ev.id}>
-                  <div className="coord-evidence-preview">
-                    {esImagen ? (
-                      <img src={url} alt={ev.nombre_original || "Evidencia"} />
-                    ) : (
-                      <div className="coord-file-preview"><Image size={36} /><span>Archivo</span></div>
-                    )}
-                  </div>
-                  <div className="coord-evidence-body">
-                    <strong>{ev.tipo || "EVIDENCIA"}</strong>
-                    <p>{ev.descripcion || "Sin descripción"}</p>
-                    <small>{ev.nombre_original || ev.filename || "Archivo"}</small>
-                    {url && (
-                      <a href={url} target="_blank" rel="noreferrer" className="coord-secondary-btn">
-                        <ExternalLink size={15} /> Ver archivo
-                      </a>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          visibles.map((evidencia) => {
+            const url = urlArchivo(evidencia.archivo_url);
+
+            return (
+              <article className="coord-evidencia-card" key={evidencia.id}>
+                <div className="coord-evidencia-preview">
+                  {esImagen(url) ? (
+                    <img src={url} alt={evidencia.nombre_original || "Evidencia"} />
+                  ) : (
+                    <FileImage size={42} />
+                  )}
+                </div>
+
+                <div className="coord-evidencia-body">
+                  <span className="coord-badge blue">{evidencia.tipo || "SOPORTE"}</span>
+                  <h3>{evidencia.equipo_nombre || "Equipo sin identificar"}</h3>
+                  <p>{evidencia.descripcion || "Sin descripción"}</p>
+                  <small>{evidencia.nombre_original || "Archivo"}</small>
+                </div>
+
+                <a className="coord-evidencia-link" href={url} target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} />
+                  Ver archivo
+                </a>
+              </article>
+            );
+          })
         )}
+      </div>
+
+      <div className="coord-pagination">
+        <button disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>Anterior</button>
+        <span>Página {pagina} de {totalPaginas}</span>
+        <button disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>Siguiente</button>
       </div>
     </div>
   );

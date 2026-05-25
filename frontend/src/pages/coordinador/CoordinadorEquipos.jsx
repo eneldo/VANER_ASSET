@@ -2,320 +2,327 @@
 ===========================================================
 COORDINADOR — INVENTARIO / EQUIPOS PRO
 Archivo: frontend/src/pages/coordinador/CoordinadorEquipos.jsx
-Permisos usados:
-- EQUIPOS_VER / INVENTARIO_VER
-- EQUIPOS_CREAR
-- EQUIPOS_EDITAR
 ===========================================================
 */
 
 import React, { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { PackageSearch, Plus, Pencil, Save, X, RefreshCw, Search } from "lucide-react";
+import { PackageSearch, Plus, Pencil, Save, X, RefreshCw, Search, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/coordinador.css";
 
-const ESTADOS = ["ACTIVO", "INACTIVO", "MANTENIMIENTO", "FUERA_DE_SERVICIO"];
+const ESTADOS = ["OPERATIVO", "EN_MANTENIMIENTO", "FUERA_DE_SERVICIO", "BAJA"];
 const CRITICIDADES = ["BAJA", "MEDIA", "ALTA", "CRITICA"];
 
 const formInicial = {
   id: null,
-  codigo_inventario: "",
   nombre: "",
   marca: "",
   modelo: "",
   serie: "",
   ubicacion: "",
-  estado: "ACTIVO",
+  codigo_id: "",
+  inventario: "",
+  estado: "OPERATIVO",
   criticidad: "MEDIA",
-  empresa_id: "",
   sede_id: "",
   categoria_id: "",
 };
 
 export default function CoordinadorEquipos() {
+  const navigate = useNavigate();
+
   const [equipos, setEquipos] = useState([]);
-  const [catalogos, setCatalogos] = useState({ empresas: [], sedes: [], equipos: [] });
-  const [permisos, setPermisos] = useState([]);
+  const [catalogos, setCatalogos] = useState({ sedes: [], categorias: [] });
   const [busqueda, setBusqueda] = useState("");
   const [form, setForm] = useState(formInicial);
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState(null);
+  const [pagina, setPagina] = useState(1);
+
+  const registrosPorPagina = 9;
 
   useEffect(() => {
     cargarDatos();
   }, []);
-
-  const cargarDatos = async () => {
-    try {
-      setCargando(true);
-      const [resCatalogos, resPermisos] = await Promise.all([
-        API.get("/coordinador/catalogos"),
-        API.get("/permisos/me"),
-      ]);
-
-      const dataCatalogos = resCatalogos.data || { equipos: [], empresas: [], sedes: [] };
-      setCatalogos(dataCatalogos);
-      setEquipos(dataCatalogos.equipos || []);
-      setPermisos(resPermisos.data?.permisos_finales || []);
-    } catch (error) {
-      console.error("Error cargando equipos coordinador:", error);
-      mostrarMensaje("error", "No se pudo cargar el inventario de equipos.");
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  const tienePermiso = (...codigos) => codigos.some((c) => permisos.includes(c));
-
-  const puedeVer = tienePermiso("EQUIPOS_VER", "INVENTARIO_VER");
-  const puedeCrear = tienePermiso("EQUIPOS_CREAR");
-  const puedeEditar = tienePermiso("EQUIPOS_EDITAR");
 
   const mostrarMensaje = (tipo, texto) => {
     setMensaje({ tipo, texto });
     setTimeout(() => setMensaje(null), 3500);
   };
 
-  const nombreSede = (id) => {
-    const sede = catalogos.sedes?.find((s) => String(s.id) === String(id));
-    return sede?.nombre || "Sin sede";
+  const cargarDatos = async () => {
+    try {
+      setCargando(true);
+      const [resEquipos, resCatalogos] = await Promise.all([
+        API.get("/coordinador/equipos"),
+        API.get("/coordinador/catalogos"),
+      ]);
+
+      setEquipos(resEquipos.data || []);
+      setCatalogos(resCatalogos.data || { sedes: [], categorias: [] });
+    } catch (error) {
+      console.error("Error cargando equipos coordinador:", error);
+      mostrarMensaje("error", "No se pudo cargar el inventario.");
+    } finally {
+      setCargando(false);
+    }
   };
 
-  const equiposFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
-    return equipos.filter((e) =>
-      `${e.nombre || ""} ${e.codigo || ""} ${e.codigo_inventario || ""} ${e.serie || ""} ${e.marca || ""} ${e.modelo || ""}`
-        .toLowerCase()
-        .includes(texto)
-    );
-  }, [equipos, busqueda]);
-
   const abrirCrear = () => {
+    setForm(formInicial);
     setEditando(false);
-    const empresaId = catalogos.empresas?.[0]?.id || "";
-    setForm({ ...formInicial, empresa_id: empresaId });
     setModal(true);
   };
 
   const abrirEditar = (equipo) => {
-    setEditando(true);
     setForm({
       id: equipo.id,
-      codigo_inventario: equipo.codigo_inventario || equipo.codigo || "",
-      nombre: equipo.nombre || equipo.nombre_completo || "",
+      nombre: equipo.nombre || "",
       marca: equipo.marca || "",
       modelo: equipo.modelo || "",
       serie: equipo.serie || "",
       ubicacion: equipo.ubicacion || "",
-      estado: equipo.estado || "ACTIVO",
+      codigo_id: equipo.codigo_id || "",
+      inventario: equipo.inventario || equipo.codigo_inventario || "",
+      estado: equipo.estado || "OPERATIVO",
       criticidad: equipo.criticidad || "MEDIA",
-      empresa_id: equipo.empresa_id || catalogos.empresas?.[0]?.id || "",
       sede_id: equipo.sede_id || "",
       categoria_id: equipo.categoria_id || "",
     });
+    setEditando(true);
     setModal(true);
   };
 
   const cerrarModal = () => {
     setModal(false);
-    setEditando(false);
     setForm(formInicial);
+    setEditando(false);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const guardarEquipo = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault();
 
-    if (!form.nombre) {
-      mostrarMensaje("error", "El nombre del equipo es obligatorio.");
+    if (!form.nombre || !form.sede_id) {
+      mostrarMensaje("error", "Nombre y sede son obligatorios.");
       return;
     }
 
     try {
+      setCargando(true);
+
       const payload = {
-        codigo_inventario: form.codigo_inventario,
         nombre: form.nombre,
-        marca: form.marca,
-        modelo: form.modelo,
-        serie: form.serie,
-        ubicacion: form.ubicacion,
+        marca: form.marca || null,
+        modelo: form.modelo || null,
+        serie: form.serie || null,
+        ubicacion: form.ubicacion || null,
+        codigo_id: form.codigo_id || null,
+        inventario: form.inventario || null,
         estado: form.estado,
         criticidad: form.criticidad,
-        empresa_id: form.empresa_id || null,
-        sede_id: form.sede_id || null,
+        sede_id: form.sede_id,
         categoria_id: form.categoria_id || null,
       };
 
-      if (editando) {
-        await API.put(`/equipos/${form.id}`, payload);
+      if (editando && form.id) {
+        await API.put(`/coordinador/equipos/${form.id}`, payload);
         mostrarMensaje("success", "Equipo actualizado correctamente.");
       } else {
-        await API.post("/equipos/", payload);
+        await API.post("/coordinador/equipos", payload);
         mostrarMensaje("success", "Equipo creado correctamente.");
       }
 
       cerrarModal();
-      cargarDatos();
+      await cargarDatos();
     } catch (error) {
       console.error("Error guardando equipo:", error);
-      mostrarMensaje("error", error.response?.data?.detail || "No se pudo guardar el equipo.");
+      mostrarMensaje("error", error?.response?.data?.detail || "No se pudo guardar el equipo.");
+    } finally {
+      setCargando(false);
     }
   };
 
-  if (!puedeVer) {
-    return <div className="coord-alert error">No tienes permiso para ver inventario/equipos.</div>;
-  }
+  const equiposFiltrados = useMemo(() => {
+    const texto = busqueda.toLowerCase();
+    return equipos.filter((e) =>
+      `${e.nombre || ""} ${e.marca || ""} ${e.modelo || ""} ${e.serie || ""} ${e.ubicacion || ""} ${e.codigo_id || ""} ${e.inventario || ""}`
+        .toLowerCase()
+        .includes(texto)
+    );
+  }, [equipos, busqueda]);
+
+  const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / registrosPorPagina));
+  const visibles = equiposFiltrados.slice((pagina - 1) * registrosPorPagina, pagina * registrosPorPagina);
 
   return (
     <div className="coord-page">
-      <div className="coord-page-header">
+      <div className="coord-hero">
         <div>
-          <span className="coord-eyebrow">Inventario</span>
-          <h2>Equipos de la empresa</h2>
-          <p>Consulta, crea o edita equipos según permisos asignados al coordinador.</p>
+          <span className="coord-eyebrow">INVENTARIO · EQUIPOS</span>
+          <h2>Inventario de Equipos</h2>
+          <p>Consulta, creación y actualización de equipos asociados a la empresa del coordinador.</p>
         </div>
 
         <div className="coord-actions">
-          <button className="coord-secondary-btn" onClick={cargarDatos}>
-            <RefreshCw size={17} /> Actualizar
+          <button className="coord-btn secondary" onClick={cargarDatos}>
+            <RefreshCw size={17} />
+            Actualizar
           </button>
-          {puedeCrear && (
-            <button className="coord-primary-btn" onClick={abrirCrear}>
-              <Plus size={17} /> Crear equipo
-            </button>
-          )}
+          <button className="coord-btn primary" onClick={abrirCrear}>
+            <Plus size={17} />
+            Nuevo equipo
+          </button>
         </div>
       </div>
 
-      {mensaje && <div className={`coord-alert ${mensaje.tipo === "error" ? "error" : "success"}`}>{mensaje.texto}</div>}
+      {mensaje && <div className={`coord-alert ${mensaje.tipo}`}>{mensaje.texto}</div>}
 
       <div className="coord-filters">
         <div className="coord-search">
           <Search size={18} />
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, código, serie, marca o modelo..." />
+          <input
+            placeholder="Buscar por nombre, marca, modelo, serie, ubicación o inventario..."
+            value={busqueda}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+          />
         </div>
       </div>
 
-      <div className="coord-card">
-        <div className="coord-card-header">
-          <div>
-            <h3>Inventario registrado</h3>
-            <p>{equiposFiltrados.length} equipos encontrados.</p>
+      <div className="coord-card-grid">
+        {visibles.length === 0 ? (
+          <div className="coord-card">
+            <p className="coord-empty">No hay equipos disponibles.</p>
           </div>
-          <PackageSearch size={26} />
-        </div>
+        ) : (
+          visibles.map((equipo) => (
+            <article className="coord-equipo-card" key={equipo.id}>
+              <div className="coord-equipo-top">
+                <div className="coord-equipo-icon"><PackageSearch size={24} /></div>
+                <span className={`coord-badge ${String(equipo.criticidad || "media").toLowerCase()}`}>
+                  {equipo.criticidad || "MEDIA"}
+                </span>
+              </div>
 
-        <div className="coord-table-wrap">
-          <table className="coord-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Equipo</th>
-                <th>Marca / Modelo</th>
-                <th>Serie</th>
-                <th>Sede</th>
-                <th>Estado</th>
-                <th>Criticidad</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargando ? (
-                <tr><td colSpan="8" className="coord-empty">Cargando equipos...</td></tr>
-              ) : equiposFiltrados.length === 0 ? (
-                <tr><td colSpan="8" className="coord-empty">No hay equipos para mostrar.</td></tr>
-              ) : (
-                equiposFiltrados.map((equipo) => (
-                  <tr key={equipo.id}>
-                    <td>{equipo.codigo_inventario || equipo.codigo || "N/A"}</td>
-                    <td><strong>{equipo.nombre || equipo.nombre_completo || "Equipo"}</strong></td>
-                    <td>{equipo.marca || "N/A"} {equipo.modelo || ""}</td>
-                    <td>{equipo.serie || "N/A"}</td>
-                    <td>{nombreSede(equipo.sede_id)}</td>
-                    <td><span className="coord-status asignado">{equipo.estado || "ACTIVO"}</span></td>
-                    <td>{equipo.criticidad || "MEDIA"}</td>
-                    <td>
-                      {puedeEditar ? (
-                        <button className="btn-table btn-edit" onClick={() => abrirEditar(equipo)}>
-                          <Pencil size={15} /> Editar
-                        </button>
-                      ) : "Sin permiso"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              <h3>{equipo.nombre || "Equipo sin nombre"}</h3>
+              <p>{equipo.marca || "Sin marca"} · {equipo.modelo || "Sin modelo"}</p>
+
+              <div className="coord-equipo-meta">
+                <span>Serie: <strong>{equipo.serie || "N/A"}</strong></span>
+                <span>Inventario: <strong>{equipo.inventario || equipo.codigo_inventario || "N/A"}</strong></span>
+                <span>Ubicación: <strong>{equipo.ubicacion || "N/A"}</strong></span>
+                <span>Sede: <strong>{equipo.sede_nombre || "N/A"}</strong></span>
+              </div>
+
+              <div className="coord-equipo-actions">
+                <button onClick={() => abrirEditar(equipo)}>
+                  <Pencil size={16} />
+                  Editar
+                </button>
+                <button onClick={() => navigate(`/coordinador/equipos/${equipo.id}/hoja-vida`)}>
+                  <FileText size={16} />
+                  Hoja de vida
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="coord-pagination">
+        <button disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>Anterior</button>
+        <span>Página {pagina} de {totalPaginas}</span>
+        <button disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>Siguiente</button>
       </div>
 
       {modal && (
-        <div className="modal-overlay-pro">
-          <div className="modal-pro">
-            <div className="modal-header-pro">
+        <div className="coord-modal-backdrop">
+          <div className="coord-modal large">
+            <div className="coord-modal-header">
               <div>
-                <h2>{editando ? "Editar equipo" : "Crear equipo"}</h2>
-                <p>La empresa queda controlada por la empresa asignada al coordinador.</p>
+                <h3>{editando ? "Editar equipo" : "Nuevo equipo"}</h3>
+                <p>Datos básicos del inventario.</p>
               </div>
-              <button className="modal-close" onClick={cerrarModal}>×</button>
+              <button onClick={cerrarModal}><X size={18} /></button>
             </div>
 
-            <form className="form-pro" onSubmit={guardarEquipo}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Código inventario</label>
-                  <input name="codigo_inventario" value={form.codigo_inventario} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Nombre equipo *</label>
-                  <input name="nombre" value={form.nombre} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                  <label>Marca</label>
-                  <input name="marca" value={form.marca} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Modelo</label>
-                  <input name="modelo" value={form.modelo} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Serie</label>
-                  <input name="serie" value={form.serie} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Ubicación</label>
-                  <input name="ubicacion" value={form.ubicacion} onChange={handleChange} />
-                </div>
-                <div className="form-group">
-                  <label>Sede</label>
-                  <select name="sede_id" value={form.sede_id} onChange={handleChange}>
-                    <option value="">Sin sede</option>
-                    {catalogos.sedes?.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Estado</label>
-                  <select name="estado" value={form.estado} onChange={handleChange}>
-                    {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Criticidad</label>
-                  <select name="criticidad" value={form.criticidad} onChange={handleChange}>
-                    {CRITICIDADES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
+            <form onSubmit={guardar} className="coord-form-grid">
+              <label>
+                Nombre del equipo
+                <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+              </label>
 
-              <div className="modal-actions-pro">
-                <button type="button" className="btn-secondary-pro" onClick={cerrarModal}><X size={16} /> Cancelar</button>
-                <button type="submit" className="btn-primary-pro"><Save size={16} /> Guardar</button>
+              <label>
+                Sede
+                <select value={form.sede_id} onChange={(e) => setForm({ ...form, sede_id: e.target.value })} required>
+                  <option value="">Seleccionar sede</option>
+                  {catalogos.sedes?.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                </select>
+              </label>
+
+              <label>
+                Categoría
+                <select value={form.categoria_id} onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}>
+                  <option value="">Sin categoría</option>
+                  {catalogos.categorias?.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </label>
+
+              <label>
+                Marca
+                <input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
+              </label>
+
+              <label>
+                Modelo
+                <input value={form.modelo} onChange={(e) => setForm({ ...form, modelo: e.target.value })} />
+              </label>
+
+              <label>
+                Serie
+                <input value={form.serie} onChange={(e) => setForm({ ...form, serie: e.target.value })} />
+              </label>
+
+              <label>
+                Código ID
+                <input value={form.codigo_id} onChange={(e) => setForm({ ...form, codigo_id: e.target.value })} />
+              </label>
+
+              <label>
+                Inventario
+                <input value={form.inventario} onChange={(e) => setForm({ ...form, inventario: e.target.value })} />
+              </label>
+
+              <label>
+                Estado
+                <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+                  {ESTADOS.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
+                </select>
+              </label>
+
+              <label>
+                Criticidad
+                <select value={form.criticidad} onChange={(e) => setForm({ ...form, criticidad: e.target.value })}>
+                  {CRITICIDADES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+
+              <label className="span-2">
+                Ubicación
+                <input value={form.ubicacion} onChange={(e) => setForm({ ...form, ubicacion: e.target.value })} />
+              </label>
+
+              <div className="coord-modal-actions span-2">
+                <button type="button" className="coord-btn secondary" onClick={cerrarModal}>
+                  <X size={17} />
+                  Cancelar
+                </button>
+                <button type="submit" className="coord-btn primary" disabled={cargando}>
+                  <Save size={17} />
+                  Guardar
+                </button>
               </div>
             </form>
           </div>

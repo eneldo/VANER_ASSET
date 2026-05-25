@@ -41,6 +41,12 @@ const ClienteHojaVida = lazy(() => import("./pages/cliente/ClienteHojaVida"));
 
 const CoordinadorLayout = lazy(() => import("./layouts/CoordinadorLayout"));
 const CoordinadorDashboard = lazy(() => import("./pages/coordinador/CoordinadorDashboard"));
+const CoordinadorMantenimientos = lazy(() => import("./pages/coordinador/CoordinadorMantenimientos"));
+const CoordinadorCronograma = lazy(() => import("./pages/coordinador/CoordinadorCronograma"));
+const CoordinadorEquipos = lazy(() => import("./pages/coordinador/CoordinadorEquipos"));
+const CoordinadorHojaVida = lazy(() => import("./pages/coordinador/CoordinadorHojaVida"));
+const CoordinadorEvidencias = lazy(() => import("./pages/coordinador/CoordinadorEvidencias"));
+const CoordinadorInformes = lazy(() => import("./pages/coordinador/CoordinadorInformes"));
 
 const ADMIN_ROLES = ["ADMIN"];
 const TECNICO_ROLES = ["TECNICO"];
@@ -88,6 +94,13 @@ function App() {
           <Route path="/coordinador" element={<ProtectedRoute allowedRoles={COORDINADOR_ROLES}><CoordinadorLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<CoordinadorDashboard />} />
+            <Route path="mantenimientos" element={<CoordinadorMantenimientos />} />
+            <Route path="cronograma" element={<CoordinadorCronograma />} />
+            <Route path="equipos" element={<CoordinadorEquipos />} />
+            <Route path="equipos/:equipoId/hoja-vida" element={<CoordinadorHojaVida />} />
+            <Route path="hoja-vida" element={<CoordinadorHojaVida />} />
+            <Route path="evidencias" element={<CoordinadorEvidencias />} />
+            <Route path="informes" element={<CoordinadorInformes />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
