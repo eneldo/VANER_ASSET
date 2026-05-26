@@ -1,7 +1,7 @@
 // =========================================================
 // SIDEBAR RESPONSIVE PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// Fase 34.2.2 - Backups Inteligentes SaaS
+// Fase 34.2.3 - SMTP Inteligente SaaS
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ import {
   X,
   SlidersHorizontal,
   Archive,
+  Mail,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -99,101 +100,57 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
 
         {esAdmin && (
           <>
-            <NavLink
-              to="/admin/empresas"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/empresas" onClick={closeMobile} className={itemClass}>
               <Building2 size={18} />
               <span>Empresas / Cliente</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/sedes"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/sedes" onClick={closeMobile} className={itemClass}>
               <MapPin size={18} />
               <span>Sedes</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/categorias"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/categorias" onClick={closeMobile} className={itemClass}>
               <Tags size={18} />
               <span>Categorías</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/tecnicos"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/tecnicos" onClick={closeMobile} className={itemClass}>
               <UserCog size={18} />
               <span>Técnicos</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/usuarios"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/usuarios" onClick={closeMobile} className={itemClass}>
               <Users size={18} />
               <span>Usuarios y Permisos</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/equipos"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/equipos" onClick={closeMobile} className={itemClass}>
               <MonitorCog size={18} />
               <span>Equipos</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/mantenimientos"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/mantenimientos" onClick={closeMobile} className={itemClass}>
               <Wrench size={18} />
               <span>Mantenimientos</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/evidencias"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/evidencias" onClick={closeMobile} className={itemClass}>
               <Image size={18} />
               <span>Evidencias</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/reportes"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/reportes" onClick={closeMobile} className={itemClass}>
               <FileText size={18} />
               <span>Reportes PRO</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/auditoria"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/auditoria" onClick={closeMobile} className={itemClass}>
               <ShieldCheck size={18} />
               <span>Auditoría PRO</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/configuracion"
-              onClick={closeMobile}
-              className={itemClass}
-            >
+            <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}>
               <Settings size={18} />
               <span>Configuración</span>
             </NavLink>
@@ -206,14 +163,6 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
               <SlidersHorizontal size={18} />
               <span>Configuración Inteligente</span>
             </NavLink>
-            <NavLink
-              to="/admin/smtp-inteligente"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <Mail size={18} />
-              <span>SMTP Inteligente</span>
-            </NavLink>
 
             <NavLink
               to="/admin/backups"
@@ -222,6 +171,15 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
             >
               <Archive size={18} />
               <span>Backups</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/smtp-inteligente"
+              onClick={closeMobile}
+              className={itemClass}
+            >
+              <Mail size={18} />
+              <span>SMTP Inteligente</span>
             </NavLink>
           </>
         )}
