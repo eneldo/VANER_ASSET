@@ -32,7 +32,7 @@ from app.middleware.file_security import (
 # En local puedes usar UPLOAD_DIR desde .env si lo necesitas.
 # ===========================================================
 
-UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/uploads").resolve()
+UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/app/uploads").resolve()
 EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
 
 EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
