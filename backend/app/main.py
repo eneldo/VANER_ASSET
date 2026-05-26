@@ -2,13 +2,9 @@
 # MAIN BACKEND SGA PRO
 # Archivo: backend/app/main.py
 # =========================================================
-# Fase 31.5:
-# - registra router auditoria_pro,
-# - activa AuditMiddleware para trazabilidad automática,
-# - conserva routers existentes del proyecto.
-# =========================================================
 
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,15 +12,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.middleware.audit_middleware import AuditMiddleware
-
-from app.middleware.rate_limit import (
-    InMemoryRateLimitMiddleware as RateLimitMiddleware
-)
-
+from app.middleware.rate_limit import InMemoryRateLimitMiddleware as RateLimitMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.automation.scheduler import iniciar_scheduler_sga, detener_scheduler_sga
-
 
 # =========================================================
 # ROUTERS DEL SISTEMA
@@ -46,7 +37,7 @@ from app.routers import cliente
 from app.routers import reportes
 from app.routers import auditoria
 from app.routers import auditoria_pro
-from app.routers import password_recovery  
+from app.routers import password_recovery
 from app.routers import coordinador
 from app.routers import formatos_mantenimiento
 from app.routers import formatos_dinamicos
@@ -55,8 +46,6 @@ from app.routers import configuracion
 from app.routers import configuracion_saas
 from app.routers import automatizacion
 from app.routers import backups_inteligentes
-
-
 
 
 # =========================================================
@@ -71,46 +60,47 @@ app = FastAPI(
 
 # =========================================================
 # MIDDLEWARES DE SEGURIDAD
-# IMPORTANTE:
-#   El orden se conserva estable para evitar romper CORS.
 # =========================================================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción restringir al dominio real
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Si estos middlewares ya existen desde Fase 31.3, se mantienen activos.
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(RequestIDMiddleware)
-
-# Fase 31.5 - Auditoría automática HTTP.
 app.add_middleware(AuditMiddleware)
 
 
 # =========================================================
 # ARCHIVOS ESTÁTICOS / UPLOADS
 # =========================================================
-# PRODUCCIÓN DOCKER:
-# - Las evidencias deben vivir en /app/uploads/evidencias.
-# - docker-compose.yml monta ./backend/app/uploads -> /app/uploads.
-# - La URL pública queda: https://api.sga.vaner.cloud/uploads/evidencias/<archivo>
+# Ruta correcta en tu proyecto local:
+#   C:\Proyectos\SGA_SaaS\backend\app\uploads\evidencias
+#
+# Ruta correcta dentro del contenedor Docker:
+#   /app/app/uploads/evidencias
+#
+# IMPORTANTE:
+#   En Dokploy debe estar:
+#   UPLOAD_DIR=/app/app/uploads
 # =========================================================
 
-UPLOADS_DIR = os.getenv("UPLOAD_DIR") or "/app/uploads"
-UPLOADS_DIR = os.path.abspath(UPLOADS_DIR)
+UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/app/uploads").resolve()
+EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
+LOGOS_DIR = UPLOADS_DIR / "logos"
 
-EVIDENCIAS_DIR = os.path.join(UPLOADS_DIR, "evidencias")
-
-os.makedirs(EVIDENCIAS_DIR, exist_ok=True)
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
+LOGOS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount(
     "/uploads",
-    StaticFiles(directory=UPLOADS_DIR),
+    StaticFiles(directory=str(UPLOADS_DIR)),
     name="uploads",
 )
 
@@ -142,10 +132,8 @@ app.include_router(bitacoras_dinamicas.router)
 app.include_router(configuracion.router)
 app.include_router(configuracion_saas.router)
 app.include_router(automatizacion.router)
-# Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
 app.include_router(backups_inteligentes.router)
-
 
 
 # =========================================================
@@ -174,5 +162,6 @@ def root():
     return {
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
-        "fase": "31.5 - Auditoría y Monitoreo PRO SaaS",
+        "fase": "34.2.3 - SMTP Inteligente SaaS PRO",
+        "uploads_dir": str(UPLOADS_DIR),
     }
