@@ -1,33 +1,24 @@
 # ============================================================
-# JOB PLACEHOLDER: backups
+# JOB: Backup Automático SaaS
 # Archivo: backend/app/automation/jobs/backup_job.py
+# Fase 34.2.2
 # ============================================================
 
-import time
-
 from app.database import SessionLocal
-from app.services.automation_service import registrar_ejecucion
+from app.services.smart_backup_service import SmartBackupService
 
 
-def ejecutar_backup_job() -> None:
-    """Job base de backups. Ejecución real se implementa en Fase 34.2.2."""
-    inicio = time.perf_counter()
+def ejecutar_backup_automatico():
+    """Job invocado por el scheduler. No se activa si el módulo backups está OFF."""
     db = SessionLocal()
     try:
-        registrar_ejecucion(
-            db=db,
-            modulo="backups",
-            ok=True,
-            mensaje="Job base de backups. Ejecución real se implementa en Fase 34.2.2.",
-            duracion_ms=int((time.perf_counter() - inicio) * 1000),
-        )
-    except Exception as exc:
-        registrar_ejecucion(
-            db=db,
-            modulo="backups",
-            ok=False,
-            mensaje=f"Error job backups: {exc}",
-            duracion_ms=int((time.perf_counter() - inicio) * 1000),
+        service = SmartBackupService(db)
+        return service.ejecutar_backup(
+            tipo="AUTOMATICO",
+            incluir_db=True,
+            incluir_uploads=True,
+            incluir_codigo=False,
+            creado_por="scheduler",
         )
     finally:
         db.close()

@@ -54,6 +54,7 @@ from app.routers import bitacoras_dinamicas
 from app.routers import configuracion
 from app.routers import configuracion_saas
 from app.routers import automatizacion
+from app.routers import backups_inteligentes
 
 
 
@@ -143,6 +144,7 @@ app.include_router(configuracion_saas.router)
 app.include_router(automatizacion.router)
 # Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
+app.include_router(backups_inteligentes.router)
 
 
 
