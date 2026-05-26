@@ -206,3 +206,93 @@
 
   .sga-brand { padding-right: 44px; }
 }
+
+
+
+.sga-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.sga-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  gap: 6px !important;
+}
+
+.sga-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sga-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+
+.sga-menu-item {
+  min-height: 38px !important;
+  padding: 9px 12px !important;
+  gap: 10px !important;
+  font-size: 13px !important;
+  line-height: 1.1 !important;
+}
+
+.sga-menu-title {
+  margin: 16px 0 8px !important;
+  font-size: 11px !important;
+}
+
+.sga-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sga-menu-group-btn {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  font-family: inherit;
+}
+
+.sga-menu-group-btn .sga-chevron {
+  margin-left: auto;
+  transition: transform 0.18s ease;
+}
+
+.sga-menu-group-btn.open .sga-chevron {
+  transform: rotate(180deg);
+}
+
+.sga-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 0 2px 12px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.sga-submenu .sga-menu-item {
+  min-height: 34px !important;
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  border-radius: 12px !important;
+}
+
+.sga-sidebar-footer {
+  flex-shrink: 0;
+  padding-top: 10px;
+}
+
+.sga-user-card {
+  margin-top: 8px !important;
+}
+
+.sga-logout {
+  margin-top: 8px !important;
+}

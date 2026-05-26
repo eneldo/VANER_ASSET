@@ -1,9 +1,10 @@
 // =========================================================
-// SIDEBAR RESPONSIVE PRO SGA
+// SIDEBAR RESPONSIVE PRO SGA - AGRUPADO
 // Archivo: frontend/src/components/Sidebar.jsx
-// Fase 34.2.3 - SMTP Inteligente SaaS
+// Fase UX - Configuración Sistema
 // =========================================================
 
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,15 +21,18 @@ import {
   UserCog,
   ShieldCheck,
   X,
+  ChevronDown,
   SlidersHorizontal,
   Archive,
   Mail,
+  Cog,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
 
 export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
   const navigate = useNavigate();
+  const [openConfigSistema, setOpenConfigSistema] = useState(true);
 
   let userSeguro = user;
 
@@ -94,133 +98,134 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
           onClick={closeMobile}
           className={itemClass}
         >
-          <LayoutDashboard size={18} />
+          <LayoutDashboard size={17} />
           <span>Dashboard</span>
         </NavLink>
 
         {esAdmin && (
           <>
             <NavLink to="/admin/empresas" onClick={closeMobile} className={itemClass}>
-              <Building2 size={18} />
+              <Building2 size={17} />
               <span>Empresas / Cliente</span>
             </NavLink>
 
             <NavLink to="/admin/sedes" onClick={closeMobile} className={itemClass}>
-              <MapPin size={18} />
+              <MapPin size={17} />
               <span>Sedes</span>
             </NavLink>
 
             <NavLink to="/admin/categorias" onClick={closeMobile} className={itemClass}>
-              <Tags size={18} />
+              <Tags size={17} />
               <span>Categorías</span>
             </NavLink>
 
             <NavLink to="/admin/tecnicos" onClick={closeMobile} className={itemClass}>
-              <UserCog size={18} />
+              <UserCog size={17} />
               <span>Técnicos</span>
             </NavLink>
 
             <NavLink to="/admin/usuarios" onClick={closeMobile} className={itemClass}>
-              <Users size={18} />
+              <Users size={17} />
               <span>Usuarios y Permisos</span>
             </NavLink>
 
             <NavLink to="/admin/equipos" onClick={closeMobile} className={itemClass}>
-              <MonitorCog size={18} />
+              <MonitorCog size={17} />
               <span>Equipos</span>
             </NavLink>
 
             <NavLink to="/admin/mantenimientos" onClick={closeMobile} className={itemClass}>
-              <Wrench size={18} />
+              <Wrench size={17} />
               <span>Mantenimientos</span>
             </NavLink>
 
             <NavLink to="/admin/evidencias" onClick={closeMobile} className={itemClass}>
-              <Image size={18} />
+              <Image size={17} />
               <span>Evidencias</span>
             </NavLink>
 
             <NavLink to="/admin/reportes" onClick={closeMobile} className={itemClass}>
-              <FileText size={18} />
+              <FileText size={17} />
               <span>Reportes PRO</span>
             </NavLink>
 
             <NavLink to="/admin/auditoria" onClick={closeMobile} className={itemClass}>
-              <ShieldCheck size={18} />
+              <ShieldCheck size={17} />
               <span>Auditoría PRO</span>
             </NavLink>
 
-            <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}>
-              <Settings size={18} />
-              <span>Configuración</span>
-            </NavLink>
+            <div className="sga-menu-group">
+              <button
+                type="button"
+                className={`sga-menu-item sga-menu-group-btn ${openConfigSistema ? "open" : ""}`}
+                onClick={() => setOpenConfigSistema((v) => !v)}
+              >
+                <Cog size={17} />
+                <span>Configuración Sistema</span>
+                <ChevronDown size={15} className="sga-chevron" />
+              </button>
 
-            <NavLink
-              to="/admin/configuracion-inteligente"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <SlidersHorizontal size={18} />
-              <span>Configuración Inteligente</span>
-            </NavLink>
+              {openConfigSistema && (
+                <div className="sga-submenu">
+                  <NavLink to="/admin/configuracion-sistema" onClick={closeMobile} className={itemClass}>
+                    <Settings size={15} />
+                    <span>Centro Sistema</span>
+                  </NavLink>
 
-            <NavLink
-              to="/admin/backups"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <Archive size={18} />
-              <span>Backups</span>
-            </NavLink>
+                  <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}>
+                    <Settings size={15} />
+                    <span>Configuración General</span>
+                  </NavLink>
 
-            <NavLink
-              to="/admin/smtp-inteligente"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <Mail size={18} />
-              <span>SMTP Inteligente</span>
-            </NavLink>
+                  <NavLink to="/admin/configuracion-inteligente" onClick={closeMobile} className={itemClass}>
+                    <SlidersHorizontal size={15} />
+                    <span>Configuración Inteligente</span>
+                  </NavLink>
+
+                  <NavLink to="/admin/backups" onClick={closeMobile} className={itemClass}>
+                    <Archive size={15} />
+                    <span>Backups</span>
+                  </NavLink>
+
+                  <NavLink to="/admin/smtp-inteligente" onClick={closeMobile} className={itemClass}>
+                    <Mail size={15} />
+                    <span>SMTP Inteligente</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
           </>
         )}
 
         {esTecnico && (
           <>
-            <NavLink
-              to="/tecnico/mantenimientos"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <Wrench size={18} />
+            <NavLink to="/tecnico/mantenimientos" onClick={closeMobile} className={itemClass}>
+              <Wrench size={17} />
               <span>Mis mantenimientos</span>
             </NavLink>
 
-            <NavLink
-              to="/tecnico/evidencias"
-              onClick={closeMobile}
-              className={itemClass}
-            >
-              <Image size={18} />
+            <NavLink to="/tecnico/evidencias" onClick={closeMobile} className={itemClass}>
+              <Image size={17} />
               <span>Evidencias</span>
             </NavLink>
           </>
         )}
       </nav>
 
-      <div className="sga-user-card">
-        <div className="sga-user-avatar">{iniciales}</div>
-        <div className="sga-user-info">
-          <strong>
-            {userSeguro?.nombre_completo || userSeguro?.username || "Usuario"}
-          </strong>
-          <span>{rol || "SIN ROL"}</span>
+      <div className="sga-sidebar-footer">
+        <div className="sga-user-card">
+          <div className="sga-user-avatar">{iniciales}</div>
+          <div className="sga-user-info">
+            <strong>{userSeguro?.nombre_completo || userSeguro?.username || "Usuario"}</strong>
+            <span>{rol || "SIN ROL"}</span>
+          </div>
         </div>
-      </div>
 
-      <button className="sga-logout" onClick={handleLogout}>
-        <LogOut size={18} />
-        <span>Cerrar sesión</span>
-      </button>
+        <button className="sga-logout" onClick={handleLogout}>
+          <LogOut size={17} />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
     </aside>
   );
 }
