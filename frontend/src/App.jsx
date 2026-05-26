@@ -8,6 +8,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLoader from "./components/AppLoader";
+import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
+import ConfiguracionInteligentePage from "./pages/admin/ConfiguracionPage";
+
 import "./styles/performance-pro.css";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -26,7 +29,7 @@ const MantenimientosPage = lazy(() => import("./pages/admin/MantenimientosPage")
 const EvidenciasPage = lazy(() => import("./pages/admin/EvidenciasPage"));
 const ReportesPage = lazy(() => import("./pages/admin/ReportesPage"));
 const AuditoriaPage = lazy(() => import("./pages/admin/AuditoriaPage"));
-const ConfiguracionPage = lazy(() => import("./pages/admin/ConfiguracionPage"));
+const AutomatizacionPage = lazy(() => import("./pages/admin/AutomatizacionPage"));
 
 const DashboardTecnico = lazy(() => import("./pages/DashboardTecnico"));
 const FormatoMantenimiento = lazy(() => import("./pages/tecnico/FormatoMantenimiento"));
@@ -41,12 +44,6 @@ const ClienteHojaVida = lazy(() => import("./pages/cliente/ClienteHojaVida"));
 
 const CoordinadorLayout = lazy(() => import("./layouts/CoordinadorLayout"));
 const CoordinadorDashboard = lazy(() => import("./pages/coordinador/CoordinadorDashboard"));
-const CoordinadorMantenimientos = lazy(() => import("./pages/coordinador/CoordinadorMantenimientos"));
-const CoordinadorCronograma = lazy(() => import("./pages/coordinador/CoordinadorCronograma"));
-const CoordinadorEquipos = lazy(() => import("./pages/coordinador/CoordinadorEquipos"));
-const CoordinadorHojaVida = lazy(() => import("./pages/coordinador/CoordinadorHojaVida"));
-const CoordinadorEvidencias = lazy(() => import("./pages/coordinador/CoordinadorEvidencias"));
-const CoordinadorInformes = lazy(() => import("./pages/coordinador/CoordinadorInformes"));
 
 const ADMIN_ROLES = ["ADMIN"];
 const TECNICO_ROLES = ["TECNICO"];
@@ -69,13 +66,14 @@ function App() {
           <Route path="/admin/usuarios" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UsuariosPage /></ProtectedRoute>} />
           <Route path="/admin/tecnicos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><TecnicosPage /></ProtectedRoute>} />
           <Route path="/admin/configuracion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ConfiguracionPage /></ProtectedRoute>} />
-          <Route path="/admin/configuracion-inteligente" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ConfiguracionPage /></ProtectedRoute>} />
+          <Route path="/admin/configuracion-inteligente" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ConfiguracionInteligentePage /></ProtectedRoute>} />
           <Route path="/admin/equipos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EquiposPage /></ProtectedRoute>} />
           <Route path="/admin/equipos/:equipoId/hoja-vida" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><HojaVidaEquipoPage /></ProtectedRoute>} />
           <Route path="/admin/mantenimientos" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><MantenimientosPage /></ProtectedRoute>} />
           <Route path="/admin/evidencias" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><EvidenciasPage /></ProtectedRoute>} />
           <Route path="/admin/reportes" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ReportesPage /></ProtectedRoute>} />
           <Route path="/admin/auditoria" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AuditoriaPage /></ProtectedRoute>} />
+          <Route path="/admin/automatizacion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AutomatizacionPage /></ProtectedRoute>} />
 
           <Route path="/tecnico/dashboard" element={<ProtectedRoute allowedRoles={TECNICO_ROLES}><DashboardTecnico /></ProtectedRoute>} />
           <Route path="/tecnico/formato-mantenimiento/:mantenimientoId" element={<ProtectedRoute allowedRoles={TECNICO_ROLES}><FormatoMantenimiento /></ProtectedRoute>} />
@@ -94,13 +92,6 @@ function App() {
           <Route path="/coordinador" element={<ProtectedRoute allowedRoles={COORDINADOR_ROLES}><CoordinadorLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<CoordinadorDashboard />} />
-            <Route path="mantenimientos" element={<CoordinadorMantenimientos />} />
-            <Route path="cronograma" element={<CoordinadorCronograma />} />
-            <Route path="equipos" element={<CoordinadorEquipos />} />
-            <Route path="equipos/:equipoId/hoja-vida" element={<CoordinadorHojaVida />} />
-            <Route path="hoja-vida" element={<CoordinadorHojaVida />} />
-            <Route path="evidencias" element={<CoordinadorEvidencias />} />
-            <Route path="informes" element={<CoordinadorInformes />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -23,6 +23,7 @@ from app.middleware.rate_limit import (
 
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.automation.scheduler import iniciar_scheduler_sga, detener_scheduler_sga
 
 
 # =========================================================
@@ -52,6 +53,7 @@ from app.routers import formatos_dinamicos
 from app.routers import bitacoras_dinamicas
 from app.routers import configuracion
 from app.routers import configuracion_saas
+from app.routers import automatizacion
 
 
 
@@ -102,10 +104,8 @@ UPLOADS_DIR = os.getenv("UPLOAD_DIR") or "/app/uploads"
 UPLOADS_DIR = os.path.abspath(UPLOADS_DIR)
 
 EVIDENCIAS_DIR = os.path.join(UPLOADS_DIR, "evidencias")
-LOGOS_DIR = os.path.join(UPLOADS_DIR, "logos")
 
 os.makedirs(EVIDENCIAS_DIR, exist_ok=True)
-os.makedirs(LOGOS_DIR, exist_ok=True)
 
 app.mount(
     "/uploads",
@@ -140,8 +140,26 @@ app.include_router(formatos_dinamicos.router)
 app.include_router(bitacoras_dinamicas.router)
 app.include_router(configuracion.router)
 app.include_router(configuracion_saas.router)
+app.include_router(automatizacion.router)
 # Fase 31.5 - Router nuevo de auditoría y monitoreo PRO.
 app.include_router(auditoria_pro.router)
+
+
+
+# =========================================================
+# FASE 34.2.1 - SCHEDULER AUTOMATIZACIÓN SAAS PRO
+# =========================================================
+
+@app.on_event("startup")
+def startup_automatizacion_saas():
+    """Inicia el scheduler SaaS sin afectar módulos existentes."""
+    iniciar_scheduler_sga()
+
+
+@app.on_event("shutdown")
+def shutdown_automatizacion_saas():
+    """Detiene el scheduler de forma segura al apagar FastAPI."""
+    detener_scheduler_sga()
 
 
 # =========================================================
