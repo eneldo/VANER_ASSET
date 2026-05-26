@@ -1,10 +1,9 @@
 // =========================================================
-// SIDEBAR RESPONSIVE PRO SGA - AGRUPADO
+// SIDEBAR RESPONSIVE ENTERPRISE PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// Fase UX - Configuración Sistema
+// Fix Configuración Sistema - Menú limpio sin duplicados
 // =========================================================
 
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -15,24 +14,18 @@ import {
   Image,
   Users,
   FileText,
-  Settings,
   LogOut,
   Tags,
   UserCog,
   ShieldCheck,
   X,
-  ChevronDown,
-  SlidersHorizontal,
-  Archive,
-  Mail,
-  Cog,
+  Settings,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
 
 export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
   const navigate = useNavigate();
-  const [openConfigSistema, setOpenConfigSistema] = useState(true);
 
   let userSeguro = user;
 
@@ -154,46 +147,11 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
               <span>Auditoría PRO</span>
             </NavLink>
 
-            <div className="sga-menu-group">
-              <button
-                type="button"
-                className={`sga-menu-item sga-menu-group-btn ${openConfigSistema ? "open" : ""}`}
-                onClick={() => setOpenConfigSistema((v) => !v)}
-              >
-                <Cog size={17} />
-                <span>Configuración Sistema</span>
-                <ChevronDown size={15} className="sga-chevron" />
-              </button>
-
-              {openConfigSistema && (
-                <div className="sga-submenu">
-                  <NavLink to="/admin/configuracion-sistema" onClick={closeMobile} className={itemClass}>
-                    <Settings size={15} />
-                    <span>Centro Sistema</span>
-                  </NavLink>
-
-                  <NavLink to="/admin/configuracion" onClick={closeMobile} className={itemClass}>
-                    <Settings size={15} />
-                    <span>Configuración General</span>
-                  </NavLink>
-
-                  <NavLink to="/admin/configuracion-inteligente" onClick={closeMobile} className={itemClass}>
-                    <SlidersHorizontal size={15} />
-                    <span>Configuración Inteligente</span>
-                  </NavLink>
-
-                  <NavLink to="/admin/backups" onClick={closeMobile} className={itemClass}>
-                    <Archive size={15} />
-                    <span>Backups</span>
-                  </NavLink>
-
-                  <NavLink to="/admin/smtp-inteligente" onClick={closeMobile} className={itemClass}>
-                    <Mail size={15} />
-                    <span>SMTP Inteligente</span>
-                  </NavLink>
-                </div>
-              )}
-            </div>
+            {/* Módulos técnicos agrupados aquí para evitar saturar el sidebar */}
+            <NavLink to="/admin/configuracion-sistema" onClick={closeMobile} className={itemClass}>
+              <Settings size={17} />
+              <span>Configuración Sistema</span>
+            </NavLink>
           </>
         )}
 
@@ -216,7 +174,9 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
         <div className="sga-user-card">
           <div className="sga-user-avatar">{iniciales}</div>
           <div className="sga-user-info">
-            <strong>{userSeguro?.nombre_completo || userSeguro?.username || "Usuario"}</strong>
+            <strong>
+              {userSeguro?.nombre_completo || userSeguro?.username || "Usuario"}
+            </strong>
             <span>{rol || "SIN ROL"}</span>
           </div>
         </div>

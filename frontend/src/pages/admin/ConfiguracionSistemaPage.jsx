@@ -1,6 +1,7 @@
 // =========================================================
-// CONFIGURACIÓN SISTEMA - CENTRO DE CONTROL
+// CONFIGURACIÓN SISTEMA - SGA SaaS PRO
 // Archivo: frontend/src/pages/admin/ConfiguracionSistemaPage.jsx
+// Agrupa configuración, automatización, backups, SMTP y futuros módulos.
 // =========================================================
 
 import { useNavigate } from "react-router-dom";
@@ -9,10 +10,12 @@ import {
   SlidersHorizontal,
   Archive,
   Mail,
-  ShieldCheck,
   Activity,
   Server,
-  ArrowRight,
+  ShieldCheck,
+  MessageCircle,
+  FileText,
+  ChevronRight,
 } from "lucide-react";
 
 import "../../styles/configuracion-sistema.css";
@@ -23,93 +26,117 @@ export default function ConfiguracionSistemaPage() {
   const modulos = [
     {
       titulo: "Configuración General",
-      descripcion: "Parámetros base del sistema, seguridad, evidencias y mantenimiento.",
-      ruta: "/admin/configuracion",
+      descripcion: "Parámetros principales del sistema y opciones base.",
       icono: Settings,
+      ruta: "/admin/configuracion",
       estado: "Activo",
     },
     {
       titulo: "Configuración Inteligente",
-      descripcion: "Identidad SaaS, logo, SMTP corporativo, colores, backups y notificaciones.",
-      ruta: "/admin/configuracion-inteligente",
+      descripcion: "Logo, SMTP base, colores, evidencias, backups y notificaciones.",
       icono: SlidersHorizontal,
-      estado: "Activo",
-    },
-    {
-      titulo: "Backups Inteligentes",
-      descripcion: "Respaldos de PostgreSQL, evidencias/uploads y paquetes ZIP descargables.",
-      ruta: "/admin/backups",
-      icono: Archive,
-      estado: "Activo",
-    },
-    {
-      titulo: "SMTP Inteligente",
-      descripcion: "Correo corporativo, pruebas SMTP, plantillas HTML y trazabilidad de envíos.",
-      ruta: "/admin/smtp-inteligente",
-      icono: Mail,
+      ruta: "/admin/configuracion-inteligente",
       estado: "Activo",
     },
     {
       titulo: "Automatización SaaS",
-      descripcion: "Scheduler, tareas recurrentes, jobs automáticos y módulos ON/OFF.",
-      ruta: "/admin/automatizacion",
+      descripcion: "Scheduler, tareas automáticas, estados y módulos ON/OFF.",
       icono: Activity,
+      ruta: "/admin/automatizacion",
       estado: "Activo",
     },
     {
-      titulo: "DevOps / Monitor",
-      descripcion: "Espacio reservado para monitoreo VPS, Docker, PostgreSQL, logs y salud del sistema.",
-      ruta: "/admin/configuracion-sistema",
+      titulo: "Backups Inteligentes",
+      descripcion: "Respaldo de PostgreSQL, evidencias y paquetes descargables.",
+      icono: Archive,
+      ruta: "/admin/backups",
+      estado: "Activo",
+    },
+    {
+      titulo: "SMTP Inteligente",
+      descripcion: "Correos corporativos, plantillas, pruebas y notificaciones.",
+      icono: Mail,
+      ruta: "/admin/smtp-inteligente",
+      estado: "Activo",
+    },
+    {
+      titulo: "WhatsApp",
+      descripcion: "Preparado para integración con proveedor WhatsApp empresarial.",
+      icono: MessageCircle,
+      ruta: "#",
+      estado: "Próximamente",
+      disabled: true,
+    },
+    {
+      titulo: "Monitor / DevOps",
+      descripcion: "Estado de VPS, servicios, PostgreSQL, API y frontend.",
       icono: Server,
-      estado: "Próximo",
+      ruta: "#",
+      estado: "Próximamente",
+      disabled: true,
+    },
+    {
+      titulo: "Logs Inteligentes",
+      descripcion: "Auditoría técnica, errores, eventos y trazabilidad operativa.",
+      icono: FileText,
+      ruta: "#",
+      estado: "Próximamente",
+      disabled: true,
     },
     {
       titulo: "Seguridad Sistema",
-      descripcion: "Auditoría, permisos, políticas de acceso y endurecimiento de plataforma.",
-      ruta: "/admin/auditoria",
+      descripcion: "Hardening, políticas, sesiones, recuperación y control avanzado.",
       icono: ShieldCheck,
-      estado: "Activo",
+      ruta: "#",
+      estado: "Próximamente",
+      disabled: true,
     },
   ];
 
+  const abrirModulo = (modulo) => {
+    if (modulo.disabled || modulo.ruta === "#") return;
+    navigate(modulo.ruta);
+  };
+
   return (
-    <main className="cfgsys-page">
-      <section className="cfgsys-hero">
+    <main className="config-sistema-page">
+      <section className="config-sistema-hero">
         <div>
-          <p className="cfgsys-kicker">SGA EMPRESARIAL · ADMIN SAAS PRO</p>
+          <p className="config-sistema-kicker">SGA EMPRESARIAL · SISTEMA</p>
           <h1>Configuración Sistema</h1>
           <p>
-            Centro unificado para configuración, automatización, backups, SMTP,
-            seguridad y operación técnica del SaaS.
+            Centro unificado para módulos técnicos, automatización, backups,
+            SMTP, monitoreo y futuras integraciones SaaS PRO.
           </p>
         </div>
       </section>
 
-      <section className="cfgsys-grid">
+      <section className="config-sistema-grid">
         {modulos.map((modulo) => {
           const Icon = modulo.icono;
-
           return (
             <button
               key={modulo.titulo}
-              className="cfgsys-card"
               type="button"
-              onClick={() => navigate(modulo.ruta)}
+              className={`config-sistema-card ${modulo.disabled ? "disabled" : ""}`}
+              onClick={() => abrirModulo(modulo)}
+              disabled={modulo.disabled}
             >
-              <div className="cfgsys-card-top">
-                <span className="cfgsys-icon"><Icon size={22} /></span>
-                <span className={`cfgsys-status ${modulo.estado === "Próximo" ? "next" : "active"}`}>
-                  {modulo.estado}
-                </span>
+              <div className="config-sistema-icon">
+                <Icon size={22} />
               </div>
 
-              <h2>{modulo.titulo}</h2>
-              <p>{modulo.descripcion}</p>
-
-              <div className="cfgsys-card-action">
-                <span>Abrir módulo</span>
-                <ArrowRight size={17} />
+              <div className="config-sistema-content">
+                <div className="config-sistema-title-row">
+                  <h3>{modulo.titulo}</h3>
+                  <span className={modulo.disabled ? "badge-pending" : "badge-active"}>
+                    {modulo.estado}
+                  </span>
+                </div>
+                <p>{modulo.descripcion}</p>
               </div>
+
+              {!modulo.disabled && <ChevronRight size={20} className="config-sistema-arrow" />}
             </button>
           );
         })}
