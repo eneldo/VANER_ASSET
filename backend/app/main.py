@@ -17,6 +17,7 @@ from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.automation.scheduler import iniciar_scheduler_sga, detener_scheduler_sga
 
+
 # =========================================================
 # ROUTERS DEL SISTEMA
 # =========================================================
@@ -46,6 +47,8 @@ from app.routers import configuracion
 from app.routers import configuracion_saas
 from app.routers import automatizacion
 from app.routers import backups_inteligentes
+from app.routers import smtp_inteligente  # Fase 34.2.3 - SMTP Inteligente SaaS PRO
+
 
 
 # =========================================================
@@ -134,7 +137,7 @@ app.include_router(configuracion_saas.router)
 app.include_router(automatizacion.router)
 app.include_router(auditoria_pro.router)
 app.include_router(backups_inteligentes.router)
-
+app.include_router(smtp_inteligente.router)
 
 # =========================================================
 # FASE 34.2.1 - SCHEDULER AUTOMATIZACIÓN SAAS PRO

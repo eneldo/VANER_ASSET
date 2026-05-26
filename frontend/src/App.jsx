@@ -11,6 +11,9 @@ import AppLoader from "./components/AppLoader";
 import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
 import ConfiguracionInteligentePage from "./pages/admin/ConfiguracionPage";
 import BackupsInteligentesPage from "./pages/admin/BackupsInteligentesPage";
+import SMTPInteligentePage from "./pages/admin/SMTPInteligentePage";
+
+
 
 import "./styles/performance-pro.css";
 
@@ -76,6 +79,7 @@ function App() {
           <Route path="/admin/auditoria" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AuditoriaPage /></ProtectedRoute>} />
           <Route path="/admin/automatizacion" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><AutomatizacionPage /></ProtectedRoute>} />
           <Route path="/admin/backups" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><BackupsInteligentesPage /></ProtectedRoute>} />
+          <Route path="/admin/smtp" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><SMTPInteligentePage /></ProtectedRoute>} />
           <Route path="/tecnico/dashboard" element={<ProtectedRoute allowedRoles={TECNICO_ROLES}><DashboardTecnico /></ProtectedRoute>} />
           <Route path="/tecnico/formato-mantenimiento/:mantenimientoId" element={<ProtectedRoute allowedRoles={TECNICO_ROLES}><FormatoMantenimiento /></ProtectedRoute>} />
 

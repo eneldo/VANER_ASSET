@@ -1,0 +1,282 @@
+/* ============================================================
+   SMTP Inteligente SaaS PRO
+   Archivo: frontend/src/styles/smtp-inteligente-saas-pro.css
+   FASE 34.2.3
+============================================================ */
+
+.smtp-pro-page {
+  min-height: 100vh;
+  padding: 28px;
+  background: #f3f6fb;
+  color: #0f172a;
+}
+
+.smtp-hero,
+.smtp-card,
+.smtp-panel,
+.smtp-history,
+.smtp-alert {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.smtp-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  background: #fff;
+  border-radius: 24px;
+  margin-bottom: 22px;
+}
+
+.smtp-kicker {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.smtp-hero h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.smtp-hero p,
+.smtp-panel p,
+.smtp-history p {
+  margin: 8px 0 0;
+  color: #52627a;
+  font-weight: 600;
+}
+
+.smtp-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.smtp-card {
+  background: #fff;
+  border-radius: 22px;
+  padding: 22px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.smtp-card svg {
+  color: #2563eb;
+}
+
+.smtp-card span,
+.smtp-card small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.smtp-card strong {
+  font-size: 25px;
+  font-weight: 950;
+}
+
+.smtp-card strong.ok {
+  color: #16a34a;
+}
+
+.smtp-card strong.warn {
+  color: #f59e0b;
+}
+
+.smtp-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+.smtp-panel,
+.smtp-history {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.smtp-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.smtp-panel h2,
+.smtp-history h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.smtp-panel label {
+  display: block;
+  margin: 14px 0 7px;
+  font-weight: 900;
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.smtp-panel input,
+.smtp-panel textarea,
+.smtp-panel select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 13px 15px;
+  font-weight: 700;
+  outline: none;
+  background: #f8fafc;
+}
+
+.smtp-panel input:focus,
+.smtp-panel textarea:focus,
+.smtp-panel select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.smtp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-weight: 950;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.smtp-btn:hover {
+  transform: translateY(-1px);
+}
+
+.smtp-btn.primary {
+  margin-top: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  box-shadow: 0 16px 28px rgba(37, 99, 235, 0.25);
+}
+
+.smtp-btn.secondary {
+  color: #0f172a;
+  background: #edf4ff;
+}
+
+.smtp-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  font-weight: 900;
+}
+
+.smtp-alert.error {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.smtp-alert.success {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #bbf7d0;
+}
+
+.smtp-table-wrap {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+}
+
+.smtp-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.smtp-table-wrap th,
+.smtp-table-wrap td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.smtp-table-wrap th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 950;
+}
+
+.smtp-empty {
+  text-align: center !important;
+  color: #64748b;
+  font-weight: 900;
+  padding: 30px !important;
+}
+
+.smtp-badge {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 11px;
+}
+
+.smtp-badge.enviado {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.smtp-badge.error {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.smtp-badge.pendiente,
+.smtp-badge.enviando {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+@media (max-width: 1100px) {
+  .smtp-grid-cards,
+  .smtp-panels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .smtp-pro-page {
+    padding: 16px;
+  }
+
+  .smtp-hero,
+  .smtp-panel-head {
+    flex-direction: column;
+  }
+
+  .smtp-grid-cards,
+  .smtp-panels {
+    grid-template-columns: 1fr;
+  }
+}
