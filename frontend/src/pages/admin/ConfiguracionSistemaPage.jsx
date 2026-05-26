@@ -1,146 +1,129 @@
 // =========================================================
-// CONFIGURACIÓN SISTEMA - SGA SaaS PRO
-// Archivo: frontend/src/pages/admin/ConfiguracionSistemaPage.jsx
-// Agrupa configuración, automatización, backups, SMTP y futuros módulos.
+// CONFIGURACIÓN SISTEMA PRO
+// Archivo:
+// frontend/src/pages/admin/ConfiguracionSistemaPage.jsx
 // =========================================================
 
 import { useNavigate } from "react-router-dom";
+
 import {
   Settings,
   SlidersHorizontal,
   Archive,
   Mail,
-  Activity,
-  Server,
   ShieldCheck,
-  MessageCircle,
-  FileText,
-  ChevronRight,
+  Cpu,
 } from "lucide-react";
+
+import AdminLayout from "./AdminLayout";
 
 import "../../styles/configuracion-sistema.css";
 
 export default function ConfiguracionSistemaPage() {
   const navigate = useNavigate();
 
-  const modulos = [
+  const cards = [
     {
-      titulo: "Configuración General",
-      descripcion: "Parámetros principales del sistema y opciones base.",
-      icono: Settings,
+      titulo: "Centro Sistema",
+      descripcion:
+        "Panel central de administración del sistema SaaS.",
+      icono: <Cpu size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
     },
+
+    {
+      titulo: "Configuración General",
+      descripcion:
+        "Parámetros generales, logos, SMTP y configuración global.",
+      icono: <Settings size={24} />,
+      ruta: "/admin/configuracion",
+      estado: "Activo",
+    },
+
     {
       titulo: "Configuración Inteligente",
-      descripcion: "Logo, SMTP base, colores, evidencias, backups y notificaciones.",
-      icono: SlidersHorizontal,
+      descripcion:
+        "Automatización SaaS, scheduler y comportamiento inteligente.",
+      icono: <SlidersHorizontal size={24} />,
       ruta: "/admin/configuracion-inteligente",
       estado: "Activo",
     },
-    {
-      titulo: "Automatización SaaS",
-      descripcion: "Scheduler, tareas automáticas, estados y módulos ON/OFF.",
-      icono: Activity,
-      ruta: "/admin/automatizacion",
-      estado: "Activo",
-    },
+
     {
       titulo: "Backups Inteligentes",
-      descripcion: "Respaldo de PostgreSQL, evidencias y paquetes descargables.",
-      icono: Archive,
+      descripcion:
+        "Respaldos PostgreSQL, uploads y restauración segura.",
+      icono: <Archive size={24} />,
       ruta: "/admin/backups",
       estado: "Activo",
     },
+
     {
       titulo: "SMTP Inteligente",
-      descripcion: "Correos corporativos, plantillas, pruebas y notificaciones.",
-      icono: Mail,
+      descripcion:
+        "Correos corporativos, plantillas, pruebas y notificaciones.",
+      icono: <Mail size={24} />,
       ruta: "/admin/smtp-inteligente",
       estado: "Activo",
     },
+
     {
-      titulo: "WhatsApp",
-      descripcion: "Preparado para integración con proveedor WhatsApp empresarial.",
-      icono: MessageCircle,
-      ruta: "#",
-      estado: "Próximamente",
-      disabled: true,
-    },
-    {
-      titulo: "Monitor / DevOps",
-      descripcion: "Estado de VPS, servicios, PostgreSQL, API y frontend.",
-      icono: Server,
-      ruta: "#",
-      estado: "Próximamente",
-      disabled: true,
-    },
-    {
-      titulo: "Logs Inteligentes",
-      descripcion: "Auditoría técnica, errores, eventos y trazabilidad operativa.",
-      icono: FileText,
-      ruta: "#",
-      estado: "Próximamente",
-      disabled: true,
-    },
-    {
-      titulo: "Seguridad Sistema",
-      descripcion: "Hardening, políticas, sesiones, recuperación y control avanzado.",
-      icono: ShieldCheck,
-      ruta: "#",
-      estado: "Próximamente",
-      disabled: true,
+      titulo: "Seguridad PRO",
+      descripcion:
+        "Auditoría, permisos, hardening y monitoreo.",
+      icono: <ShieldCheck size={24} />,
+      ruta: "/admin/auditoria",
+      estado: "Activo",
     },
   ];
 
-  const abrirModulo = (modulo) => {
-    if (modulo.disabled || modulo.ruta === "#") return;
-    navigate(modulo.ruta);
-  };
-
   return (
-    <main className="config-sistema-page">
-      <section className="config-sistema-hero">
-        <div>
-          <p className="config-sistema-kicker">SGA EMPRESARIAL · SISTEMA</p>
-          <h1>Configuración Sistema</h1>
-          <p>
-            Centro unificado para módulos técnicos, automatización, backups,
-            SMTP, monitoreo y futuras integraciones SaaS PRO.
-          </p>
+    <AdminLayout>
+      <div className="config-sistema-page">
+        <div className="config-sistema-header">
+          <div>
+            <span className="config-badge">
+              CONFIGURACIÓN SISTEMA
+            </span>
+
+            <h1>Centro de Configuración SaaS PRO</h1>
+
+            <p>
+              Gestión centralizada de módulos inteligentes,
+              automatización, seguridad y servicios empresariales.
+            </p>
+          </div>
         </div>
-      </section>
 
-      <section className="config-sistema-grid">
-        {modulos.map((modulo) => {
-          const Icon = modulo.icono;
-          return (
-            <button
-              key={modulo.titulo}
-              type="button"
-              className={`config-sistema-card ${modulo.disabled ? "disabled" : ""}`}
-              onClick={() => abrirModulo(modulo)}
-              disabled={modulo.disabled}
+        <div className="config-grid">
+          {cards.map((item, index) => (
+            <div
+              key={index}
+              className="config-card"
+              onClick={() => navigate(item.ruta)}
             >
-              <div className="config-sistema-icon">
-                <Icon size={22} />
-              </div>
-
-              <div className="config-sistema-content">
-                <div className="config-sistema-title-row">
-                  <h3>{modulo.titulo}</h3>
-                  <span className={modulo.disabled ? "badge-pending" : "badge-active"}>
-                    {modulo.estado}
-                  </span>
+              <div className="config-card-top">
+                <div className="config-icon">
+                  {item.icono}
                 </div>
-                <p>{modulo.descripcion}</p>
+
+                <span className="config-status">
+                  {item.estado}
+                </span>
               </div>
 
-              {!modulo.disabled && <ChevronRight size={20} className="config-sistema-arrow" />}
-            </button>
-          );
-        })}
-      </section>
-    </main>
+              <h3>{item.titulo}</h3>
+
+              <p>{item.descripcion}</p>
+
+              <div className="config-arrow">
+                →
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AdminLayout>
   );
 }
