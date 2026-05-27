@@ -1,223 +1,215 @@
 /* =========================================================
    CONFIGURACIÓN SISTEMA SaaS PRO
-   ========================================================= */
+========================================================= */
 
 .config-sistema-page {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  min-height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
   background: #f4f7fb;
 }
 
 /* =========================================================
    HEADER
-   ========================================================= */
+========================================================= */
 
 .config-sistema-header {
-  background: linear-gradient(135deg, #1d3fa3, #2954d1);
-  border-radius: 28px;
-  padding: 34px;
-  color: white;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  border-radius: 28px;
+  padding: 32px;
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.25);
 }
 
-.config-sistema-header::before {
+.config-sistema-header::after {
   content: "";
   position: absolute;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
   background: rgba(255,255,255,0.08);
-  right: -90px;
-  top: -90px;
+  border-radius: 50%;
 }
 
-.config-header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  position: relative;
-  z-index: 2;
-}
-
-.config-badge {
-  display: inline-block;
-  padding: 7px 15px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.16);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .6px;
-  margin-bottom: 14px;
-}
-
-.config-sistema-header h1 {
-  font-size: 52px;
-  line-height: 1.1;
+.config-header-top h1 {
   margin: 0;
+  font-size: 42px;
   font-weight: 900;
 }
 
-.config-sistema-header p {
-  margin-top: 14px;
-  max-width: 900px;
-  color: rgba(255,255,255,0.92);
-  line-height: 1.7;
-  font-size: 16px;
-}
-
-/* =========================================================
-   BOTÓN MENÚ
-   ========================================================= */
-
-.config-menu-btn {
-  border: none;
-  background: rgba(255,255,255,0.18);
-  color: white;
-  padding: 14px 18px;
-  border-radius: 18px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: .25s ease;
-  backdrop-filter: blur(12px);
-  min-width: 130px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-  z-index: 50;
-  position: relative;
-}
-
-.config-menu-btn svg {
-  flex-shrink: 0;
-}
-
-.config-menu-btn:hover {
-  background: rgba(255,255,255,0.28);
-  transform: translateY(-2px);
+.config-header-top p {
+  margin-top: 10px;
+  font-size: 15px;
+  opacity: 0.92;
 }
 
 /* =========================================================
    GRID
-   ========================================================= */
+========================================================= */
 
 .config-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 22px;
+
+  /* MÁS COMPACTO */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+
+  gap: 18px;
 }
 
 /* =========================================================
    CARD
-   ========================================================= */
+========================================================= */
 
 .config-card {
-  background: white;
-  border-radius: 24px;
-  padding: 24px;
   position: relative;
+
+  background: white;
+
+  border-radius: 22px;
+
+  padding: 20px;
+
+  min-height: 190px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 6px 18px rgba(15, 23, 42, 0.06);
+
+  transition: all 0.25s ease;
+
   cursor: pointer;
-  transition: .25s ease;
-  border: 1px solid #e6ecf5;
+
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  min-height: 220px;
 }
 
 .config-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(0,0,0,0.08);
+
+  box-shadow:
+    0 18px 35px rgba(37, 99, 235, 0.14);
+
+  border-color: #bfdbfe;
 }
+
+/* =========================================================
+   TOP
+========================================================= */
 
 .config-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
+/* =========================================================
+   ICON
+========================================================= */
+
 .config-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
+  width: 52px;
+  height: 52px;
+
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+
   color: white;
-  box-shadow: 0 6px 14px rgba(37,99,235,.25);
+
+  box-shadow:
+    0 10px 20px rgba(37, 99, 235, 0.25);
 }
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 .config-status {
-  padding: 6px 12px;
-  border-radius: 999px;
   background: #dcfce7;
-  color: #166534;
-  font-size: 12px;
-  font-weight: 700;
-}
+  color: #15803d;
 
-.config-card h3 {
-  font-size: 33px;
-  line-height: 1.1;
-  margin: 0 0 14px;
-  color: #0f172a;
+  padding: 5px 12px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+
   font-weight: 800;
 }
 
-.config-card p {
-  color: #475569;
-  line-height: 1.7;
-  margin: 0;
-  font-size: 15px;
+/* =========================================================
+   TITULO
+========================================================= */
+
+.config-card h3 {
+  margin: 0 0 10px;
+
+  font-size: 19px;
+
+  font-weight: 900;
+
+  line-height: 1.2;
+
+  color: #0f172a;
 }
 
-.config-arrow {
-  position: absolute;
-  right: 24px;
-  bottom: 20px;
-  font-size: 30px;
-  color: #2563eb;
-  font-weight: 900;
+/* =========================================================
+   DESCRIPCIÓN
+========================================================= */
+
+.config-card p {
+  margin: 0;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+
+  color: #64748b;
+}
+
+/* =========================================================
+   BOTÓN MOBILE
+========================================================= */
+
+.config-menu-btn {
+  display: none;
 }
 
 /* =========================================================
    RESPONSIVE
-   ========================================================= */
+========================================================= */
 
-@media (max-width: 992px) {
-  .config-header-top {
-    flex-direction: column;
+@media (max-width: 1200px) {
+
+  .config-grid {
+    grid-template-columns:
+      repeat(auto-fill, minmax(220px, 1fr));
   }
 
-  .config-sistema-header h1 {
-    font-size: 40px;
-  }
 }
 
 @media (max-width: 768px) {
 
   .config-sistema-page {
-    padding: 16px;
+    padding: 14px;
   }
 
   .config-sistema-header {
     padding: 24px;
+    border-radius: 22px;
   }
 
-  .config-sistema-header h1 {
+  .config-header-top h1 {
     font-size: 30px;
-  }
-
-  .config-sistema-header p {
-    font-size: 14px;
   }
 
   .config-grid {
@@ -228,19 +220,4 @@
     min-height: auto;
   }
 
-  .config-card h3 {
-    font-size: 26px;
-  }
-
-  .config-menu-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-
-@media (min-width: 992px) {
-  .config-menu-btn {
-    display: none;
-  }
 }
