@@ -5,7 +5,19 @@
 # ============================================================
 
 import uuid
-from sqlalchemy import Column, String, Boolean, Integer, Text, Date, DateTime, ForeignKey, JSON
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+)
+
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -17,13 +29,31 @@ class SchedulerRegla(Base):
 
     __tablename__ = "scheduler_reglas_mantenimiento"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
 
     nombre = Column(String(180), nullable=False)
     descripcion = Column(Text, nullable=True)
 
-    equipo_id = Column(Integer, ForeignKey("equipos.id", ondelete="CASCADE"), nullable=False, index=True)
-    tecnico_id = Column(Integer, ForeignKey("tecnicos.id", ondelete="SET NULL"), nullable=True, index=True)
+    # IMPORTANTE:
+    # En el proyecto SGA SaaS, equipos.id y tecnicos.id son UUID.
+    equipo_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("equipos.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    tecnico_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tecnicos.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     tipo_mantenimiento = Column(String(60), nullable=False, default="PREVENTIVO")
     frecuencia_dias = Column(Integer, nullable=False, default=30)
@@ -33,17 +63,28 @@ class SchedulerRegla(Base):
     prioridad = Column(String(30), nullable=False, default="MEDIA")
     estado_inicial = Column(String(30), nullable=False, default="PROGRAMADO")
 
-    # MANUAL: no genera; SEMIAUTOMATICO: crea sugerencia; AUTOMATICO: crea mantenimiento.
+    # MANUAL:
+    #   No genera nada automáticamente.
+    # SEMIAUTOMATICO:
+    #   Crea sugerencias para aprobación.
+    # AUTOMATICO:
+    #   Crea mantenimientos directamente.
     modo = Column(String(30), nullable=False, default="SEMIAUTOMATICO")
     activo = Column(Boolean, nullable=False, default=True)
 
+    # En tu tabla mantenimientos el id sigue siendo INTEGER.
     ultimo_mantenimiento_id = Column(Integer, nullable=True)
+
     ultima_ejecucion = Column(DateTime(timezone=True), nullable=True)
 
     configuracion = Column(JSON, nullable=True, default=dict)
 
     creado_en = Column(DateTime(timezone=True), server_default=func.now())
-    actualizado_en = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    actualizado_en = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 
 class SchedulerSugerencia(Base):
@@ -51,22 +92,55 @@ class SchedulerSugerencia(Base):
 
     __tablename__ = "scheduler_sugerencias_mantenimiento"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
 
-    regla_id = Column(UUID(as_uuid=True), ForeignKey("scheduler_reglas_mantenimiento.id", ondelete="CASCADE"), nullable=False, index=True)
-    equipo_id = Column(Integer, ForeignKey("equipos.id", ondelete="CASCADE"), nullable=False, index=True)
-    tecnico_id = Column(Integer, ForeignKey("tecnicos.id", ondelete="SET NULL"), nullable=True)
+    regla_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("scheduler_reglas_mantenimiento.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # IMPORTANTE:
+    # En el proyecto SGA SaaS, equipos.id y tecnicos.id son UUID.
+    equipo_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("equipos.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    tecnico_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("tecnicos.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     tipo_mantenimiento = Column(String(60), nullable=False, default="PREVENTIVO")
     fecha_programada = Column(Date, nullable=False, index=True)
     prioridad = Column(String(30), nullable=False, default="MEDIA")
 
-    estado = Column(String(30), nullable=False, default="PENDIENTE")  # PENDIENTE/APROBADA/RECHAZADA/GENERADA
+    # Estados:
+    # PENDIENTE / APROBADA / RECHAZADA / GENERADA
+    estado = Column(String(30), nullable=False, default="PENDIENTE")
+
     mensaje = Column(Text, nullable=True)
+
+    # En tu tabla mantenimientos el id sigue siendo INTEGER.
     mantenimiento_id = Column(Integer, nullable=True)
 
     creado_en = Column(DateTime(timezone=True), server_default=func.now())
-    actualizado_en = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    actualizado_en = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 
 class SchedulerLog(Base):
@@ -74,9 +148,20 @@ class SchedulerLog(Base):
 
     __tablename__ = "scheduler_inteligente_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
+    )
+
     nivel = Column(String(20), nullable=False, default="INFO")
     evento = Column(String(150), nullable=False)
     mensaje = Column(Text, nullable=True)
     metadata_json = Column(JSON, nullable=True, default=dict)
-    creado_en = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    creado_en = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        index=True,
+    )
