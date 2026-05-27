@@ -1,7 +1,7 @@
 // =========================================================
 // SIDEBAR RESPONSIVE ENTERPRISE PRO SGA
 // Archivo: frontend/src/components/Sidebar.jsx
-// Fix Configuración Sistema - Menú limpio sin duplicados
+// Actualizado FASE 34.2.9 - Recovery & Restore PRO
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   X,
   Settings,
+  DatabaseBackup,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -147,10 +148,14 @@ export default function Sidebar({ user, onLogout, isOpen = false, onClose }) {
               <span>Auditoría PRO</span>
             </NavLink>
 
-            {/* Módulos técnicos agrupados aquí para evitar saturar el sidebar */}
             <NavLink to="/admin/configuracion-sistema" onClick={closeMobile} className={itemClass}>
               <Settings size={17} />
               <span>Configuración Sistema</span>
+            </NavLink>
+
+            <NavLink to="/admin/recovery" onClick={closeMobile} className={itemClass}>
+              <DatabaseBackup size={17} />
+              <span>Recovery & Restore</span>
             </NavLink>
           </>
         )}
