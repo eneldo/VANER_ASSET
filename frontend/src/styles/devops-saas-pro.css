@@ -1,0 +1,344 @@
+/* ============================================================
+   DEVOPS SAAS PRO - FASE 34.2.6
+   Archivo: frontend/src/styles/devops-saas-pro.css
+   ============================================================ */
+
+.devops-page {
+  padding: 28px;
+  background: #f4f7fb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.devops-hero {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb, #06b6d4);
+  color: white;
+  border-radius: 28px;
+  padding: 36px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+}
+
+.devops-badge {
+  display: inline-flex;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 16px;
+}
+
+.devops-hero h1 {
+  margin: 0;
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.devops-hero p {
+  max-width: 980px;
+  margin: 18px 0 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.devops-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.devops-actions button,
+.devops-row-actions button {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.devops-status {
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 900;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.devops-status.limitado {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.devops-alert {
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-weight: 800;
+}
+
+.devops-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.devops-kpi,
+.devops-card {
+  background: white;
+  border: 1px solid #e6edf7;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.devops-kpi {
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.devops-kpi-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+}
+
+.devops-kpi svg {
+  width: 24px;
+  height: 24px;
+}
+
+.devops-kpi span {
+  display: block;
+  color: #64748b;
+  font-weight: 900;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.devops-kpi strong {
+  display: block;
+  font-size: 26px;
+  color: #0f172a;
+  margin-top: 4px;
+}
+
+.devops-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.devops-card {
+  padding: 24px;
+}
+
+.devops-card h2,
+.devops-section-title h2 {
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.devops-info-list p {
+  margin: 10px 0;
+  color: #334155;
+  font-weight: 600;
+}
+
+.devops-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.status-chip {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.status-chip span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-chip strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+}
+
+.status-chip.online {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.status-chip.warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.devops-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.devops-section-title small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.devops-table-wrap {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+}
+
+.devops-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.devops-table thead {
+  background: #eff6ff;
+}
+
+.devops-table th,
+.devops-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.devops-table th {
+  color: #1e3a8a;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 950;
+}
+
+.service-state {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.service-state.up {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.devops-ports {
+  max-width: 360px;
+  white-space: normal;
+  color: #475569;
+}
+
+.devops-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.devops-row-actions button {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 9px 12px;
+  font-size: 12px;
+}
+
+.devops-empty {
+  text-align: center;
+  padding: 34px !important;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.logs-card {
+  max-height: 520px;
+  overflow: hidden;
+}
+
+.devops-log-viewer {
+  background: #020617;
+  color: #d1fae5;
+  border-radius: 18px;
+  padding: 18px;
+  overflow: auto;
+  max-height: 430px;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+@media (max-width: 1200px) {
+  .devops-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .devops-grid-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .devops-page {
+    padding: 16px;
+  }
+
+  .devops-hero {
+    flex-direction: column;
+    padding: 24px;
+  }
+
+  .devops-hero h1 {
+    font-size: 34px;
+  }
+
+  .devops-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .devops-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .devops-status-grid {
+    grid-template-columns: 1fr;
+  }
+}

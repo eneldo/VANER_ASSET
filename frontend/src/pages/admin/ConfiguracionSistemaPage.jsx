@@ -16,6 +16,7 @@ import {
   Menu,
   Activity,
   FileSearch,
+  ServerCog,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -81,6 +82,14 @@ export default function ConfiguracionSistemaPage() {
         "Visor de eventos, errores, automatizaciones y trazabilidad del sistema.",
       icono: <FileSearch size={24} />,
       ruta: "/admin/logs-inteligentes",
+      estado: "Activo",
+    },
+    {
+      titulo: "DevOps SaaS PRO",
+      descripcion:
+        "Estado de contenedores, servicios, logs rápidos y salud de infraestructura.",
+      icono: <ServerCog size={24} />,
+      ruta: "/admin/devops",
       estado: "Activo",
     },
 
