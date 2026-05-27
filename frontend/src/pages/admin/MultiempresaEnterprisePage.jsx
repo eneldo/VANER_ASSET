@@ -1,7 +1,5 @@
 // ============================================================
 // MULTIEMPRESA ENTERPRISE PRO
-// Archivo: frontend/src/pages/admin/MultiempresaEnterprisePage.jsx
-// FASE 34.3 — Panel Multiempresa Enterprise PRO
 // ============================================================
 
 import { useEffect, useState } from "react";
@@ -22,9 +20,11 @@ import axios from "../../api/axios";
 import "../../styles/multiempresa-enterprise.css";
 
 export default function MultiempresaEnterprisePage() {
+
   const navigate = useNavigate();
 
   const [empresas, setEmpresas] = useState([]);
+
   const [dashboard, setDashboard] = useState({
     empresas: 0,
     usuarios: 0,
@@ -35,11 +35,13 @@ export default function MultiempresaEnterprisePage() {
   const [loading, setLoading] = useState(true);
 
   // ============================================================
-  // CARGAR DATOS REALES DESDE POSTGRESQL
+  // CARGAR DATOS
   // ============================================================
 
   const cargarDatos = async () => {
+
     try {
+
       setLoading(true);
 
       const [dashboardRes, empresasRes] = await Promise.all([
@@ -49,13 +51,25 @@ export default function MultiempresaEnterprisePage() {
 
       setDashboard(dashboardRes.data);
 
-      setEmpresas(empresasRes.data?.empresas || []);
+      setEmpresas(
+        empresasRes.data?.empresas || []
+      );
+
     } catch (error) {
-      console.error("Error cargando Multiempresa Enterprise:", error);
+
+      console.error(
+        "Error cargando multiempresa:",
+        error
+      );
+
       setEmpresas([]);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
   useEffect(() => {
@@ -63,19 +77,61 @@ export default function MultiempresaEnterprisePage() {
   }, []);
 
   // ============================================================
-  // IR A EMPRESA REAL
+  // NAVEGACIÓN INTELIGENTE
   // ============================================================
 
   const abrirEmpresa = (empresaId) => {
-    /*
-      Si tu EmpresasPage tiene edición por query string,
-      aquí se envía el ID real de la empresa.
-    */
-    navigate(`/admin/empresas?empresa_id=${empresaId}`);
+
+    navigate(
+      `/admin/empresas?empresa_id=${empresaId}`
+    );
+
+  };
+
+  const abrirSedes = (empresaId, e) => {
+
+    e.stopPropagation();
+
+    navigate(
+      `/admin/sedes?empresa_id=${empresaId}`
+    );
+
+  };
+
+  const abrirEquipos = (empresaId, e) => {
+
+    e.stopPropagation();
+
+    navigate(
+      `/admin/equipos?empresa_id=${empresaId}`
+    );
+
+  };
+
+  const abrirUsuarios = (empresaId, e) => {
+
+    e.stopPropagation();
+
+    navigate(
+      `/admin/usuarios?empresa_id=${empresaId}`
+    );
+
+  };
+
+  const abrirMantenimientos = (empresaId, e) => {
+
+    e.stopPropagation();
+
+    navigate(
+      `/admin/mantenimientos?empresa_id=${empresaId}`
+    );
+
   };
 
   return (
+
     <AdminLayout>
+
       <div className="multiempresa-page">
 
         {/* ================================================= */}
@@ -83,17 +139,24 @@ export default function MultiempresaEnterprisePage() {
         {/* ================================================= */}
 
         <div className="multiempresa-header">
+
           <div>
+
             <span className="multiempresa-badge">
               MULTIEMPRESA ENTERPRISE
             </span>
 
-            <h1>Panel Multiempresa Enterprise PRO</h1>
+            <h1>
+              Panel Multiempresa Enterprise PRO
+            </h1>
 
             <p>
-              Gestión SaaS real de empresas, sedes, usuarios,
-              equipos y mantenimientos con aislamiento por empresa.
+              Gestión SaaS real de empresas,
+              sedes, usuarios, equipos y
+              mantenimientos con aislamiento
+              por empresa.
             </p>
+
           </div>
 
           <button
@@ -101,75 +164,118 @@ export default function MultiempresaEnterprisePage() {
             onClick={cargarDatos}
             disabled={loading}
           >
+
             <RefreshCw size={18} />
-            {loading ? "Actualizando..." : "Actualizar"}
+
+            {loading
+              ? "Actualizando..."
+              : "Actualizar"}
+
           </button>
+
         </div>
 
         {/* ================================================= */}
-        {/* KPIS GLOBALES */}
+        {/* KPI GLOBALES */}
         {/* ================================================= */}
 
         <div className="multiempresa-kpi-grid">
 
           <div className="multiempresa-kpi-card">
+
             <Building2 size={22} />
+
             <div>
               <span>Empresas</span>
-              <strong>{dashboard.empresas || 0}</strong>
+              <strong>
+                {dashboard.empresas || 0}
+              </strong>
             </div>
+
           </div>
 
           <div className="multiempresa-kpi-card">
+
             <Users size={22} />
+
             <div>
               <span>Usuarios</span>
-              <strong>{dashboard.usuarios || 0}</strong>
+              <strong>
+                {dashboard.usuarios || 0}
+              </strong>
             </div>
+
           </div>
 
           <div className="multiempresa-kpi-card">
+
             <MonitorCog size={22} />
+
             <div>
               <span>Equipos</span>
-              <strong>{dashboard.equipos || 0}</strong>
+              <strong>
+                {dashboard.equipos || 0}
+              </strong>
             </div>
+
           </div>
 
           <div className="multiempresa-kpi-card">
+
             <Wrench size={22} />
+
             <div>
               <span>Mantenimientos</span>
-              <strong>{dashboard.mantenimientos || 0}</strong>
+              <strong>
+                {dashboard.mantenimientos || 0}
+              </strong>
             </div>
+
           </div>
 
         </div>
 
         {/* ================================================= */}
-        {/* EMPRESAS REALES */}
+        {/* EMPRESAS */}
         {/* ================================================= */}
 
         {loading ? (
+
           <div className="multiempresa-empty">
-            Cargando empresas reales desde PostgreSQL...
+            Cargando empresas...
           </div>
+
         ) : empresas.length === 0 ? (
+
           <div className="multiempresa-empty">
-            No hay empresas creadas en el sistema.
+            No existen empresas registradas.
           </div>
+
         ) : (
+
           <div className="multiempresa-grid">
+
             {empresas.map((empresa) => (
+
               <button
+                key={empresa.id}
                 type="button"
                 className="empresa-card"
-                key={empresa.id}
-                onClick={() => abrirEmpresa(empresa.id)}
+                onClick={() =>
+                  abrirEmpresa(empresa.id)
+                }
               >
+
+                {/* ===================================== */}
+                {/* TOP */}
+                {/* ===================================== */}
+
                 <div className="empresa-top">
+
                   <div className="empresa-icon">
+
                     <Building2 size={22} />
+
                   </div>
 
                   <span
@@ -179,59 +285,152 @@ export default function MultiempresaEnterprisePage() {
                         : "empresa-status inactiva"
                     }
                   >
+
                     {empresa.estado}
+
                   </span>
+
                 </div>
 
+                {/* ===================================== */}
+                {/* INFO */}
+                {/* ===================================== */}
+
                 <div className="empresa-info">
-                  <h3>{empresa.nombre}</h3>
+
+                  <h3>
+                    {empresa.nombre}
+                  </h3>
 
                   <p>
                     {empresa.nit
                       ? `NIT: ${empresa.nit}`
-                      : "Sin NIT registrado"}
+                      : "Sin NIT"}
                   </p>
 
                   <small>
-                    {empresa.correo || "Sin correo registrado"}
+                    {empresa.correo ||
+                      "Sin correo"}
                   </small>
+
                 </div>
 
+                {/* ===================================== */}
+                {/* KPIS CLICKABLES */}
+                {/* ===================================== */}
+
                 <div className="empresa-body">
-                  <div>
+
+                  {/* SEDES */}
+
+                  <button
+                    type="button"
+                    className="empresa-kpi-btn"
+                    onClick={(e) =>
+                      abrirSedes(
+                        empresa.id,
+                        e
+                      )
+                    }
+                  >
+
                     <MapPin size={16} />
-                    <strong>{empresa.sedes}</strong>
+
+                    <strong>
+                      {empresa.sedes}
+                    </strong>
+
                     <p>Sedes</p>
-                  </div>
 
-                  <div>
+                  </button>
+
+                  {/* EQUIPOS */}
+
+                  <button
+                    type="button"
+                    className="empresa-kpi-btn"
+                    onClick={(e) =>
+                      abrirEquipos(
+                        empresa.id,
+                        e
+                      )
+                    }
+                  >
+
                     <MonitorCog size={16} />
-                    <strong>{empresa.equipos}</strong>
+
+                    <strong>
+                      {empresa.equipos}
+                    </strong>
+
                     <p>Equipos</p>
-                  </div>
 
-                  <div>
+                  </button>
+
+                  {/* USUARIOS */}
+
+                  <button
+                    type="button"
+                    className="empresa-kpi-btn"
+                    onClick={(e) =>
+                      abrirUsuarios(
+                        empresa.id,
+                        e
+                      )
+                    }
+                  >
+
                     <Users size={16} />
-                    <strong>{empresa.usuarios}</strong>
-                    <p>Usuarios</p>
-                  </div>
 
-                  <div>
+                    <strong>
+                      {empresa.usuarios}
+                    </strong>
+
+                    <p>Usuarios</p>
+
+                  </button>
+
+                  {/* MANTENIMIENTOS */}
+
+                  <button
+                    type="button"
+                    className="empresa-kpi-btn"
+                    onClick={(e) =>
+                      abrirMantenimientos(
+                        empresa.id,
+                        e
+                      )
+                    }
+                  >
+
                     <Wrench size={16} />
-                    <strong>{empresa.mantenimientos}</strong>
+
+                    <strong>
+                      {empresa.mantenimientos}
+                    </strong>
+
                     <p>Manten.</p>
-                  </div>
+
+                  </button>
+
                 </div>
 
                 <div className="empresa-action">
-                  Ver empresa
+                  Ver empresa completa
                 </div>
+
               </button>
+
             ))}
+
           </div>
+
         )}
 
       </div>
+
     </AdminLayout>
+
   );
+
 }
