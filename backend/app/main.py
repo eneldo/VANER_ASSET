@@ -53,6 +53,8 @@ from app.routers import logs_inteligentes  # Fase 34.2.4 - Logs Inteligentes Saa
 from app.routers import devops_saas  # Fase 34.2.5 - DevOps SaaS PRO
 from app.routers import scheduler_inteligente  # Fase 34.2.6 - Scheduler Inteligente SaaS PRO
 from app.routers import recovery_restore  # Fase 34.2.7 - Recovery & Restore SaaS PRO
+from app.routers import multiempresa_enterprise  # Fase 34.2.8 - Multiempresa & Enterprise SaaS PRO
+
 
 
 
@@ -149,6 +151,7 @@ app.include_router(logs_inteligentes.router)
 app.include_router(devops_saas.router)
 app.include_router(scheduler_inteligente.router)
 app.include_router(recovery_restore.router)
+app.include_router(multiempresa_enterprise.router)
 # =========================================================
 # FASE 34.2.1 - SCHEDULER AUTOMATIZACIÓN SAAS PRO
 # =========================================================

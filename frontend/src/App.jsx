@@ -41,6 +41,7 @@ import LogsInteligentesPage from "./pages/admin/LogsInteligentesPage";
 import DevOpsSaasPage from "./pages/admin/DevOpsSaasPage";
 import SchedulerInteligentePage from "./pages/admin/SchedulerInteligentePage";
 import RecoveryRestorePage from "./pages/admin/RecoveryRestorePage";
+import MultiempresaEnterprisePage from "./pages/admin/MultiempresaEnterprisePage";
 
 // CLIENTE
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -96,6 +97,7 @@ function App() {
         <Route path="/admin/devops" element={<ProtectedRoute><DevOpsSaasPage /></ProtectedRoute>} />
         <Route path="/admin/scheduler-inteligente" element={<ProtectedRoute><SchedulerInteligentePage /></ProtectedRoute>} />
         <Route path="/admin/recovery" element={<ProtectedRoute><RecoveryRestorePage /></ProtectedRoute>} />
+        <Route path="/admin/multiempresa-enterprise" element={<ProtectedRoute><MultiempresaEnterprisePage /></ProtectedRoute>} />
         {/* TÉCNICO */}
         <Route path="/tecnico/dashboard" element={<ProtectedRoute><DashboardTecnico /></ProtectedRoute>} />
 

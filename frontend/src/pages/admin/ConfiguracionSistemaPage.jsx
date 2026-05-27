@@ -19,6 +19,7 @@ import {
   ServerCog,
   CalendarClock,
   DatabaseBackup,
+  Building2,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -133,6 +134,15 @@ export default function ConfiguracionSistemaPage() {
       ruta: "/admin/scheduler-inteligente",
       estado: "Activo",
     },
+
+    {
+      titulo: "Multiempresa Enterprise",
+      descripcion:
+        "Gestión de múltiples empresas y funcionalidades empresariales.",
+      icono: <Building2 size={24} />,
+      ruta: "/admin/multiempresa-enterprise",
+      estado: "Activo",
+    }
 
   ];
 
