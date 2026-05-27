@@ -3,7 +3,10 @@
 // ============================================================
 
 import { useEffect, useState } from "react";
+
 import axios from "../../api/axios";
+
+import AdminLayout from "./AdminLayout";
 
 import "../../styles/recovery-restore.css";
 
@@ -68,7 +71,7 @@ export default function RecoveryRestorePage() {
   };
 
   // ============================================================
-  // RESTORE
+  // RESTAURAR
   // ============================================================
 
   const restaurarBackup = async (archivo) => {
@@ -108,109 +111,182 @@ export default function RecoveryRestorePage() {
   }, []);
 
   return (
-    <div className="recovery-page">
 
-      <div className="recovery-header">
+    <AdminLayout>
 
-        <div>
-          <h1>Recovery & Restore PRO</h1>
-          <p>Gestión profesional de backups del sistema</p>
-        </div>
+      <div className="recovery-page">
 
-        <button
-          className="btn-backup"
-          onClick={crearBackup}
-          disabled={loading}
-        >
-          {loading ? "Generando..." : "Crear Backup"}
-        </button>
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
 
-      </div>
+        <div className="recovery-header">
 
-      {status && (
-        <div className="status-grid">
+          <div>
 
-          <div className="status-card">
-            <h3>PostgreSQL</h3>
-            <span>
-              {status.postgres ? "ONLINE" : "OFFLINE"}
+            <span className="recovery-badge">
+              RECOVERY & RESTORE PRO
             </span>
+
+            <h1>
+              Centro de Backups Inteligentes
+            </h1>
+
+            <p>
+              Gestión profesional de respaldos,
+              recuperación y restauración segura
+              PostgreSQL SaaS Enterprise.
+            </p>
+
           </div>
 
-          <div className="status-card">
-            <h3>Total Backups</h3>
-            <span>{status.backups_totales}</span>
-          </div>
-
-          <div className="status-card">
-            <h3>Último Backup</h3>
-            <span>{status.ultimo_backup || "N/A"}</span>
-          </div>
+          <button
+            className="btn-backup"
+            onClick={crearBackup}
+            disabled={loading}
+          >
+            {loading
+              ? "Generando..."
+              : "Crear Backup"}
+          </button>
 
         </div>
-      )}
 
-      <div className="table-container">
+        {/* ================================================= */}
+        {/* STATS */}
+        {/* ================================================= */}
 
-        <table className="recovery-table">
+        {status && (
 
-          <thead>
-            <tr>
-              <th>Archivo</th>
-              <th>Tamaño</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+          <div className="status-grid">
 
-          <tbody>
+            <div className="status-card">
 
-            {backups.map((backup, index) => (
+              <h3>PostgreSQL</h3>
 
-              <tr key={index}>
+              <span>
+                {status.postgres
+                  ? "ONLINE"
+                  : "OFFLINE"}
+              </span>
 
-                <td>{backup.nombre}</td>
+            </div>
 
-                <td>{backup.tamaño_mb} MB</td>
+            <div className="status-card">
 
-                <td>
-                  {new Date(
-                    backup.fecha
-                  ).toLocaleString()}
-                </td>
+              <h3>Total Backups</h3>
 
-                <td className="actions">
+              <span>
+                {status.backups_totales}
+              </span>
 
-                  <a
-                    href={`${import.meta.env.VITE_API_URL}/recovery/download/${backup.nombre}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-download"
-                  >
-                    Descargar
-                  </a>
+            </div>
 
-                  <button
-                    className="btn-restore"
-                    onClick={() =>
-                      restaurarBackup(backup.nombre)
-                    }
-                  >
-                    Restaurar
-                  </button>
+            <div className="status-card">
 
-                </td>
+              <h3>Último Backup</h3>
 
+              <span>
+                {status.ultimo_backup || "N/A"}
+              </span>
+
+            </div>
+
+          </div>
+
+        )}
+
+        {/* ================================================= */}
+        {/* TABLA */}
+        {/* ================================================= */}
+
+        <div className="table-container">
+
+          <table className="recovery-table">
+
+            <thead>
+
+              <tr>
+                <th>Archivo</th>
+                <th>Tamaño</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
               </tr>
 
-            ))}
+            </thead>
 
-          </tbody>
+            <tbody>
 
-        </table>
+              {backups.length === 0 ? (
+
+                <tr>
+
+                  <td
+                    colSpan="4"
+                    className="empty-row"
+                  >
+                    No existen backups generados
+                  </td>
+
+                </tr>
+
+              ) : (
+
+                backups.map((backup, index) => (
+
+                  <tr key={index}>
+
+                    <td>{backup.nombre}</td>
+
+                    <td>
+                      {backup.tamaño_mb} MB
+                    </td>
+
+                    <td>
+                      {new Date(
+                        backup.fecha
+                      ).toLocaleString()}
+                    </td>
+
+                    <td className="actions">
+
+                      <a
+                        href={`${import.meta.env.VITE_API_URL}/recovery/download/${backup.nombre}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-download"
+                      >
+                        Descargar
+                      </a>
+
+                      <button
+                        className="btn-restore"
+                        onClick={() =>
+                          restaurarBackup(
+                            backup.nombre
+                          )
+                        }
+                      >
+                        Restaurar
+                      </button>
+
+                    </td>
+
+                  </tr>
+
+                ))
+
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
 
       </div>
 
-    </div>
+    </AdminLayout>
+
   );
 }
