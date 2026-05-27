@@ -1,6 +1,7 @@
 # ============================================================
 # BI EJECUTIVO AVANZADO PRO
 # Archivo: backend/app/routers/bi_ejecutivo.py
+# Compatible con frontend actual
 # ============================================================
 
 from fastapi import APIRouter, Depends
@@ -8,71 +9,42 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-
-# ============================================================
-# IMPORTAR MODELOS
-# ============================================================
-
 from app.models.empresa import Empresa
 from app.models.sede import Sede
 from app.models.equipo import Equipo
 from app.models.usuario import Usuario
 from app.models.mantenimiento import Mantenimiento
 
-# ============================================================
-# ROUTER
-# ============================================================
-
 router = APIRouter(
     prefix="/bi-ejecutivo",
     tags=["BI Ejecutivo PRO"]
 )
 
-# ============================================================
-# KPI GENERALES
-# ============================================================
 
 @router.get("/kpis")
 def obtener_kpis(db: Session = Depends(get_db)):
-
     try:
-
-        total_empresas = db.query(Empresa).count()
-        total_sedes = db.query(Sede).count()
-        total_equipos = db.query(Equipo).count()
-        total_usuarios = db.query(Usuario).count()
-        total_mantenimientos = db.query(Mantenimiento).count()
-
         return {
-            "total_empresas": total_empresas,
-            "total_sedes": total_sedes,
-            "total_equipos": total_equipos,
-            "total_usuarios": total_usuarios,
-            "total_mantenimientos": total_mantenimientos
+            "total_empresas": db.query(Empresa).count(),
+            "total_sedes": db.query(Sede).count(),
+            "total_equipos": db.query(Equipo).count(),
+            "total_usuarios": db.query(Usuario).count(),
+            "total_mantenimientos": db.query(Mantenimiento).count(),
         }
-
     except Exception as e:
-
-        print("ERROR KPI:", str(e))
-
+        print("ERROR KPI BI:", str(e))
         return {
             "total_empresas": 0,
             "total_sedes": 0,
             "total_equipos": 0,
             "total_usuarios": 0,
-            "total_mantenimientos": 0
+            "total_mantenimientos": 0,
         }
 
 
-# ============================================================
-# MANTENIMIENTOS POR ESTADO
-# ============================================================
-
-@router.get("/mantenimientos-estado")
-def mantenimientos_estado(db: Session = Depends(get_db)):
-
+@router.get("/mantenimientos-estados")
+def mantenimientos_estados(db: Session = Depends(get_db)):
     try:
-
         resultados = (
             db.query(
                 Mantenimiento.estado,
@@ -84,28 +56,24 @@ def mantenimientos_estado(db: Session = Depends(get_db)):
 
         return [
             {
-                "estado": r[0] if r[0] else "SIN_ESTADO",
-                "total": r[1]
+                "estado": r[0] or "SIN_ESTADO",
+                "total": r[1],
             }
             for r in resultados
         ]
-
     except Exception as e:
-
-        print("ERROR mantenimientos_estado:", str(e))
-
+        print("ERROR mantenimientos_estados BI:", str(e))
         return []
 
 
-# ============================================================
-# EQUIPOS POR EMPRESA
-# ============================================================
+@router.get("/mantenimientos-estado")
+def mantenimientos_estado_alias(db: Session = Depends(get_db)):
+    return mantenimientos_estados(db)
+
 
 @router.get("/equipos-empresa")
 def equipos_empresa(db: Session = Depends(get_db)):
-
     try:
-
         resultados = (
             db.query(
                 Empresa.nombre,
@@ -122,37 +90,23 @@ def equipos_empresa(db: Session = Depends(get_db)):
         return [
             {
                 "empresa": r[0],
-                "total": r[1]
+                "equipos": r[1],
+                "total": r[1],
             }
             for r in resultados
         ]
-
     except Exception as e:
-
-        print("ERROR equipos_empresa:", str(e))
-
+        print("ERROR equipos_empresa BI:", str(e))
         return []
 
 
-# ============================================================
-# COSTOS POR EMPRESA
-# ============================================================
-
 @router.get("/costos-empresa")
 def costos_empresa(db: Session = Depends(get_db)):
-
     try:
-
-        # ====================================================
-        # COMPATIBLE CON BD ACTUAL
-        # SI NO EXISTE "costo"
-        # USA CONTEO DE MANTENIMIENTOS
-        # ====================================================
-
         resultados = (
             db.query(
                 Empresa.nombre,
-                func.count(Mantenimiento.id).label("total")
+                func.count(Mantenimiento.id)
             )
             .outerjoin(
                 Mantenimiento,
@@ -165,100 +119,82 @@ def costos_empresa(db: Session = Depends(get_db)):
         return [
             {
                 "empresa": r[0],
-                "costo": r[1]
+                "costo_total": float(r[1] or 0),
+                "costo": float(r[1] or 0),
             }
             for r in resultados
         ]
-
     except Exception as e:
-
-        print("ERROR costos_empresa:", str(e))
-
+        print("ERROR costos_empresa BI:", str(e))
         return []
 
 
-# ============================================================
-# TECNICOS PRODUCTIVOS
-# ============================================================
-
 @router.get("/tecnicos-productivos")
 def tecnicos_productivos(db: Session = Depends(get_db)):
-
     try:
-
         resultados = (
             db.query(
                 Usuario.nombre,
-                func.count(Mantenimiento.id).label("total")
+                func.count(Mantenimiento.id)
             )
-            .join(
+            .outerjoin(
                 Mantenimiento,
                 Mantenimiento.tecnico_id == Usuario.id
             )
             .group_by(Usuario.nombre)
-            .all()
-        )
-
-        return [
-            {
-                "tecnico": r[0],
-                "total": r[1]
-            }
-            for r in resultados
-        ]
-
-    except Exception as e:
-
-        print("ERROR tecnicos_productivos:", str(e))
-
-        return []
-
-
-# ============================================================
-# EQUIPOS CRITICOS
-# ============================================================
-
-@router.get("/equipos-criticos")
-def equipos_criticos(db: Session = Depends(get_db)):
-
-    try:
-
-        resultados = (
-            db.query(
-                Equipo.nombre,
-                Empresa.nombre,
-                func.count(Mantenimiento.id).label("total")
-            )
-            .outerjoin(
-                Mantenimiento,
-                Mantenimiento.equipo_id == Equipo.id
-            )
-            .outerjoin(
-                Empresa,
-                Equipo.empresa_id == Empresa.id
-            )
-            .group_by(
-                Equipo.nombre,
-                Empresa.nombre
-            )
-            .order_by(
-                func.count(Mantenimiento.id).desc()
-            )
+            .order_by(func.count(Mantenimiento.id).desc())
             .limit(10)
             .all()
         )
 
         return [
             {
-                "equipo": r[0],
-                "empresa": r[1],
-                "mantenimientos": r[2]
+                "tecnico": r[0] or "Sin nombre",
+                "mantenimientos": r[1],
+                "total": r[1],
             }
             for r in resultados
         ]
-
     except Exception as e:
+        print("ERROR tecnicos_productivos BI:", str(e))
+        return []
 
-        print("ERROR equipos_criticos:", str(e))
 
+@router.get("/equipos-criticos")
+def equipos_criticos(db: Session = Depends(get_db)):
+    try:
+        resultados = (
+            db.query(
+                Equipo.nombre,
+                Empresa.nombre,
+                func.count(Mantenimiento.id)
+            )
+            .outerjoin(
+                Empresa,
+                Equipo.empresa_id == Empresa.id
+            )
+            .outerjoin(
+                Mantenimiento,
+                Mantenimiento.equipo_id == Equipo.id
+            )
+            .group_by(
+                Equipo.nombre,
+                Empresa.nombre
+            )
+            .order_by(func.count(Mantenimiento.id).desc())
+            .limit(10)
+            .all()
+        )
+
+        return [
+            {
+                "equipo": r[0] or "Sin nombre",
+                "empresa": r[1] or "Sin empresa",
+                "mantenimientos": r[2],
+                "total": r[2],
+            }
+            for r in resultados
+        ]
+    except Exception as e:
+        print("ERROR equipos_criticos BI:", str(e))
         return []
