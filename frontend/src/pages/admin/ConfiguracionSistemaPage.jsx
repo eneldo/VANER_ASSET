@@ -15,6 +15,7 @@ import {
   Cpu,
   Menu,
   Activity,
+  FileSearch,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -27,8 +28,7 @@ export default function ConfiguracionSistemaPage() {
   const cards = [
     {
       titulo: "Centro Sistema",
-      descripcion:
-        "Panel central de administración del sistema SaaS.",
+      descripcion: "Panel central de administración del sistema SaaS.",
       icono: <Cpu size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -36,8 +36,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Configuración General",
-      descripcion:
-        "Parámetros generales, logos, SMTP y configuración global.",
+      descripcion: "Parámetros generales, logos, SMTP y configuración global.",
       icono: <Settings size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -54,8 +53,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Backups Inteligentes",
-      descripcion:
-        "Respaldos PostgreSQL, uploads y restauración segura.",
+      descripcion: "Respaldos PostgreSQL, uploads y restauración segura.",
       icono: <Archive size={24} />,
       ruta: "/admin/backups",
       estado: "Activo",
@@ -72,17 +70,23 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Monitor VPS + PostgreSQL",
-      descripcion:
-        "Estado del servidor, Docker, CPU, RAM, disco y PostgreSQL.",
+      descripcion: "Estado del servidor, Docker, CPU, RAM, disco y PostgreSQL.",
       icono: <Activity size={24} />,
       ruta: "/admin/monitor-vps",
+      estado: "Activo",
+    },
+    {
+      titulo: "Logs Inteligentes",
+      descripcion:
+        "Visor de eventos, errores, automatizaciones y trazabilidad del sistema.",
+      icono: <FileSearch size={24} />,
+      ruta: "/admin/logs-inteligentes",
       estado: "Activo",
     },
 
     {
       titulo: "Seguridad PRO",
-      descripcion:
-        "Auditoría, permisos, hardening y monitoreo.",
+      descripcion: "Auditoría, permisos, hardening y monitoreo.",
       icono: <ShieldCheck size={24} />,
       ruta: "/admin/auditoria",
       estado: "Activo",

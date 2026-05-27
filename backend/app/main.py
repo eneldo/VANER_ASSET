@@ -49,6 +49,7 @@ from app.routers import automatizacion
 from app.routers import backups_inteligentes
 from app.routers import monitor_vps
 from app.routers import smtp_inteligente  # Fase 34.2.3 - SMTP Inteligente SaaS PRO
+from app.routers import logs_inteligentes  # Fase 34.2.4 - Logs Inteligentes SaaS PRO
 
 
 
@@ -140,7 +141,7 @@ app.include_router(auditoria_pro.router)
 app.include_router(backups_inteligentes.router)
 app.include_router(smtp_inteligente.router)
 app.include_router(monitor_vps.router)
-
+app.include_router(logs_inteligentes.router)
 # =========================================================
 # FASE 34.2.1 - SCHEDULER AUTOMATIZACIÓN SAAS PRO
 # =========================================================
