@@ -1,0 +1,79 @@
+.multiempresa-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  background: #f4f7fb;
+}
+
+.multiempresa-header {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: white;
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.multiempresa-header h1 {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 900;
+}
+
+.multiempresa-header p {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.multiempresa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.empresa-card {
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 20px rgba(15,23,42,.06);
+}
+
+.empresa-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.empresa-top h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.empresa-top span {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.empresa-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.empresa-body div {
+  text-align: center;
+}
+
+.empresa-body strong {
+  font-size: 24px;
+  color: #2563eb;
+}
+
+.empresa-body p {
+  margin-top: 6px;
+  color: #64748b;
+}
