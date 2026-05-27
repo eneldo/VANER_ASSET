@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Cpu,
   Menu,
+  Activity,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -26,7 +27,8 @@ export default function ConfiguracionSistemaPage() {
   const cards = [
     {
       titulo: "Centro Sistema",
-      descripcion: "Panel central de administración del sistema SaaS.",
+      descripcion:
+        "Panel central de administración del sistema SaaS.",
       icono: <Cpu size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -34,7 +36,8 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Configuración General",
-      descripcion: "Parámetros generales, logos, SMTP y configuración global.",
+      descripcion:
+        "Parámetros generales, logos, SMTP y configuración global.",
       icono: <Settings size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -51,7 +54,8 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Backups Inteligentes",
-      descripcion: "Respaldos PostgreSQL, uploads y restauración segura.",
+      descripcion:
+        "Respaldos PostgreSQL, uploads y restauración segura.",
       icono: <Archive size={24} />,
       ruta: "/admin/backups",
       estado: "Activo",
@@ -68,7 +72,8 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Monitor VPS + PostgreSQL",
-      descripcion: "CPU, RAM, disco, PostgreSQL, Docker y estado de servicios.",
+      descripcion:
+        "Estado del servidor, Docker, CPU, RAM, disco y PostgreSQL.",
       icono: <Activity size={24} />,
       ruta: "/admin/monitor-vps",
       estado: "Activo",
@@ -76,7 +81,8 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Seguridad PRO",
-      descripcion: "Auditoría, permisos, hardening y monitoreo.",
+      descripcion:
+        "Auditoría, permisos, hardening y monitoreo.",
       icono: <ShieldCheck size={24} />,
       ruta: "/admin/auditoria",
       estado: "Activo",
@@ -86,26 +92,31 @@ export default function ConfiguracionSistemaPage() {
   return (
     <AdminLayout>
       <div className="config-sistema-page">
+
         {/* ================================================= */}
         {/* HEADER */}
         {/* ================================================= */}
 
         <div className="config-sistema-header">
+
           <div className="config-header-top">
+
             <div>
-              <span className="config-badge">CONFIGURACIÓN SISTEMA</span>
+              <span className="config-badge">
+                CONFIGURACIÓN SISTEMA
+              </span>
 
               <h1>Centro de Configuración SaaS PRO</h1>
 
               <p>
-                Gestión centralizada de módulos inteligentes, automatización,
-                seguridad y servicios empresariales.
+                Gestión centralizada de módulos inteligentes,
+                automatización, seguridad y servicios empresariales.
               </p>
             </div>
 
-            {/* ============================================= */}
+            {/* ================================================= */}
             {/* BOTÓN HAMBURGUESA */}
-            {/* ============================================= */}
+            {/* ================================================= */}
 
             <button
               className="config-menu-btn"
@@ -117,6 +128,7 @@ export default function ConfiguracionSistemaPage() {
               <Menu size={22} />
               <span>Menú</span>
             </button>
+
           </div>
         </div>
 
@@ -125,25 +137,37 @@ export default function ConfiguracionSistemaPage() {
         {/* ================================================= */}
 
         <div className="config-grid">
+
           {cards.map((item, index) => (
             <div
               key={index}
               className="config-card"
               onClick={() => navigate(item.ruta)}
             >
-              <div className="config-card-top">
-                <div className="config-icon">{item.icono}</div>
 
-                <span className="config-status">{item.estado}</span>
+              <div className="config-card-top">
+
+                <div className="config-icon">
+                  {item.icono}
+                </div>
+
+                <span className="config-status">
+                  {item.estado}
+                </span>
+
               </div>
 
               <h3>{item.titulo}</h3>
 
               <p>{item.descripcion}</p>
 
-              <div className="config-arrow">→</div>
+              <div className="config-arrow">
+                →
+              </div>
+
             </div>
           ))}
+
         </div>
       </div>
     </AdminLayout>
