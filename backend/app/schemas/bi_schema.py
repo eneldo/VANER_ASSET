@@ -61,7 +61,7 @@ class BICostosSede(BaseModel):
 
 
 # ============================================================
-# TÉCNICOS PRODUCTIVOS
+# PRODUCTIVIDAD TÉCNICOS
 # ============================================================
 
 class BITecnicoProductividad(BaseModel):
@@ -82,7 +82,7 @@ class BIEquipoCritico(BaseModel):
 
 
 # ============================================================
-# RESPUESTA DASHBOARD GENERAL
+# DASHBOARD COMPLETO
 # ============================================================
 
 class BIDashboardResponse(BaseModel):
