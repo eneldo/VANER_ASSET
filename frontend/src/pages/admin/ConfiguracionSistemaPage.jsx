@@ -17,6 +17,7 @@ import {
   Activity,
   FileSearch,
   ServerCog,
+  CalendarClock,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -98,6 +99,14 @@ export default function ConfiguracionSistemaPage() {
       descripcion: "Auditoría, permisos, hardening y monitoreo.",
       icono: <ShieldCheck size={24} />,
       ruta: "/admin/auditoria",
+      estado: "Activo",
+    },
+    {
+      titulo: "Scheduler Inteligente",
+      descripcion:
+        "Reglas automáticas, modo manual, semiautomático y automático para mantenimientos.",
+      icono: <CalendarClock size={24} />,
+      ruta: "/admin/scheduler-inteligente",
       estado: "Activo",
     },
   ];

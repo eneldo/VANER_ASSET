@@ -39,6 +39,7 @@ import SMTPInteligentePage from "./pages/admin/SMTPInteligentePage";
 import MonitorVpsPage from "./pages/admin/MonitorVpsPage";
 import LogsInteligentesPage from "./pages/admin/LogsInteligentesPage";
 import DevOpsSaasPage from "./pages/admin/DevOpsSaasPage";
+import SchedulerInteligentePage from "./pages/admin/SchedulerInteligentePage";
 
 // CLIENTE
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -92,6 +93,7 @@ function App() {
         <Route path="/admin/monitor-vps" element={<ProtectedRoute><MonitorVpsPage /></ProtectedRoute>} />
         <Route path="/admin/logs-inteligentes" element={<ProtectedRoute><LogsInteligentesPage /></ProtectedRoute>} />
         <Route path="/admin/devops" element={<ProtectedRoute><DevOpsSaasPage /></ProtectedRoute>} />
+        <Route path="/admin/scheduler-inteligente" element={<ProtectedRoute><SchedulerInteligentePage /></ProtectedRoute>} />
         {/* TÉCNICO */}
         <Route path="/tecnico/dashboard" element={<ProtectedRoute><DashboardTecnico /></ProtectedRoute>} />
 
