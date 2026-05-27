@@ -1,70 +1,73 @@
-/* ============================================================
-   RECOVERY & RESTORE PRO - INTEGRADO A CONFIGURACIÓN SISTEMA
-============================================================ */
-
 .recovery-page {
   width: 100%;
   min-height: calc(100vh - 40px);
   padding: 28px;
   background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
   color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .recovery-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 22px;
-  margin-bottom: 24px;
-  padding: 24px;
+  padding: 28px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 22px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
+.recovery-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 7px 12px;
+  border-radius: 999px;
+}
+
 .recovery-header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 900;
   color: #0f172a;
 }
 
 .recovery-header p {
-  margin: 6px 0 0;
+  max-width: 680px;
+  margin: 8px 0 0;
   color: #64748b;
   font-size: 14px;
 }
 
 .btn-backup {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #ffffff;
+  color: #fff;
   border: none;
-  padding: 13px 22px;
+  padding: 14px 24px;
   border-radius: 14px;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 900;
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
-}
-
-.btn-backup:hover {
-  transform: translateY(-1px);
-}
-
-.btn-backup:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+  white-space: nowrap;
 }
 
 .status-grid {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 18px;
-  margin-bottom: 24px;
 }
 
 .status-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 22px;
   padding: 22px;
   border: 1px solid #e2e8f0;
@@ -75,21 +78,20 @@
   margin: 0 0 12px;
   color: #334155;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .status-card span {
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 900;
   color: #2563eb;
-  word-break: break-word;
 }
 
 .table-container {
   width: 100%;
-  max-height: 430px;
+  max-height: 460px;
   overflow: auto;
-  background: #ffffff;
+  background: #fff;
   border-radius: 22px;
   padding: 12px;
   border: 1px solid #e2e8f0;
@@ -99,7 +101,7 @@
 .recovery-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 780px;
+  min-width: 760px;
 }
 
 .recovery-table thead th {
@@ -116,21 +118,22 @@
 }
 
 .recovery-table td {
-  padding: 15px;
+  padding: 16px;
   border-bottom: 1px solid #e2e8f0;
   color: #334155;
   font-size: 14px;
   font-weight: 600;
 }
 
-.recovery-table tbody tr:hover {
-  background: #f8fafc;
+.empty-row {
+  text-align: center;
+  padding: 40px !important;
+  color: #64748b;
 }
 
 .actions {
   display: flex;
   gap: 10px;
-  align-items: center;
 }
 
 .btn-download,
@@ -147,12 +150,12 @@
 
 .btn-download {
   background: #0f766e;
-  color: #ffffff;
+  color: #fff;
 }
 
 .btn-restore {
   background: #dc2626;
-  color: #ffffff;
+  color: #fff;
 }
 
 @media (max-width: 900px) {
@@ -165,11 +168,11 @@
     align-items: flex-start;
   }
 
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-
   .btn-backup {
     width: 100%;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
   }
 }
