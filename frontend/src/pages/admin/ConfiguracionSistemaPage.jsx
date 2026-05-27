@@ -20,6 +20,7 @@ import {
   CalendarClock,
   DatabaseBackup,
   Building2,
+  BarChart3,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -35,11 +36,9 @@ export default function ConfiguracionSistemaPage() {
   // =======================================================
 
   const cards = [
-
     {
       titulo: "Centro Sistema",
-      descripcion:
-        "Panel central de administración del sistema SaaS.",
+      descripcion: "Panel central de administración del sistema SaaS.",
       icono: <Cpu size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -47,8 +46,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Configuración General",
-      descripcion:
-        "Parámetros globales, branding, logos y configuración.",
+      descripcion: "Parámetros globales, branding, logos y configuración.",
       icono: <Settings size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -74,8 +72,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Backups Inteligentes",
-      descripcion:
-        "Respaldos PostgreSQL, uploads y restauración segura.",
+      descripcion: "Respaldos PostgreSQL, uploads y restauración segura.",
       icono: <Archive size={24} />,
       ruta: "/admin/backups",
       estado: "Activo",
@@ -83,8 +80,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "SMTP Inteligente",
-      descripcion:
-        "Correos corporativos, plantillas y notificaciones.",
+      descripcion: "Correos corporativos, plantillas y notificaciones.",
       icono: <Mail size={24} />,
       ruta: "/admin/smtp-inteligente",
       estado: "Activo",
@@ -92,8 +88,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Monitor VPS + PostgreSQL",
-      descripcion:
-        "Estado del servidor, Docker, CPU, RAM y PostgreSQL.",
+      descripcion: "Estado del servidor, Docker, CPU, RAM y PostgreSQL.",
       icono: <Activity size={24} />,
       ruta: "/admin/monitor-vps",
       estado: "Activo",
@@ -101,8 +96,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Logs Inteligentes",
-      descripcion:
-        "Eventos, errores, trazabilidad y monitoreo.",
+      descripcion: "Eventos, errores, trazabilidad y monitoreo.",
       icono: <FileSearch size={24} />,
       ruta: "/admin/logs-inteligentes",
       estado: "Activo",
@@ -110,8 +104,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "DevOps SaaS PRO",
-      descripcion:
-        "Contenedores, infraestructura y salud del sistema.",
+      descripcion: "Contenedores, infraestructura y salud del sistema.",
       icono: <ServerCog size={24} />,
       ruta: "/admin/devops",
       estado: "Activo",
@@ -119,8 +112,7 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Seguridad PRO",
-      descripcion:
-        "Auditoría, permisos y hardening.",
+      descripcion: "Auditoría, permisos y hardening.",
       icono: <ShieldCheck size={24} />,
       ruta: "/admin/auditoria",
       estado: "Activo",
@@ -128,10 +120,16 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Scheduler Inteligente",
-      descripcion:
-        "Automatización avanzada de mantenimientos.",
+      descripcion: "Automatización avanzada de mantenimientos.",
       icono: <CalendarClock size={24} />,
       ruta: "/admin/scheduler-inteligente",
+      estado: "Activo",
+    },
+    {
+      titulo: "BI Ejecutivo",
+      descripcion: "Business Intelligence, KPIs y análisis empresarial.",
+      icono: <BarChart3 size={24} />,
+      ruta: "/admin/bi-ejecutivo",
       estado: "Activo",
     },
 
@@ -142,8 +140,7 @@ export default function ConfiguracionSistemaPage() {
       icono: <Building2 size={24} />,
       ruta: "/admin/multiempresa-enterprise",
       estado: "Activo",
-    }
-
+    },
   ];
 
   return (

@@ -42,6 +42,7 @@ import DevOpsSaasPage from "./pages/admin/DevOpsSaasPage";
 import SchedulerInteligentePage from "./pages/admin/SchedulerInteligentePage";
 import RecoveryRestorePage from "./pages/admin/RecoveryRestorePage";
 import MultiempresaEnterprisePage from "./pages/admin/MultiempresaEnterprisePage";
+import BIExecutivePage from "./pages/admin/BIExecutivePage";
 
 // CLIENTE
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -84,7 +85,7 @@ function App() {
         <Route path="/admin/evidencias" element={<ProtectedRoute><EvidenciasPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/auditoria" element={<ProtectedRoute><AuditoriaPage /></ProtectedRoute>} />
-
+        <Route path="/admin/bi-ejecutivo" element={<ProtectedRoute><BIExecutivePage /></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-inteligente" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-sistema" element={<ProtectedRoute><ConfiguracionSistemaPage /></ProtectedRoute>} />
