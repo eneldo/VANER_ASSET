@@ -11,37 +11,93 @@
   background: #f4f7fb;
 }
 
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .config-sistema-header {
   background: linear-gradient(135deg, #1d3fa3, #2954d1);
-  border-radius: 24px;
-  padding: 32px;
+  border-radius: 28px;
+  padding: 34px;
   color: white;
   box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.config-sistema-header::before {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  right: -90px;
+  top: -90px;
+}
+
+.config-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .config-badge {
   display: inline-block;
-  padding: 6px 14px;
+  padding: 7px 15px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.16);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  margin-bottom: 12px;
+  font-weight: 800;
+  letter-spacing: .6px;
+  margin-bottom: 14px;
 }
 
 .config-sistema-header h1 {
-  font-size: 42px;
+  font-size: 52px;
+  line-height: 1.1;
   margin: 0;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .config-sistema-header p {
-  margin-top: 12px;
+  margin-top: 14px;
   max-width: 900px;
-  color: rgba(255,255,255,0.9);
-  line-height: 1.6;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.7;
+  font-size: 16px;
 }
+
+/* =========================================================
+   BOTÓN MENÚ
+   ========================================================= */
+
+.config-menu-btn {
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: .25s ease;
+  backdrop-filter: blur(12px);
+}
+
+.config-menu-btn:hover {
+  background: rgba(255,255,255,0.24);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
 
 .config-grid {
   display: grid;
@@ -49,9 +105,13 @@
   gap: 22px;
 }
 
+/* =========================================================
+   CARD
+   ========================================================= */
+
 .config-card {
   background: white;
-  border-radius: 22px;
+  border-radius: 24px;
   padding: 24px;
   position: relative;
   cursor: pointer;
@@ -59,18 +119,19 @@
   border: 1px solid #e6ecf5;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  min-height: 220px;
 }
 
 .config-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 25px rgba(0,0,0,0.08);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.08);
 }
 
 .config-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .config-icon {
@@ -82,6 +143,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #2563eb, #06b6d4);
   color: white;
+  box-shadow: 0 6px 14px rgba(37,99,235,.25);
 }
 
 .config-status {
@@ -94,36 +156,75 @@
 }
 
 .config-card h3 {
-  font-size: 24px;
-  margin: 0 0 12px;
+  font-size: 33px;
+  line-height: 1.1;
+  margin: 0 0 14px;
   color: #0f172a;
+  font-weight: 800;
 }
 
 .config-card p {
   color: #475569;
-  line-height: 1.6;
+  line-height: 1.7;
   margin: 0;
+  font-size: 15px;
 }
 
 .config-arrow {
   position: absolute;
-  right: 22px;
+  right: 24px;
   bottom: 20px;
-  font-size: 28px;
+  font-size: 30px;
   color: #2563eb;
-  font-weight: 700;
+  font-weight: 900;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 992px) {
+  .config-header-top {
+    flex-direction: column;
+  }
+
+  .config-sistema-header h1 {
+    font-size: 40px;
+  }
 }
 
 @media (max-width: 768px) {
+
+  .config-sistema-page {
+    padding: 16px;
+  }
+
   .config-sistema-header {
     padding: 24px;
   }
 
   .config-sistema-header h1 {
-    font-size: 28px;
+    font-size: 30px;
+  }
+
+  .config-sistema-header p {
+    font-size: 14px;
   }
 
   .config-grid {
     grid-template-columns: 1fr;
+  }
+
+  .config-card {
+    min-height: auto;
+  }
+
+  .config-card h3 {
+    font-size: 26px;
+  }
+
+  .config-menu-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

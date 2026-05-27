@@ -1,5 +1,5 @@
 // =========================================================
-// CONFIGURACIÓN SISTEMA PRO
+// CONFIGURACIÓN SISTEMA SaaS PRO
 // Archivo:
 // frontend/src/pages/admin/ConfiguracionSistemaPage.jsx
 // =========================================================
@@ -13,6 +13,7 @@ import {
   Mail,
   ShieldCheck,
   Cpu,
+  Menu,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -81,29 +82,55 @@ export default function ConfiguracionSistemaPage() {
   return (
     <AdminLayout>
       <div className="config-sistema-page">
+
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
+
         <div className="config-sistema-header">
-          <div>
-            <span className="config-badge">
-              CONFIGURACIÓN SISTEMA
-            </span>
 
-            <h1>Centro de Configuración SaaS PRO</h1>
+          <div className="config-header-top">
 
-            <p>
-              Gestión centralizada de módulos inteligentes,
-              automatización, seguridad y servicios empresariales.
-            </p>
+            <div>
+              <span className="config-badge">
+                CONFIGURACIÓN SISTEMA
+              </span>
+
+              <h1>Centro de Configuración SaaS PRO</h1>
+
+              <p>
+                Gestión centralizada de módulos inteligentes,
+                automatización, seguridad y servicios empresariales.
+              </p>
+            </div>
+
+            {/* ============================================= */}
+            {/* BOTÓN HAMBURGUESA */}
+            {/* ============================================= */}
+
+            <button className="config-menu-btn">
+              <Menu size={20} />
+              <span>Menú</span>
+            </button>
+
           </div>
         </div>
 
+        {/* ================================================= */}
+        {/* GRID */}
+        {/* ================================================= */}
+
         <div className="config-grid">
+
           {cards.map((item, index) => (
             <div
               key={index}
               className="config-card"
               onClick={() => navigate(item.ruta)}
             >
+
               <div className="config-card-top">
+
                 <div className="config-icon">
                   {item.icono}
                 </div>
@@ -111,6 +138,7 @@ export default function ConfiguracionSistemaPage() {
                 <span className="config-status">
                   {item.estado}
                 </span>
+
               </div>
 
               <h3>{item.titulo}</h3>
@@ -120,8 +148,10 @@ export default function ConfiguracionSistemaPage() {
               <div className="config-arrow">
                 →
               </div>
+
             </div>
           ))}
+
         </div>
       </div>
     </AdminLayout>
