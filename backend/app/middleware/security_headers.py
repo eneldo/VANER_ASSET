@@ -43,11 +43,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 https://cdn.jsdelivr.net;
             style-src 'self' 'unsafe-inline'
                 https://cdn.jsdelivr.net;
-            img-src 'self' data: https:;
+            img-src 'self' data: blob: https:;
             font-src 'self' data: https:;
             connect-src 'self'
                 https://api.sga.vaner.cloud
                 https://sga.vaner.cloud;
+            worker-src 'self' blob:;
             frame-ancestors 'self';
             base-uri 'self';
         """
