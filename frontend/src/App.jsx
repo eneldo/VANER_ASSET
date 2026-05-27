@@ -36,6 +36,7 @@ import ConfiguracionSistemaPage from "./pages/admin/ConfiguracionSistemaPage";
 import AutomatizacionPage from "./pages/admin/AutomatizacionPage";
 import BackupsInteligentesPage from "./pages/admin/BackupsInteligentesPage";
 import SMTPInteligentePage from "./pages/admin/SMTPInteligentePage";
+import MonitorVpsPage from "./pages/admin/MonitorVpsPage";
 
 // CLIENTE
 import ClienteLayout from "./pages/cliente/ClienteLayout";
@@ -86,7 +87,7 @@ function App() {
         <Route path="/admin/automatizacion" element={<ProtectedRoute><AutomatizacionPage /></ProtectedRoute>} />
         <Route path="/admin/backups" element={<ProtectedRoute><BackupsInteligentesPage /></ProtectedRoute>} />
         <Route path="/admin/smtp-inteligente" element={<ProtectedRoute><SMTPInteligentePage /></ProtectedRoute>} />
-
+        <Route path="/admin/monitor-vps" element={<ProtectedRoute><MonitorVpsPage /></ProtectedRoute>} />
         {/* TÉCNICO */}
         <Route path="/tecnico/dashboard" element={<ProtectedRoute><DashboardTecnico /></ProtectedRoute>} />
 
