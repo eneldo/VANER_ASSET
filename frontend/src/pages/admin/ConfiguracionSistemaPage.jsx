@@ -82,25 +82,20 @@ export default function ConfiguracionSistemaPage() {
   return (
     <AdminLayout>
       <div className="config-sistema-page">
-
         {/* ================================================= */}
         {/* HEADER */}
         {/* ================================================= */}
 
         <div className="config-sistema-header">
-
           <div className="config-header-top">
-
             <div>
-              <span className="config-badge">
-                CONFIGURACIÓN SISTEMA
-              </span>
+              <span className="config-badge">CONFIGURACIÓN SISTEMA</span>
 
               <h1>Centro de Configuración SaaS PRO</h1>
 
               <p>
-                Gestión centralizada de módulos inteligentes,
-                automatización, seguridad y servicios empresariales.
+                Gestión centralizada de módulos inteligentes, automatización,
+                seguridad y servicios empresariales.
               </p>
             </div>
 
@@ -108,11 +103,16 @@ export default function ConfiguracionSistemaPage() {
             {/* BOTÓN HAMBURGUESA */}
             {/* ============================================= */}
 
-            <button className="config-menu-btn">
-              <Menu size={20} />
+            <button
+              className="config-menu-btn"
+              onClick={() => {
+                const event = new CustomEvent("toggle-sidebar");
+                window.dispatchEvent(event);
+              }}
+            >
+              <Menu size={22} />
               <span>Menú</span>
             </button>
-
           </div>
         </div>
 
@@ -121,37 +121,25 @@ export default function ConfiguracionSistemaPage() {
         {/* ================================================= */}
 
         <div className="config-grid">
-
           {cards.map((item, index) => (
             <div
               key={index}
               className="config-card"
               onClick={() => navigate(item.ruta)}
             >
-
               <div className="config-card-top">
+                <div className="config-icon">{item.icono}</div>
 
-                <div className="config-icon">
-                  {item.icono}
-                </div>
-
-                <span className="config-status">
-                  {item.estado}
-                </span>
-
+                <span className="config-status">{item.estado}</span>
               </div>
 
               <h3>{item.titulo}</h3>
 
               <p>{item.descripcion}</p>
 
-              <div className="config-arrow">
-                →
-              </div>
-
+              <div className="config-arrow">→</div>
             </div>
           ))}
-
         </div>
       </div>
     </AdminLayout>
