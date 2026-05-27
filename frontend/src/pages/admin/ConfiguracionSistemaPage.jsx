@@ -18,6 +18,7 @@ import {
   FileSearch,
   ServerCog,
   CalendarClock,
+  DatabaseBackup,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -25,12 +26,19 @@ import AdminLayout from "./AdminLayout";
 import "../../styles/configuracion-sistema.css";
 
 export default function ConfiguracionSistemaPage() {
+
   const navigate = useNavigate();
 
+  // =======================================================
+  // CARDS
+  // =======================================================
+
   const cards = [
+
     {
       titulo: "Centro Sistema",
-      descripcion: "Panel central de administración del sistema SaaS.",
+      descripcion:
+        "Panel central de administración del sistema SaaS.",
       icono: <Cpu size={24} />,
       ruta: "/admin/configuracion",
       estado: "Activo",
@@ -38,9 +46,19 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Configuración General",
-      descripcion: "Parámetros generales, logos, SMTP y configuración global.",
+      descripcion:
+        "Parámetros globales, branding, logos y configuración.",
       icono: <Settings size={24} />,
       ruta: "/admin/configuracion",
+      estado: "Activo",
+    },
+
+    {
+      titulo: "Recovery & Restore PRO",
+      descripcion:
+        "Backups PostgreSQL, restauración inteligente y recuperación del sistema.",
+      icono: <DatabaseBackup size={24} />,
+      ruta: "/admin/recovery",
       estado: "Activo",
     },
 
@@ -55,7 +73,8 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Backups Inteligentes",
-      descripcion: "Respaldos PostgreSQL, uploads y restauración segura.",
+      descripcion:
+        "Respaldos PostgreSQL, uploads y restauración segura.",
       icono: <Archive size={24} />,
       ruta: "/admin/backups",
       estado: "Activo",
@@ -64,7 +83,7 @@ export default function ConfiguracionSistemaPage() {
     {
       titulo: "SMTP Inteligente",
       descripcion:
-        "Correos corporativos, plantillas, pruebas y notificaciones.",
+        "Correos corporativos, plantillas y notificaciones.",
       icono: <Mail size={24} />,
       ruta: "/admin/smtp-inteligente",
       estado: "Activo",
@@ -72,23 +91,26 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Monitor VPS + PostgreSQL",
-      descripcion: "Estado del servidor, Docker, CPU, RAM, disco y PostgreSQL.",
+      descripcion:
+        "Estado del servidor, Docker, CPU, RAM y PostgreSQL.",
       icono: <Activity size={24} />,
       ruta: "/admin/monitor-vps",
       estado: "Activo",
     },
+
     {
       titulo: "Logs Inteligentes",
       descripcion:
-        "Visor de eventos, errores, automatizaciones y trazabilidad del sistema.",
+        "Eventos, errores, trazabilidad y monitoreo.",
       icono: <FileSearch size={24} />,
       ruta: "/admin/logs-inteligentes",
       estado: "Activo",
     },
+
     {
       titulo: "DevOps SaaS PRO",
       descripcion:
-        "Estado de contenedores, servicios, logs rápidos y salud de infraestructura.",
+        "Contenedores, infraestructura y salud del sistema.",
       icono: <ServerCog size={24} />,
       ruta: "/admin/devops",
       estado: "Activo",
@@ -96,23 +118,27 @@ export default function ConfiguracionSistemaPage() {
 
     {
       titulo: "Seguridad PRO",
-      descripcion: "Auditoría, permisos, hardening y monitoreo.",
+      descripcion:
+        "Auditoría, permisos y hardening.",
       icono: <ShieldCheck size={24} />,
       ruta: "/admin/auditoria",
       estado: "Activo",
     },
+
     {
       titulo: "Scheduler Inteligente",
       descripcion:
-        "Reglas automáticas, modo manual, semiautomático y automático para mantenimientos.",
+        "Automatización avanzada de mantenimientos.",
       icono: <CalendarClock size={24} />,
       ruta: "/admin/scheduler-inteligente",
       estado: "Activo",
     },
+
   ];
 
   return (
     <AdminLayout>
+
       <div className="config-sistema-page">
 
         {/* ================================================= */}
@@ -124,34 +150,33 @@ export default function ConfiguracionSistemaPage() {
           <div className="config-header-top">
 
             <div>
+
               <span className="config-badge">
                 CONFIGURACIÓN SISTEMA
               </span>
 
-              <h1>Centro de Configuración SaaS PRO</h1>
+              <h1>
+                Centro de Configuración SaaS PRO
+              </h1>
 
               <p>
-                Gestión centralizada de módulos inteligentes,
-                automatización, seguridad y servicios empresariales.
+                Gestión centralizada de módulos
+                inteligentes, automatización,
+                seguridad y servicios empresariales.
               </p>
+
             </div>
 
-            {/* ================================================= */}
-            {/* BOTÓN HAMBURGUESA */}
-            {/* ================================================= */}
+            {/* BOTÓN RESPONSIVE */}
 
             <button
               className="config-menu-btn"
-              onClick={() => {
-                const event = new CustomEvent("toggle-sidebar");
-                window.dispatchEvent(event);
-              }}
             >
-              <Menu size={22} />
-              <span>Menú</span>
+              <Menu size={20} />
             </button>
 
           </div>
+
         </div>
 
         {/* ================================================= */}
@@ -160,38 +185,42 @@ export default function ConfiguracionSistemaPage() {
 
         <div className="config-grid">
 
-          {cards.map((item, index) => (
+          {cards.map((card, index) => (
+
             <div
               key={index}
               className="config-card"
-              onClick={() => navigate(item.ruta)}
+              onClick={() => navigate(card.ruta)}
             >
 
               <div className="config-card-top">
 
                 <div className="config-icon">
-                  {item.icono}
+                  {card.icono}
                 </div>
 
                 <span className="config-status">
-                  {item.estado}
+                  {card.estado}
                 </span>
 
               </div>
 
-              <h3>{item.titulo}</h3>
+              <h3>
+                {card.titulo}
+              </h3>
 
-              <p>{item.descripcion}</p>
-
-              <div className="config-arrow">
-                →
-              </div>
+              <p>
+                {card.descripcion}
+              </p>
 
             </div>
+
           ))}
 
         </div>
+
       </div>
+
     </AdminLayout>
   );
 }
