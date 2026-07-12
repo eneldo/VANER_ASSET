@@ -11,11 +11,16 @@ from app.database import get_db
 from app.models.equipo import Equipo
 from app.models.empresa import Empresa
 from app.models.sede import Sede
-from app.models.categoria import Categoria
+from app.models.categoria import Categoria, CATEGORIA_CODES
 from app.schemas.equipo import EquipoCreate, EquipoUpdate, EquipoOut
+from app.core.auth_dependencies import require_roles
 
 
-router = APIRouter(prefix="/equipos", tags=["Equipos"])
+router = APIRouter(
+    prefix="/equipos",
+    tags=["Equipos"],
+    dependencies=[Depends(require_roles("ADMIN"))],
+)
 
 
 # Estados permitidos del equipo
@@ -72,7 +77,7 @@ def validar_relaciones_equipo(data, db: Session):
             Categoria.id == data.categoria_id
         ).first()
 
-        if not categoria:
+        if not categoria or not categoria.activo or categoria.code not in CATEGORIA_CODES:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La categoría asociada no existe"
@@ -264,7 +269,7 @@ def actualizar_equipo(
             Categoria.id == datos["categoria_id"]
         ).first()
 
-        if not categoria:
+        if not categoria or not categoria.activo or categoria.code not in CATEGORIA_CODES:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La categoría asociada no existe"

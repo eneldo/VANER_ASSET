@@ -20,6 +20,8 @@ import {
   ShieldCheck,
   X,
   Settings,
+  Receipt,
+  FileCog,
 } from "lucide-react";
 
 import "../styles/sidebar.css";
@@ -220,6 +222,16 @@ export default function Sidebar({
             >
               <FileText size={17} />
               <span>Reportes PRO</span>
+            </NavLink>
+
+            <NavLink to="/admin/facturacion" onClick={closeMobile} className={itemClass}>
+              <Receipt size={17} />
+              <span>Facturación</span>
+            </NavLink>
+
+            <NavLink to="/admin/plantillas-reportes" onClick={closeMobile} className={itemClass}>
+              <FileCog size={17} />
+              <span>Plantillas PDF</span>
             </NavLink>
 
             <NavLink

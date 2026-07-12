@@ -72,7 +72,8 @@ export default function CronogramaPage() {
   };
 
   useEffect(() => {
-    cargarCronograma();
+    const timer = window.setTimeout(() => cargarCronograma(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

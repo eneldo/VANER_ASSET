@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { getEmpresaId } from "./ClienteLayout";
+import { getEmpresaId } from "../../utils/multiempresa";
 import {
   CalendarDays,
   RefreshCcw,
@@ -32,7 +32,7 @@ export default function ClienteCronograma() {
     cargarCronograma();
   }, []);
 
-  const cargarCronograma = async () => {
+  async function cargarCronograma() {
     try {
       const empresaId = getEmpresaId();
 
@@ -83,7 +83,8 @@ export default function ClienteCronograma() {
   const registrosActuales = filtrados.slice(inicio, inicio + registrosPorPagina);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda]);
 
   return (

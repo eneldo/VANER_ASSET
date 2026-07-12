@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   Search,
   Plus,
@@ -196,8 +196,11 @@ export default function EquiposPage() {
     }
   };
 
+  const cargarTodoAlMontar = useEffectEvent(cargarTodo);
+
   useEffect(() => {
-    cargarTodo();
+    const timer = window.setTimeout(() => cargarTodoAlMontar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const sedesFiltradas = useMemo(() => {
@@ -702,7 +705,7 @@ export default function EquiposPage() {
                   </label>
 
                   <label>Categoría
-                    <select name="categoria_id" value={equipoForm.categoria_id} onChange={handleEquipoChange}>
+                    <select name="categoria_id" value={equipoForm.categoria_id} onChange={handleEquipoChange} required>
                       <option value="">Sin categoría</option>
                       {categorias.map((categoria) => <option key={categoria.id} value={categoria.id}>{categoria.nombre}</option>)}
                     </select>

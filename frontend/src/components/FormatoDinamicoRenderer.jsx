@@ -6,7 +6,6 @@
 // checkbox, texto, numero, textarea, select.
 // ============================================================
 
-import React from "react";
 
 function agruparPorSeccion(campos = []) {
   return campos.reduce((acc, campo) => {

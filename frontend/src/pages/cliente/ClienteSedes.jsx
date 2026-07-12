@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { getEmpresaId } from "./ClienteLayout";
+import { getEmpresaId } from "../../utils/multiempresa";
 import {
   MapPin,
   Search,
@@ -43,7 +43,7 @@ export default function ClienteSedes() {
     cargarSedes();
   }, []);
 
-  const cargarSedes = async () => {
+  async function cargarSedes() {
     try {
       const empresaId = getEmpresaId();
 
@@ -119,7 +119,8 @@ export default function ClienteSedes() {
   const sedesActuales = sedesFiltradas.slice(inicioPagina, inicioPagina + registrosPorPagina);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda]);
 
   // ============================================================

@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.database import get_db, engine, Base
+from app.database import get_db
 from app.models import scheduler_inteligente  # noqa: F401 - registra modelos
 from app.schemas.scheduler_inteligente import (
     SchedulerLogOut,
@@ -37,9 +37,8 @@ router = APIRouter(prefix="/scheduler-inteligente", tags=["Scheduler Inteligente
 
 @router.post("/inicializar")
 def inicializar_tablas():
-    """Crea tablas de scheduler inteligente si no existen."""
-    Base.metadata.create_all(bind=engine)
-    return {"ok": True, "mensaje": "Tablas Scheduler Inteligente listas"}
+    """Compatibilidad: las tablas se administran exclusivamente con Alembic."""
+    return {"ok": True, "mensaje": "Esquema Scheduler administrado por Alembic"}
 
 
 @router.get("/dashboard")

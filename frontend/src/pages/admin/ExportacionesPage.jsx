@@ -88,7 +88,7 @@ export default function ExportacionesPage() {
     cargarCatalogos();
   }, []);
 
-  const cargarCatalogos = async () => {
+  async function cargarCatalogos() {
     try {
       const { data } = await API.get("/exportaciones/catalogos");
       setCatalogos(data);

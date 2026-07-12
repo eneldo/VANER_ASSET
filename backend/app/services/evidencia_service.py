@@ -16,6 +16,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
+from app.config import settings
 
 from app.middleware.file_security import (
     sanitize_filename,
@@ -32,7 +33,7 @@ from app.middleware.file_security import (
 # En local puedes usar UPLOAD_DIR desde .env si lo necesitas.
 # ===========================================================
 
-UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/app/uploads").resolve()
+UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or settings.UPLOAD_DIR).resolve()
 EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
 
 EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,7 +51,7 @@ async def save_secure_file(file: UploadFile) -> dict:
     {
         "filename": "uuid.ext",
         "path": "/app/uploads/evidencias/uuid.ext",
-        "public_url": "/uploads/evidencias/uuid.ext"
+        "public_url": "uuid.ext"
     }
     """
 
@@ -81,7 +82,9 @@ async def save_secure_file(file: UploadFile) -> dict:
     return {
         "filename": secure_name,
         "path": str(final_path),
-        "public_url": f"/uploads/evidencias/{secure_name}",
+        # Compatibilidad con los llamadores actuales: este valor es una clave
+        # privada de almacenamiento, no una URL pública.
+        "public_url": secure_name,
     }
 
 

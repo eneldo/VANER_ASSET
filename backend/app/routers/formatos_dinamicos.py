@@ -10,8 +10,15 @@ from uuid import UUID
 from app.database import get_db
 from app.models.formato_dinamico import TipoFormato, CampoFormato
 from app.schemas.formato_dinamico_schema import TipoFormatoCreate, TipoFormatoOut, CampoFormatoCreate, CampoFormatoOut
+from app.models.usuario import Usuario
+from app.routers.auth import obtener_usuario_actual
+from app.core.auth_dependencies import require_roles
 
-router = APIRouter(prefix="/formatos-dinamicos", tags=["Formatos Dinámicos PRO"])
+router = APIRouter(
+    prefix="/formatos-dinamicos",
+    tags=["Formatos Dinámicos PRO"],
+    dependencies=[Depends(obtener_usuario_actual)],
+)
 
 
 @router.get("/", response_model=list[TipoFormatoOut])
@@ -53,7 +60,11 @@ def obtener_por_codigo(codigo: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=TipoFormatoOut)
-def crear_formato(data: TipoFormatoCreate, db: Session = Depends(get_db)):
+def crear_formato(
+    data: TipoFormatoCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("ADMIN")),
+):
     codigo = data.codigo.upper().strip()
     if db.query(TipoFormato).filter(TipoFormato.codigo == codigo).first():
         raise HTTPException(status_code=400, detail="Ya existe un formato con ese código")
@@ -67,7 +78,11 @@ def crear_formato(data: TipoFormatoCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/campos", response_model=CampoFormatoOut)
-def crear_campo(data: CampoFormatoCreate, db: Session = Depends(get_db)):
+def crear_campo(
+    data: CampoFormatoCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("ADMIN")),
+):
     if not db.query(TipoFormato).filter(TipoFormato.id == data.formato_id).first():
         raise HTTPException(status_code=404, detail="Formato no existe")
     campo = CampoFormato(**data.model_dump())
@@ -78,7 +93,11 @@ def crear_campo(data: CampoFormatoCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/campos/{campo_id}")
-def eliminar_campo(campo_id: UUID, db: Session = Depends(get_db)):
+def eliminar_campo(
+    campo_id: UUID,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("ADMIN")),
+):
     campo = db.query(CampoFormato).filter(CampoFormato.id == campo_id).first()
     if not campo:
         raise HTTPException(status_code=404, detail="Campo no encontrado")

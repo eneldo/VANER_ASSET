@@ -121,7 +121,7 @@ def is_token_type(payload: dict, expected_type: str) -> bool:
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import get_db, establecer_contexto_tenant
 from app.models.usuario import Usuario
 # -----------------------------------------------------
 
@@ -150,5 +150,6 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if user is None:
         raise credentials_exception
-    
+
+    establecer_contexto_tenant(db, user)
     return user

@@ -4,7 +4,6 @@
 // Portal Cliente estable y funcional
 // ============================================================
 
-import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import {
@@ -13,29 +12,12 @@ import {
   MonitorCog,
   Wrench,
   CalendarDays,
+  AlertTriangle,
+  FileCheck2,
   LogOut,
 } from "lucide-react";
 
 import "./cliente.css";
-
-// ============================================================
-// OBTENER EMPRESA ID
-// ============================================================
-
-export function getEmpresaId() {
-  try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-    return (
-      localStorage.getItem("empresa_id") ||
-      user?.empresa_id ||
-      user?.empresa?.id ||
-      ""
-    );
-  } catch {
-    return localStorage.getItem("empresa_id") || "";
-  }
-}
 
 export default function ClienteLayout() {
   const navigate = useNavigate();
@@ -129,6 +111,16 @@ export default function ClienteLayout() {
           <NavLink to="/cliente/cronograma" className="cliente-link">
             <CalendarDays size={18} />
             Cronograma
+          </NavLink>
+
+          <NavLink to="/cliente/solicitudes" className="cliente-link cliente-link-emergency">
+            <AlertTriangle size={18} />
+            Emergencias
+          </NavLink>
+
+          <NavLink to="/cliente/reportes" className="cliente-link">
+            <FileCheck2 size={18} />
+            Reportes aprobados
           </NavLink>
         </nav>
 

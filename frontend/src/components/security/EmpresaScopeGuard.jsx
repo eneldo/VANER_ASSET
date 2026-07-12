@@ -7,7 +7,6 @@ Objetivo:
 - No reemplaza la seguridad backend; solo mejora experiencia de usuario.
 */
 
-import React from "react";
 import { getEmpresaId, isClienteLike } from "../../utils/multiempresa";
 
 export default function EmpresaScopeGuard({ children }) {

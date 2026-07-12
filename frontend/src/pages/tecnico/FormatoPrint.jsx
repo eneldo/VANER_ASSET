@@ -5,7 +5,7 @@
 // Vista imprimible del formato técnico.
 // ============================================================
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/formatoMantenimiento.css";
 
@@ -17,13 +17,12 @@ export default function FormatoPrint() {
 
   const [form, setForm] = useState(null);
 
-  useEffect(() => {
-    cargarFormato();
-  }, [mantenimientoId]);
-
-  const cargarFormato = async () => {
+  async function cargarFormato() {
     try {
-      const res = await fetch(`${API_URL}/formatos-mantenimiento/mantenimiento/${mantenimientoId}`);
+      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/formatos-mantenimiento/mantenimiento/${mantenimientoId}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
 
       if (!res.ok) {
         alert("No se encontró formato para imprimir.");
@@ -42,6 +41,13 @@ export default function FormatoPrint() {
       alert("Error cargando formato.");
     }
   };
+
+  const cargarFormatoAlCambiarOt = useEffectEvent(() => cargarFormato());
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargarFormatoAlCambiarOt(), 0);
+    return () => window.clearTimeout(timer);
+  }, [mantenimientoId]);
 
   const check = (valor) => (valor ? "☑" : "☐");
 
@@ -229,11 +235,11 @@ export default function FormatoPrint() {
 
         <div className="print-firmas">
           <div>
-            <span>{form.firma_usuario || ""}</span>
+            {esFirmaImagen(form.firma_usuario) ? <img src={form.firma_usuario} alt="Firma del usuario" /> : <span>Sin firma</span>}
             <strong>Firma del Usuario</strong>
           </div>
           <div>
-            <span>{form.firma_operario || ""}</span>
+            {esFirmaImagen(form.firma_operario) ? <img src={form.firma_operario} alt="Firma del operario" /> : <span>Sin firma</span>}
             <strong>Firma del Operario</strong>
           </div>
           <div>
@@ -244,4 +250,8 @@ export default function FormatoPrint() {
       </div>
     </div>
   );
+}
+
+function esFirmaImagen(value) {
+  return String(value || "").startsWith("data:image/png;base64,");
 }

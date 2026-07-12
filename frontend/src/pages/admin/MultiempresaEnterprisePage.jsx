@@ -73,7 +73,8 @@ export default function MultiempresaEnterprisePage() {
   };
 
   useEffect(() => {
-    cargarDatos();
+    const timer = window.setTimeout(() => cargarDatos(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // ============================================================

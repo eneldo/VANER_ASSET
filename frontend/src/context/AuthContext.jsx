@@ -3,7 +3,8 @@
 // Archivo: frontend/src/context/AuthContext.jsx
 // ============================================================
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { AuthContext } from "./auth-context";
 import api from "../api/axios";
 import {
   saveSession,
@@ -13,25 +14,16 @@ import {
   getRefreshToken,
 } from "../utils/authStorage";
 
-export const AuthContext = createContext(null);
+function initialUser() {
+  const storedUser = getStoredUser();
+  if (storedUser && getAccessToken()) return storedUser;
+  clearSession();
+  return null;
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getStoredUser());
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const storedUser = getStoredUser();
-    const token = getAccessToken();
-
-    if (storedUser && token) {
-      setUser(storedUser);
-    } else {
-      clearSession();
-      setUser(null);
-    }
-
-    setLoading(false);
-  }, []);
+  const [user, setUser] = useState(initialUser);
+  const loading = false;
 
   const login = async ({ username, password }) => {
     const response = await api.post("/auth/login", {
@@ -80,16 +72,16 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const hasRole = (...roles) => {
+  const hasRole = useCallback((...roles) => {
     if (!user?.rol) return false;
     return roles.map((r) => String(r).toUpperCase()).includes(user.rol);
-  };
+  }, [user]);
 
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     if (!permission) return true;
     if (user?.rol === "ADMIN") return true;
     return Array.isArray(user?.permisos) && user.permisos.includes(permission);
-  };
+  }, [user]);
 
   const isAuthenticated = Boolean(user && getAccessToken());
 
@@ -104,18 +96,8 @@ export function AuthProvider({ children }) {
       hasPermission,
       isAuthenticated,
     }),
-    [user, loading]
+    [user, loading, hasRole, hasPermission, isAuthenticated]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
-
-  return context;
 }

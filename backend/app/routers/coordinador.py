@@ -24,12 +24,13 @@ from app.routers.auth import obtener_usuario_actual
 from app.models.usuario import Usuario
 from app.models.empresa import Empresa
 from app.models.sede import Sede
-from app.models.categoria import Categoria
+from app.models.categoria import Categoria, CATEGORIA_CODES
 from app.models.equipo import Equipo
 from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.tecnico import Tecnico
 from app.models.mantenimiento import Mantenimiento
 from app.models.evidencia import Evidencia
+from app.routers.evidencias import crear_url_firmada
 
 
 router = APIRouter(prefix="/coordinador", tags=["Coordinador PRO"])
@@ -43,7 +44,7 @@ class EquipoCreate(BaseModel):
     nombre: str
     empresa_id: Optional[UUID] = None
     sede_id: UUID
-    categoria_id: Optional[UUID] = None
+    categoria_id: UUID
     marca: Optional[str] = None
     modelo: Optional[str] = None
     serie: Optional[str] = None
@@ -285,7 +286,20 @@ def _query_empresas_por_usuario(db: Session, usuario: Usuario):
 
 
 def _query_categorias(db: Session):
-    return db.query(Categoria)
+    return db.query(Categoria).filter(Categoria.activo.is_(True), Categoria.code.in_(CATEGORIA_CODES))
+
+
+def _validar_categoria_canonica(db: Session, categoria_id):
+    if not categoria_id:
+        raise HTTPException(status_code=422, detail="La categoría del equipo es obligatoria")
+    categoria = db.query(Categoria).filter(
+        Categoria.id == categoria_id,
+        Categoria.activo.is_(True),
+        Categoria.code.in_(CATEGORIA_CODES),
+    ).first()
+    if not categoria:
+        raise HTTPException(status_code=422, detail="Categoría de activo no permitida")
+    return categoria
 
 
 def _query_tecnicos_por_usuario(db: Session, usuario: Usuario):
@@ -498,7 +512,7 @@ def _serializar_evidencia(e, db: Session):
     return {
         "id": str(e.id),
         "tipo": getattr(e, "tipo", None),
-        "archivo_url": getattr(e, "archivo_url", None),
+        "archivo_url": crear_url_firmada(e.id, getattr(e, "archivo_url", None)),
         "nombre_original": getattr(e, "nombre_original", None),
         "descripcion": getattr(e, "descripcion", None),
         "equipo_id": str(e.equipo_id) if getattr(e, "equipo_id", None) else None,
@@ -603,6 +617,7 @@ def crear_equipo_coordinador(
 ):
     _validar_rol(usuario_actual)
     _validar_sede_pertenece_empresa(db, data.sede_id, usuario_actual)
+    _validar_categoria_canonica(db, data.categoria_id)
 
     empresa_id = data.empresa_id if _es_admin(usuario_actual) else _empresa_usuario(usuario_actual)
     if not empresa_id:
@@ -634,6 +649,8 @@ def actualizar_equipo_coordinador(
 
     if payload.get("sede_id"):
         _validar_sede_pertenece_empresa(db, payload["sede_id"], usuario_actual)
+    if "categoria_id" in payload:
+        _validar_categoria_canonica(db, payload["categoria_id"])
 
     for campo, valor in payload.items():
         if hasattr(equipo, campo):

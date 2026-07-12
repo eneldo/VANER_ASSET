@@ -7,7 +7,7 @@
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
-from app.database import get_db, Base, engine
+from app.database import get_db
 from app.models.log_sistema import LogSistema
 from app.schemas.log_sistema import LogSistemaCreate, LogSistemaOut, LogSistemaResumen
 from app.services.logs_inteligentes_service import (
@@ -19,12 +19,6 @@ from app.services.logs_inteligentes_service import (
 )
 
 router = APIRouter(prefix="/logs-inteligentes", tags=["Logs Inteligentes SaaS PRO"])
-
-
-@router.on_event("startup")
-def crear_tablas_logs():
-    """Crea la tabla si falta. Seguro para producción y no rompe módulos existentes."""
-    Base.metadata.create_all(bind=engine, tables=[LogSistema.__table__])
 
 
 @router.get("/resumen", response_model=LogSistemaResumen)

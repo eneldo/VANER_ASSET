@@ -8,7 +8,7 @@
 // - Tabla con scroll horizontal/vertical y paginación
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   Menu,
   Bell,
@@ -92,17 +92,23 @@ export default function ReportesPage() {
   const inicioRegistro = items.length === 0 ? 0 : (paginaActual - 1) * filasPorPagina + 1;
   const finRegistro = Math.min(paginaActual * filasPorPagina, items.length);
 
-  useEffect(() => {
+  const cargarInicial = useEffectEvent(() => {
     cargarEmpresas();
     cargarReporte();
+  });
+  const cargarSedesAlCambiarEmpresa = useEffectEvent(() => cargarSedes());
+
+  useEffect(() => {
+    cargarInicial();
   }, []);
 
   useEffect(() => {
-    cargarSedes();
+    cargarSedesAlCambiarEmpresa();
   }, [empresaId]);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [items, filasPorPagina]);
 
   const getHeaders = () => {
@@ -113,7 +119,7 @@ export default function ReportesPage() {
     };
   };
 
-  const cargarEmpresas = async () => {
+  async function cargarEmpresas() {
     try {
       const res = await fetch(`${API_URL}/reportes/filtros/empresas`, {
         headers: getHeaders(),
@@ -126,7 +132,7 @@ export default function ReportesPage() {
     }
   };
 
-  const cargarSedes = async () => {
+  async function cargarSedes() {
     try {
       const url = empresaId
         ? `${API_URL}/reportes/filtros/sedes?empresa_id=${empresaId}`
@@ -144,7 +150,7 @@ export default function ReportesPage() {
     }
   };
 
-  const cargarReporte = async () => {
+  async function cargarReporte() {
     setLoading(true);
 
     try {

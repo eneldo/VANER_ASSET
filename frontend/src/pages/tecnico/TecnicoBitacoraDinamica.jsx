@@ -5,7 +5,7 @@
 // Carga automáticamente el formato correcto según el equipo del mantenimiento.
 // ============================================================
 
-import React, { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useEffectEvent, useMemo, useState, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,13 +13,12 @@ import {
   ClipboardCheck,
   Wrench,
   Building2,
-  MapPin,
   Cpu,
   History,
   FileText,
 } from "lucide-react";
 
-import { AuthContext } from "../../context/AuthContext";
+import { AuthContext } from "../../context/auth-context";
 import formatosDinamicosApi from "../../api/formatosDinamicosApi";
 import FormatoDinamicoRenderer from "../../components/FormatoDinamicoRenderer";
 import "../../styles/bitacoraDinamica.css";
@@ -42,11 +41,13 @@ export default function TecnicoBitacoraDinamica() {
     repuestos_utilizados: "",
   });
 
+  const cargarContextoAlCambiarOt = useEffectEvent(() => cargarContexto());
+
   useEffect(() => {
-    cargarContexto();
+    cargarContextoAlCambiarOt();
   }, [mantenimientoId]);
 
-  const cargarContexto = async () => {
+  async function cargarContexto() {
     setLoading(true);
     setError("");
 

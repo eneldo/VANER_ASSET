@@ -7,7 +7,7 @@
 // - Usa endpoint /cliente/{empresa_id}/dashboard.
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -55,11 +55,13 @@ export default function ClienteIndicadores() {
     };
   };
 
+  const cargarIndicadoresAlMontar = useEffectEvent(() => cargarIndicadores());
+
   useEffect(() => {
-    cargarIndicadores();
+    cargarIndicadoresAlMontar();
   }, []);
 
-  const cargarIndicadores = async () => {
+  async function cargarIndicadores() {
     setLoading(true);
 
     try {

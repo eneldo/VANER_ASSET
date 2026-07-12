@@ -14,7 +14,6 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
-  Users,
   Wifi,
 } from "lucide-react";
 
@@ -136,7 +135,8 @@ export default function AuditoriaPage() {
   };
 
   useEffect(() => {
-    cargarTodo();
+    const timer = window.setTimeout(() => cargarTodo(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 

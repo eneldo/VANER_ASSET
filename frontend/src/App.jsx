@@ -5,65 +5,72 @@
 // =========================================================
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 // AUTH
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import NoAutorizado from "./pages/NoAutorizado";
+const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const NoAutorizado = lazy(() => import("./pages/NoAutorizado"));
 
 // DASHBOARDS REALES
-import DashboardAdmin from "./pages/DashboardAdmin";
-import DashboardTecnico from "./pages/DashboardTecnico";
-import CoordinadorDashboard from "./pages/coordinador/CoordinadorDashboard";
+const DashboardAdmin = lazy(() => import("./pages/DashboardAdmin"));
+const DashboardTecnico = lazy(() => import("./pages/DashboardTecnico"));
+const CoordinadorDashboard = lazy(() => import("./pages/coordinador/CoordinadorDashboard"));
 
 // ADMIN
-import EmpresasPage from "./pages/admin/EmpresasPage";
-import SedesPage from "./pages/admin/SedesPage";
-import CategoriasPage from "./pages/admin/CategoriasPage";
-import TecnicosPage from "./pages/admin/TecnicosPage";
-import UsuariosPage from "./pages/admin/UsuariosPage";
-import EquiposPage from "./pages/admin/EquiposPage";
-import HojaVidaEquipoPage from "./pages/admin/HojaVidaEquipoPage";
-import MantenimientosPage from "./pages/admin/MantenimientosPage";
-import EvidenciasPage from "./pages/admin/EvidenciasPage";
-import ReportesPage from "./pages/admin/ReportesPage";
-import AuditoriaPage from "./pages/admin/AuditoriaPage";
-import ConfiguracionPage from "./pages/admin/ConfiguracionPage";
-import ConfiguracionSistemaPage from "./pages/admin/ConfiguracionSistemaPage";
-import AutomatizacionPage from "./pages/admin/AutomatizacionPage";
-import BackupsInteligentesPage from "./pages/admin/BackupsInteligentesPage";
-import SMTPInteligentePage from "./pages/admin/SMTPInteligentePage";
-import MonitorVpsPage from "./pages/admin/MonitorVpsPage";
-import LogsInteligentesPage from "./pages/admin/LogsInteligentesPage";
-import DevOpsSaasPage from "./pages/admin/DevOpsSaasPage";
-import SchedulerInteligentePage from "./pages/admin/SchedulerInteligentePage";
-import RecoveryRestorePage from "./pages/admin/RecoveryRestorePage";
-import MultiempresaEnterprisePage from "./pages/admin/MultiempresaEnterprisePage";
-import BIExecutivePage from "./pages/admin/BIExecutivePage";
+const EmpresasPage = lazy(() => import("./pages/admin/EmpresasPage"));
+const SedesPage = lazy(() => import("./pages/admin/SedesPage"));
+const CategoriasPage = lazy(() => import("./pages/admin/CategoriasPage"));
+const TecnicosPage = lazy(() => import("./pages/admin/TecnicosPage"));
+const UsuariosPage = lazy(() => import("./pages/admin/UsuariosPage"));
+const EquiposPage = lazy(() => import("./pages/admin/EquiposPage"));
+const HojaVidaEquipoPage = lazy(() => import("./pages/admin/HojaVidaEquipoPage"));
+const MantenimientosPage = lazy(() => import("./pages/admin/MantenimientosPage"));
+const EvidenciasPage = lazy(() => import("./pages/admin/EvidenciasPage"));
+const ReportesPage = lazy(() => import("./pages/admin/ReportesPage"));
+const AuditoriaPage = lazy(() => import("./pages/admin/AuditoriaPage"));
+const ConfiguracionPage = lazy(() => import("./pages/admin/ConfiguracionPage"));
+const ConfiguracionSistemaPage = lazy(() => import("./pages/admin/ConfiguracionSistemaPage"));
+const AutomatizacionPage = lazy(() => import("./pages/admin/AutomatizacionPage"));
+const BackupsInteligentesPage = lazy(() => import("./pages/admin/BackupsInteligentesPage"));
+const SMTPInteligentePage = lazy(() => import("./pages/admin/SMTPInteligentePage"));
+const MonitorVpsPage = lazy(() => import("./pages/admin/MonitorVpsPage"));
+const LogsInteligentesPage = lazy(() => import("./pages/admin/LogsInteligentesPage"));
+const DevOpsSaasPage = lazy(() => import("./pages/admin/DevOpsSaasPage"));
+const SchedulerInteligentePage = lazy(() => import("./pages/admin/SchedulerInteligentePage"));
+const RecoveryRestorePage = lazy(() => import("./pages/admin/RecoveryRestorePage"));
+const MultiempresaEnterprisePage = lazy(() => import("./pages/admin/MultiempresaEnterprisePage"));
+const BIExecutivePage = lazy(() => import("./pages/admin/BIExecutivePage"));
+const FacturacionPage = lazy(() => import("./pages/admin/FacturacionPage"));
+const PlantillasReportePage = lazy(() => import("./pages/admin/PlantillasReportePage"));
 
 // CLIENTE
-import ClienteLayout from "./pages/cliente/ClienteLayout";
-import ClienteDashboard from "./pages/cliente/ClienteDashboard";
-import ClienteSedes from "./pages/cliente/ClienteSedes";
-import ClienteEquipos from "./pages/cliente/ClienteEquipos";
-import ClienteMantenimientos from "./pages/cliente/ClienteMantenimientos";
-import ClienteCronograma from "./pages/cliente/ClienteCronograma";
+const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
+const ClienteDashboard = lazy(() => import("./pages/cliente/ClienteDashboard"));
+const ClienteSedes = lazy(() => import("./pages/cliente/ClienteSedes"));
+const ClienteEquipos = lazy(() => import("./pages/cliente/ClienteEquipos"));
+const ClienteMantenimientos = lazy(() => import("./pages/cliente/ClienteMantenimientos"));
+const ClienteCronograma = lazy(() => import("./pages/cliente/ClienteCronograma"));
+const ClienteSolicitudes = lazy(() => import("./pages/cliente/ClienteSolicitudes"));
+const ClienteReportes = lazy(() => import("./pages/cliente/ClienteReportes"));
 
 // COORDINADOR
-import CoordinadorLayout from "./layouts/CoordinadorLayout";
-import CoordinadorMantenimientos from "./pages/coordinador/CoordinadorMantenimientos";
-import CoordinadorCronograma from "./pages/coordinador/CoordinadorCronograma";
-import CoordinadorEquipos from "./pages/coordinador/CoordinadorEquipos";
-import CoordinadorHojaVida from "./pages/coordinador/CoordinadorHojaVida";
-import CoordinadorEvidencias from "./pages/coordinador/CoordinadorEvidencias";
-import CoordinadorInformes from "./pages/coordinador/CoordinadorInformes";
+const CoordinadorLayout = lazy(() => import("./layouts/CoordinadorLayout"));
+const CoordinadorMantenimientos = lazy(() => import("./pages/coordinador/CoordinadorMantenimientos"));
+const CoordinadorCronograma = lazy(() => import("./pages/coordinador/CoordinadorCronograma"));
+const CoordinadorEquipos = lazy(() => import("./pages/coordinador/CoordinadorEquipos"));
+const CoordinadorHojaVida = lazy(() => import("./pages/coordinador/CoordinadorHojaVida"));
+const CoordinadorEvidencias = lazy(() => import("./pages/coordinador/CoordinadorEvidencias"));
+const CoordinadorInformes = lazy(() => import("./pages/coordinador/CoordinadorInformes"));
+const CoordinadorReportesPublicados = lazy(() => import("./pages/coordinador/CoordinadorReportesPublicados"));
 
 function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<div className="app-route-loading" role="status">Cargando módulo...</div>}>
       <Routes>
         {/* LOGIN */}
         <Route path="/" element={<Login />} />
@@ -86,6 +93,8 @@ function App() {
         <Route path="/admin/reportes" element={<ProtectedRoute><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/auditoria" element={<ProtectedRoute><AuditoriaPage /></ProtectedRoute>} />
         <Route path="/admin/bi-ejecutivo" element={<ProtectedRoute><BIExecutivePage /></ProtectedRoute>} />
+        <Route path="/admin/facturacion" element={<ProtectedRoute><FacturacionPage /></ProtectedRoute>} />
+        <Route path="/admin/plantillas-reportes" element={<ProtectedRoute><PlantillasReportePage /></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-inteligente" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-sistema" element={<ProtectedRoute><ConfiguracionSistemaPage /></ProtectedRoute>} />
@@ -109,6 +118,8 @@ function App() {
           <Route path="equipos" element={<ClienteEquipos />} />
           <Route path="mantenimientos" element={<ClienteMantenimientos />} />
           <Route path="cronograma" element={<ClienteCronograma />} />
+          <Route path="solicitudes" element={<ClienteSolicitudes />} />
+          <Route path="reportes" element={<ClienteReportes />} />
         </Route>
 
         {/* COORDINADOR */}
@@ -120,11 +131,13 @@ function App() {
           <Route path="hoja-vida/:id" element={<CoordinadorHojaVida />} />
           <Route path="evidencias" element={<CoordinadorEvidencias />} />
           <Route path="informes" element={<CoordinadorInformes />} />
+          <Route path="reportes-publicados" element={<CoordinadorReportesPublicados />} />
         </Route>
 
         {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

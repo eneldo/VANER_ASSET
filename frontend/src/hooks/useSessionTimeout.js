@@ -8,7 +8,7 @@
 // ============================================================
 
 import { useEffect, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "./useAuth";
 
 export function useSessionTimeout({ minutes = 30 } = {}) {
   const { logout, isAuthenticated } = useAuth();

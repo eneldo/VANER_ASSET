@@ -59,11 +59,8 @@ export default function EmpresasPage() {
   const [form, setForm] = useState(FORM_INICIAL);
 
   useEffect(() => {
-    cargarEmpresas();
-  }, []);
-
-  useEffect(() => {
-    setPagina(1);
+    const timer = window.setTimeout(() => setPagina(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda, porPagina]);
 
   const cargarEmpresas = async () => {
@@ -78,6 +75,11 @@ export default function EmpresasPage() {
       setCargando(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargarEmpresas(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const estadisticas = useMemo(() => {
     const total = empresas.length;

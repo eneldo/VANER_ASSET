@@ -25,10 +25,12 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 from app.database import get_db
+from app.core.auth_dependencies import require_roles
 
 router = APIRouter(
     prefix="/reportes",
-    tags=["Reportes PRO"]
+    tags=["Reportes PRO"],
+    dependencies=[Depends(require_roles("ADMIN"))],
 )
 
 

@@ -9,10 +9,10 @@
 // - Histórico de mantenimientos finalizados.
 // =========================================================
 
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useCallback, useEffect, useMemo, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../context/auth-context";
 import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
 
 import {
@@ -111,11 +111,7 @@ export default function DashboardTecnico() {
 
   const usuarioId = user?.usuario_id || user?.id;
 
-  useEffect(() => {
-    if (usuarioId) cargarDashboardTecnico();
-  }, [usuarioId]);
-
-  const cargarDashboardTecnico = async () => {
+  const cargarDashboardTecnico = useCallback(async () => {
     try {
       const res = await API.get(`/dashboard-tecnico/usuario/${usuarioId}`);
       setData(res.data);
@@ -123,9 +119,15 @@ export default function DashboardTecnico() {
       console.error(error);
       alert("Error cargando portal técnico.");
     }
-  };
+  }, [usuarioId]);
 
-  const mantenimientos = data?.mantenimientos || [];
+  useEffect(() => {
+    if (!usuarioId) return undefined;
+    const timer = window.setTimeout(() => cargarDashboardTecnico(), 0);
+    return () => window.clearTimeout(timer);
+  }, [usuarioId, cargarDashboardTecnico]);
+
+  const mantenimientos = useMemo(() => data?.mantenimientos || [], [data?.mantenimientos]);
   const resumen = data?.resumen || {};
 
   const filtrados = useMemo(() => {
@@ -736,7 +738,7 @@ function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
   const [sede, setSede] = useState("");
   const [equipo, setEquipo] = useState("");
 
-  const cargarHistorico = async () => {
+  const cargarHistorico = useCallback(async () => {
     try {
       setCargando(true);
 
@@ -759,11 +761,12 @@ function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
     } finally {
       setCargando(false);
     }
-  };
+  }, [desde, empresa, equipo, hasta, sede, usuarioId]);
 
   useEffect(() => {
-    cargarHistorico();
-  }, []);
+    const timer = window.setTimeout(() => cargarHistorico(), 0);
+    return () => window.clearTimeout(timer);
+  }, [cargarHistorico]);
 
   return (
     <div className="tec-modal-backdrop">

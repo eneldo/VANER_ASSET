@@ -10,7 +10,7 @@
 // - Se deja listo para crear o actualizar la hoja de vida.
 // =========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
@@ -72,8 +72,10 @@ export default function HojaVidaEquipoPage() {
     riesgo_elevado: false,
   });
 
+  const cargarHojaVidaAlCambiarEquipo = useEffectEvent(() => cargarHojaVida());
+
   useEffect(() => {
-    cargarHojaVida();
+    cargarHojaVidaAlCambiarEquipo();
   }, [equipoId]);
 
   // =======================================================
@@ -106,7 +108,7 @@ export default function HojaVidaEquipoPage() {
   // =======================================================
   // CARGAR HOJA DE VIDA + DATOS BÁSICOS DEL EQUIPO
   // =======================================================
-  const cargarHojaVida = async () => {
+  async function cargarHojaVida() {
     try {
       setCargando(true);
 

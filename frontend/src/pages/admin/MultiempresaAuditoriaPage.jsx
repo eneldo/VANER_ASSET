@@ -6,7 +6,6 @@ Panel visual preparado para consultar auditoría multiempresa.
 Puedes conectarlo luego al endpoint /auditoria/multiempresa si ya lo tienes.
 */
 
-import React from "react";
 import AdminLayout from "../../components/AdminLayout";
 
 export default function MultiempresaAuditoriaPage() {

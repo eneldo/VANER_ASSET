@@ -15,7 +15,7 @@
 // - DELETE /sedes/{id}
 // ============================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
 
@@ -64,10 +64,11 @@ export default function SedesPage() {
   }, []);
 
   useEffect(() => {
-    setPagina(1);
+    const timer = window.setTimeout(() => setPagina(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda, filtroEmpresa, porPagina]);
 
-  const cargarDatos = async () => {
+  async function cargarDatos() {
     try {
       setCargando(true);
 
@@ -86,10 +87,10 @@ export default function SedesPage() {
     }
   };
 
-  const getNombreEmpresa = (empresaId) => {
+  const getNombreEmpresa = useCallback((empresaId) => {
     const empresa = empresas.find((item) => String(item.id) === String(empresaId));
     return empresa ? empresa.nombre : "Empresa no encontrada";
-  };
+  }, [empresas]);
 
   const estadisticas = useMemo(() => {
     const total = sedes.length;
@@ -125,7 +126,7 @@ export default function SedesPage() {
 
       return contenido.includes(texto);
     });
-  }, [sedes, empresas, busqueda, filtroEmpresa]);
+  }, [sedes, busqueda, filtroEmpresa, getNombreEmpresa]);
 
   const totalPaginas = Math.max(1, Math.ceil(sedesFiltradas.length / porPagina));
   const paginaSegura = Math.min(pagina, totalPaginas);

@@ -20,7 +20,7 @@ class Equipo(Base):
     # Relaciones principales
     empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False)
     sede_id = Column(UUID(as_uuid=True), ForeignKey("sedes.id"), nullable=False)
-    categoria_id = Column(UUID(as_uuid=True), ForeignKey("categorias.id"), nullable=True)
+    categoria_id = Column(UUID(as_uuid=True), ForeignKey("categorias.id"), nullable=False)
 
     # Datos básicos del equipo
     nombre = Column(String(150), nullable=False)

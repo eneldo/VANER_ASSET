@@ -121,7 +121,8 @@ export default function BIExecutivePage() {
   };
 
   useEffect(() => {
-    cargarBI();
+    const timer = window.setTimeout(() => cargarBI(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (

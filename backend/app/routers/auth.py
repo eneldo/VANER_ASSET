@@ -19,7 +19,7 @@ from sqlalchemy import or_, text, func
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import get_db
+from app.database import get_db, establecer_contexto_tenant
 from app.models.usuario import Usuario
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.security import verify_password, create_access_token
@@ -90,6 +90,7 @@ def obtener_usuario_actual(
     if not usuario or not usuario.activo:
         raise credenciales_error
 
+    establecer_contexto_tenant(db, usuario)
     return usuario
 
 

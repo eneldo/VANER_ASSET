@@ -167,7 +167,8 @@ export default function TecnicosPage() {
   };
 
   useEffect(() => {
-    cargarTodo();
+    const timer = window.setTimeout(() => cargarTodo(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -202,7 +203,8 @@ export default function TecnicosPage() {
   }, [filtrados, page, pageSize, totalPages]);
 
   useEffect(() => {
-    setPage(1);
+    const timer = window.setTimeout(() => setPage(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda, pageSize]);
 
   const metricas = useMemo(() => {

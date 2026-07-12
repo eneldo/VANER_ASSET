@@ -11,7 +11,7 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from app.database import SessionLocal
+from app.database import SessionLocal, establecer_contexto_sistema
 from app.models.auditoria_pro import AuditoriaProEvento
 from app.services.audit_service import get_client_ip, get_request_id
 
@@ -78,6 +78,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         if should_log:
             db = SessionLocal()
             try:
+                establecer_contexto_sistema(db)
                 evento = AuditoriaProEvento(
                     modulo=self._modulo_from_path(path),
                     accion=self._accion_from_method(request.method, response.status_code),

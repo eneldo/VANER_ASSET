@@ -5,7 +5,7 @@ Archivo: frontend/src/pages/coordinador/CoordinadorEquipos.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import API from "../../api/axios";
 import { PackageSearch, Plus, Pencil, Save, X, RefreshCw, Search, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -44,8 +44,10 @@ export default function CoordinadorEquipos() {
 
   const registrosPorPagina = 9;
 
+  const cargarDatosAlMontar = useEffectEvent(() => cargarDatos());
+
   useEffect(() => {
-    cargarDatos();
+    cargarDatosAlMontar();
   }, []);
 
   const mostrarMensaje = (tipo, texto) => {
@@ -53,7 +55,7 @@ export default function CoordinadorEquipos() {
     setTimeout(() => setMensaje(null), 3500);
   };
 
-  const cargarDatos = async () => {
+  async function cargarDatos() {
     try {
       setCargando(true);
       const [resEquipos, resCatalogos] = await Promise.all([
@@ -264,7 +266,7 @@ export default function CoordinadorEquipos() {
 
               <label>
                 Categoría
-                <select value={form.categoria_id} onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}>
+                <select required value={form.categoria_id} onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}>
                   <option value="">Sin categoría</option>
                   {catalogos.categorias?.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>

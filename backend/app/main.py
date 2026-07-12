@@ -6,7 +6,7 @@
 import os
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -16,6 +16,7 @@ from app.middleware.rate_limit import InMemoryRateLimitMiddleware as RateLimitMi
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.automation.scheduler import iniciar_scheduler_sga, detener_scheduler_sga
+from app.core.auth_dependencies import require_roles
 
 
 # =========================================================
@@ -55,6 +56,10 @@ from app.routers import scheduler_inteligente  # Fase 34.2.6 - Scheduler Intelig
 from app.routers import recovery_restore  # Fase 34.2.7 - Recovery & Restore SaaS PRO
 from app.routers import multiempresa_enterprise  # Fase 34.2.8 - Multiempresa & Enterprise SaaS PRO
 from app.routers import bi_ejecutivo # Fase 34.2.9 - BI Ejecutivo SaaS PRO
+from app.routers import solicitudes_correctivas
+from app.routers import reportes_publicados
+from app.routers import facturacion
+from app.routers import plantillas_reporte
 
 
 
@@ -71,14 +76,30 @@ app = FastAPI(
 )
 
 
+def _cors_origins() -> list[str]:
+    origins = [
+        item.strip().rstrip("/")
+        for item in settings.BACKEND_CORS_ORIGINS.split(",")
+        if item.strip()
+    ] or ["*"]
+    if settings.APP_ENV.lower() == "production" and "*" in origins:
+        raise RuntimeError(
+            "BACKEND_CORS_ORIGINS debe listar dominios explícitos en producción"
+        )
+    return origins
+
+
+CORS_ORIGINS = _cors_origins()
+
+
 # =========================================================
 # MIDDLEWARES DE SEGURIDAD
 # =========================================================
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials="*" not in CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -103,7 +124,7 @@ app.add_middleware(AuditMiddleware)
 #   UPLOAD_DIR=/app/app/uploads
 # =========================================================
 
-UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/app/uploads").resolve()
+UPLOADS_DIR = Path(os.getenv("UPLOAD_DIR") or settings.UPLOAD_DIR).resolve()
 EVIDENCIAS_DIR = UPLOADS_DIR / "evidencias"
 LOGOS_DIR = UPLOADS_DIR / "logos"
 
@@ -111,10 +132,12 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 EVIDENCIAS_DIR.mkdir(parents=True, exist_ok=True)
 LOGOS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Solo los logos corporativos son públicos. Las evidencias se entregan mediante
+# URLs firmadas de corta duración desde el router /evidencias.
 app.mount(
-    "/uploads",
-    StaticFiles(directory=str(UPLOADS_DIR)),
-    name="uploads",
+    "/uploads/logos",
+    StaticFiles(directory=str(LOGOS_DIR)),
+    name="logos",
 )
 
 
@@ -123,38 +146,44 @@ app.mount(
 # =========================================================
 
 app.include_router(auth.router)
-app.include_router(usuarios.router)
-app.include_router(empresas.router)
-app.include_router(sedes.router)
+ADMIN_ONLY = [Depends(require_roles("ADMIN"))]
+
+app.include_router(usuarios.router, dependencies=ADMIN_ONLY)
+app.include_router(empresas.router, dependencies=ADMIN_ONLY)
+app.include_router(sedes.router, dependencies=ADMIN_ONLY)
 app.include_router(categorias.router)
 app.include_router(equipos.router)
-app.include_router(equipo_hoja_vida.router)
-app.include_router(tecnicos.router)
-app.include_router(mantenimientos.router)
+app.include_router(equipo_hoja_vida.router, dependencies=ADMIN_ONLY)
+app.include_router(tecnicos.router, dependencies=ADMIN_ONLY)
+app.include_router(mantenimientos.router, dependencies=ADMIN_ONLY)
 app.include_router(evidencias.router)
 app.include_router(dashboard_tecnico.router)
-app.include_router(permisos.router)
+app.include_router(permisos.router, dependencies=ADMIN_ONLY)
 app.include_router(cliente.router)
-app.include_router(reportes.router)
-app.include_router(auditoria.router)
+app.include_router(reportes.router, dependencies=ADMIN_ONLY)
+app.include_router(auditoria.router, dependencies=ADMIN_ONLY)
 app.include_router(password_recovery.router)
 app.include_router(coordinador.router)
 app.include_router(formatos_mantenimiento.router)
 app.include_router(formatos_dinamicos.router)
 app.include_router(bitacoras_dinamicas.router)
-app.include_router(configuracion.router)
-app.include_router(configuracion_saas.router)
-app.include_router(automatizacion.router)
-app.include_router(auditoria_pro.router)
-app.include_router(backups_inteligentes.router)
-app.include_router(smtp_inteligente.router)
-app.include_router(monitor_vps.router)
-app.include_router(logs_inteligentes.router)
-app.include_router(devops_saas.router)
-app.include_router(scheduler_inteligente.router)
-app.include_router(recovery_restore.router)
-app.include_router(multiempresa_enterprise.router)
-app.include_router(bi_ejecutivo.router)
+app.include_router(configuracion.router, dependencies=ADMIN_ONLY)
+app.include_router(configuracion_saas.router, dependencies=ADMIN_ONLY)
+app.include_router(automatizacion.router, dependencies=ADMIN_ONLY)
+app.include_router(auditoria_pro.router, dependencies=ADMIN_ONLY)
+app.include_router(backups_inteligentes.router, dependencies=ADMIN_ONLY)
+app.include_router(smtp_inteligente.router, dependencies=ADMIN_ONLY)
+app.include_router(monitor_vps.router, dependencies=ADMIN_ONLY)
+app.include_router(logs_inteligentes.router, dependencies=ADMIN_ONLY)
+app.include_router(devops_saas.router, dependencies=ADMIN_ONLY)
+app.include_router(scheduler_inteligente.router, dependencies=ADMIN_ONLY)
+app.include_router(recovery_restore.router, dependencies=ADMIN_ONLY)
+app.include_router(multiempresa_enterprise.router, dependencies=ADMIN_ONLY)
+app.include_router(bi_ejecutivo.router, dependencies=ADMIN_ONLY)
+app.include_router(solicitudes_correctivas.router)
+app.include_router(reportes_publicados.router)
+app.include_router(facturacion.router)
+app.include_router(plantillas_reporte.router)
 
 
 # =========================================================

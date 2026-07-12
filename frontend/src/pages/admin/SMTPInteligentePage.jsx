@@ -79,7 +79,8 @@ export default function SMTPInteligentePage() {
   };
 
   useEffect(() => {
-    cargarDatos();
+    const timer = window.setTimeout(() => cargarDatos(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleTest = async (e) => {

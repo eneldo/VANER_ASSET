@@ -4,7 +4,7 @@
 // Fase 34.1 - Configuración Inteligente SaaS PRO
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   Upload,
   Save,
@@ -123,10 +123,6 @@ export default function ConfiguracionPage() {
     return `${API_BASE}${config.logo_url}`;
   }, [config.logo_url, logoPreview]);
 
-  useEffect(() => {
-    cargarConfiguracion();
-  }, []);
-
   const cargarConfiguracion = async () => {
     try {
       setLoading(true);
@@ -140,10 +136,17 @@ export default function ConfiguracionPage() {
     }
   };
 
-  const showMessage = (type, text) => {
+  const cargarConfiguracionAlMontar = useEffectEvent(cargarConfiguracion);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargarConfiguracionAlMontar(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function showMessage(type, text) {
     setMessage({ type, text });
     window.setTimeout(() => setMessage(null), 4500);
-  };
+  }
 
   const updateRoot = (field, value) => {
     setConfig((prev) => ({ ...prev, [field]: value }));

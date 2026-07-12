@@ -5,7 +5,7 @@ Archivo: frontend/src/pages/coordinador/CoordinadorInformes.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
 import { FileBarChart, Printer, RefreshCw, Download, Search } from "lucide-react";
 import "../../styles/coordinador.css";
@@ -25,14 +25,14 @@ export default function CoordinadorInformes() {
   const [equipoFiltro, setEquipoFiltro] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(true);
+  const [, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     cargarInformes();
   }, []);
 
-  const cargarInformes = async () => {
+  async function cargarInformes() {
     try {
       setCargando(true);
       setError("");

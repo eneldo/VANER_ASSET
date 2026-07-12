@@ -4,13 +4,18 @@ services:
     container_name: sga_postgres
     restart: always
     environment:
-      POSTGRES_DB: sga_db
-      POSTGRES_USER: sga_user
-      POSTGRES_PASSWORD: sga_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    networks:
+      - sga_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -26,12 +31,22 @@ services:
       ALGORITHM: ${ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
       UPLOAD_DIR: /app/uploads
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./backend/app/uploads:/app/uploads
-    ports:
-      - "8000:8000"
+      - ./backend/app/backups:/app/app/backups
+    expose:
+      - "8000"
+    networks:
+      - sga_internal
+      - dokploy-network
 
   frontend:
     build:
@@ -42,8 +57,18 @@ services:
     restart: always
     depends_on:
       - backend
-    ports:
-      - "3001:80"
+    expose:
+      - "80"
+    networks:
+      - sga_internal
+      - dokploy-network
 
 volumes:
   postgres_data:
+
+networks:
+  sga_internal:
+    driver: bridge
+
+  dokploy-network:
+    external: true

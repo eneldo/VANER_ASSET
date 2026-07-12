@@ -122,7 +122,8 @@ export default function NotificacionesPage() {
   };
 
   useEffect(() => {
-    cargarDatos();
+    const timer = window.setTimeout(() => cargarDatos(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtroLeida, filtroPrioridad, filtroTipo]);
 

@@ -3,7 +3,7 @@
 // Módulo: Coordinador - Crear, editar, eliminar y filtrar mantenimientos
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import API from "../../api/axios";
 import "../../styles/coordinador.css";
 import { useSearchParams } from "react-router-dom";
@@ -42,8 +42,6 @@ const fmtFecha = (fecha) => {
   }
 };
 
-const estadoClass = (estado) => `coord-badge ${String(estado || "sin").toLowerCase()}`;
-
 export default function CoordinadorMantenimientos() {
   const [searchParams] = useSearchParams();
   const estadoURL = searchParams.get("estado") || "";
@@ -64,13 +62,18 @@ export default function CoordinadorMantenimientos() {
 
   const registrosPorPagina = 8;
 
+  const cargarDatosAlMontar = useEffectEvent(() => cargarDatos());
+
   useEffect(() => {
-    cargarDatos();
+    cargarDatosAlMontar();
   }, []);
 
   useEffect(() => {
-    setFiltroEstado(estadoURL);
-    setPagina(1);
+    const timer = window.setTimeout(() => {
+      setFiltroEstado(estadoURL);
+      setPagina(1);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [estadoURL]);
 
   const mostrarMensaje = (tipo, texto) => {
@@ -78,7 +81,7 @@ export default function CoordinadorMantenimientos() {
     setTimeout(() => setMensaje(null), 3500);
   };
 
-  const cargarDatos = async () => {
+  async function cargarDatos() {
     try {
       setCargando(true);
       const [resMantenimientos, resCatalogos] = await Promise.all([

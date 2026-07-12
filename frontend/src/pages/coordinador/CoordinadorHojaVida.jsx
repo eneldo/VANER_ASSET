@@ -5,7 +5,7 @@ Archivo: frontend/src/pages/coordinador/CoordinadorHojaVida.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import API from "../../api/axios";
 import { FileText, RefreshCw, Search, Save, Printer } from "lucide-react";
 import { useParams } from "react-router-dom";
@@ -51,16 +51,19 @@ export default function CoordinadorHojaVida() {
   const [detalle, setDetalle] = useState(null);
   const [hojaVida, setHojaVida] = useState(hojaInicial);
   const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(true);
+  const [, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
+  const cargarEquiposAlMontar = useEffectEvent(() => cargarEquipos());
+  const cargarHojaVidaAlCambiarEquipo = useEffectEvent((id) => cargarHojaVida(id));
+
   useEffect(() => {
-    cargarEquipos();
+    cargarEquiposAlMontar();
   }, []);
 
   useEffect(() => {
-    if (equipoId) cargarHojaVida(equipoId);
+    if (equipoId) cargarHojaVidaAlCambiarEquipo(equipoId);
   }, [equipoId]);
 
   const mostrarMensaje = (tipo, texto) => {
@@ -68,7 +71,7 @@ export default function CoordinadorHojaVida() {
     setTimeout(() => setMensaje(null), 3500);
   };
 
-  const cargarEquipos = async () => {
+  async function cargarEquipos() {
     try {
       setCargando(true);
       const res = await API.get("/coordinador/equipos");
@@ -84,7 +87,7 @@ export default function CoordinadorHojaVida() {
     }
   };
 
-  const cargarHojaVida = async (id) => {
+  async function cargarHojaVida(id) {
     try {
       setCargando(true);
       const res = await API.get(`/coordinador/equipos/${id}/hoja-vida`);

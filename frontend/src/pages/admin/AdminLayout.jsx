@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import "../../styles/sidebar.css";
 import "../../styles/admin.css";
 

@@ -63,7 +63,8 @@ export default function MonitorVpsPage() {
   };
 
   useEffect(() => {
-    cargar();
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const vps = data?.vps || {};

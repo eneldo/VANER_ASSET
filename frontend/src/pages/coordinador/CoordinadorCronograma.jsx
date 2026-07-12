@@ -5,7 +5,7 @@ Archivo: frontend/src/pages/coordinador/CoordinadorCronograma.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
 import { CalendarDays, RefreshCw, Search } from "lucide-react";
 import "../../styles/coordinador.css";
@@ -35,7 +35,7 @@ export default function CoordinadorCronograma() {
     cargarCronograma();
   }, []);
 
-  const cargarCronograma = async () => {
+  async function cargarCronograma() {
     try {
       setCargando(true);
       setError("");

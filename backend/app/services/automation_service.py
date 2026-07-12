@@ -8,7 +8,6 @@ from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from app.database import Base, engine
 from app.models.automatizacion import Automatizacion, AutomatizacionLog
 
 
@@ -73,13 +72,8 @@ DEFAULT_AUTOMATIZACIONES = [
 
 
 def crear_tablas_automatizacion_si_faltan() -> None:
-    """Crea solo las tablas de esta fase si no existen."""
-
-    Base.metadata.create_all(
-        bind=engine,
-        tables=[Automatizacion.__table__, AutomatizacionLog.__table__],
-        checkfirst=True,
-    )
+    """Compatibilidad: el esquema se administra exclusivamente con Alembic."""
+    return None
 
 
 def inicializar_automatizaciones(db: Session) -> List[Automatizacion]:

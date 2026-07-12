@@ -8,9 +8,11 @@
 //   e industrial general.
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/formatoMantenimiento.css";
+import SignaturePad from "../../components/SignaturePad";
+import { isNetworkError, queueOfflineRequest } from "../../utils/offlineQueue";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -457,7 +459,7 @@ export default function FormatoMantenimiento() {
 
   const [formatoId, setFormatoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
-  const [mantenimiento, setMantenimiento] = useState(null);
+  const [, setMantenimiento] = useState(null);
   const [templateKey, setTemplateKey] = useState("INDUSTRIAL_GENERAL");
   const [form, setForm] = useState(formInicial(mantenimientoId));
 
@@ -472,12 +474,7 @@ export default function FormatoMantenimiento() {
     };
   };
 
-  useEffect(() => {
-    cargarDetalleMantenimiento();
-    cargarFormatoExistente();
-  }, [mantenimientoId]);
-
-  const cargarDetalleMantenimiento = async () => {
+  async function cargarDetalleMantenimiento() {
     try {
       const res = await fetch(
         `${API_URL}/dashboard-tecnico/mantenimiento/${mantenimientoId}/detalle`,
@@ -538,7 +535,7 @@ export default function FormatoMantenimiento() {
     }
   };
 
-  const cargarFormatoExistente = async () => {
+  async function cargarFormatoExistente() {
     try {
       const res = await fetch(
         `${API_URL}/formatos-mantenimiento/mantenimiento/${mantenimientoId}`,
@@ -572,6 +569,18 @@ export default function FormatoMantenimiento() {
       console.log("No existe formato previo.");
     }
   };
+
+  const cargarFormatoAlCambiarOt = useEffectEvent(() => {
+    cargarDetalleMantenimiento();
+    cargarFormatoExistente();
+  });
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      cargarFormatoAlCambiarOt();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [mantenimientoId]);
 
   const actualizarCampo = (campo, valor) => {
     setForm((prev) => ({
@@ -622,25 +631,23 @@ export default function FormatoMantenimiento() {
 
   const guardarFormato = async () => {
     setGuardando(true);
+    const endpoint = formatoId
+      ? `/formatos-mantenimiento/${formatoId}`
+      : "/formatos-mantenimiento/";
+    const url = `${API_URL}${endpoint}`;
+    const method = formatoId ? "PUT" : "POST";
+    const payload = {
+      ...form,
+      mantenimiento_id: String(mantenimientoId),
+      tipo_equipo: form.tipo_equipo || templateKey,
+      trabajos_realizados: {
+        ...form.trabajos_realizados,
+        _plantilla: templateKey,
+        _titulo_plantilla: template.titulo,
+      },
+    };
 
     try {
-      const url = formatoId
-        ? `${API_URL}/formatos-mantenimiento/${formatoId}`
-        : `${API_URL}/formatos-mantenimiento/`;
-
-      const method = formatoId ? "PUT" : "POST";
-
-      const payload = {
-        ...form,
-        mantenimiento_id: String(mantenimientoId),
-        tipo_equipo: form.tipo_equipo || templateKey,
-        trabajos_realizados: {
-          ...form.trabajos_realizados,
-          _plantilla: templateKey,
-          _titulo_plantilla: template.titulo,
-        },
-      };
-
       const res = await fetch(url, {
         method,
         headers: getHeaders(),
@@ -658,6 +665,11 @@ export default function FormatoMantenimiento() {
       alert("Bitácora guardada correctamente.");
     } catch (error) {
       console.error(error);
+      if (isNetworkError(error)) {
+        await queueOfflineRequest({ method: formatoId ? "put" : "post", url: endpoint, data: payload });
+        alert("Sin conexión: el formato y la firma quedaron guardados para sincronización automática.");
+        return;
+      }
       alert("Error guardando la bitácora.");
     } finally {
       setGuardando(false);
@@ -908,21 +920,8 @@ export default function FormatoMantenimiento() {
         </label>
 
         <div className="firmas">
-          <label>
-            Firma del Usuario
-            <input
-              value={form.firma_usuario || ""}
-              onChange={(e) => actualizarCampo("firma_usuario", e.target.value)}
-            />
-          </label>
-
-          <label>
-            Firma del Operario
-            <input
-              value={form.firma_operario || ""}
-              onChange={(e) => actualizarCampo("firma_operario", e.target.value)}
-            />
-          </label>
+          <SignaturePad label="Firma del cliente / usuario" value={form.firma_usuario || ""} onChange={(value) => actualizarCampo("firma_usuario", value)} />
+          <SignaturePad label="Firma del técnico / operario" value={form.firma_operario || ""} onChange={(value) => actualizarCampo("firma_operario", value)} />
 
           <label>
             Firma del Coordinador

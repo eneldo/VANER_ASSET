@@ -7,7 +7,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.database import Base, engine, get_db
+from app.database import get_db
 from app.models.smtp_log import SMTPLog
 from app.schemas.smtp_inteligente import (
     SMTPLogOut,
@@ -30,9 +30,8 @@ router = APIRouter(
 
 @router.post("/inicializar")
 def inicializar_smtp_inteligente():
-    """Crea la tabla smtp_logs si no existe. Seguro para producción."""
-    Base.metadata.create_all(bind=engine, tables=[SMTPLog.__table__])
-    return {"ok": True, "mensaje": "SMTP Inteligente inicializado correctamente."}
+    """Compatibilidad: el esquema se administra exclusivamente con Alembic."""
+    return {"ok": True, "mensaje": "Esquema SMTP administrado por Alembic"}
 
 
 @router.get("/estado", response_model=SMTPStatusOut)

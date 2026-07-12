@@ -13,7 +13,7 @@ class EquipoBase(BaseModel):
     # Relaciones principales
     empresa_id: UUID
     sede_id: UUID
-    categoria_id: Optional[UUID] = None
+    categoria_id: UUID
 
     # Datos básicos del equipo
     nombre: str

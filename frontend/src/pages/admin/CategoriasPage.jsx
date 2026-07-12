@@ -4,7 +4,7 @@
 // Módulo responsive, profesional y compatible con backend actual
 // ============================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   Boxes,
   CheckCircle2,
@@ -13,7 +13,6 @@ import {
   Plus,
   RefreshCcw,
   Search,
-  Trash2,
   XCircle,
 } from "lucide-react";
 
@@ -28,6 +27,7 @@ const ESTADO_OPTIONS = [
 ];
 
 const initialForm = {
+  code: "",
   nombre: "",
   descripcion: "",
   activo: true,
@@ -36,6 +36,7 @@ const initialForm = {
 function normalizarCategoria(item) {
   return {
     id: item?.id,
+    code: item?.code || "",
     nombre: item?.nombre || item?.name || "Sin nombre",
     descripcion: item?.descripcion || item?.description || "Sin descripción",
     activo: item?.activo ?? item?.estado ?? true,
@@ -83,9 +84,11 @@ export default function CategoriasPage() {
     }
   };
 
+  const cargarCategoriasAlMontar = useEffectEvent(cargarCategorias);
+
   useEffect(() => {
-    cargarCategorias();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = window.setTimeout(() => cargarCategoriasAlMontar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const filtradas = useMemo(() => {
@@ -107,10 +110,6 @@ export default function CategoriasPage() {
     const start = (current - 1) * pageSize;
     return filtradas.slice(start, start + pageSize);
   }, [filtradas, page, pageSize, totalPages]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [busqueda, pageSize]);
 
   const metricas = useMemo(() => {
     const total = categorias.length;
@@ -138,29 +137,27 @@ export default function CategoriasPage() {
     event.preventDefault();
     setError("");
 
-    if (!form.nombre.trim()) {
-      setError("El nombre de la categoría es obligatorio.");
+    if (!editId) {
+      setError("Selecciona una categoría para editar su descripción.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const method = editId ? "PUT" : "POST";
-      const url = editId ? `${API_URL}/categorias/${editId}` : `${API_URL}/categorias/`;
+      const method = "PUT";
+      const url = `${API_URL}/categorias/${editId}`;
 
       const response = await fetch(url, {
         method,
         headers: authHeaders,
         body: JSON.stringify({
-          nombre: form.nombre.trim(),
           descripcion: form.descripcion.trim(),
-          activo: Boolean(form.activo),
         }),
       });
 
       if (!response.ok) {
-        throw new Error(editId ? "No fue posible actualizar la categoría." : "No fue posible crear la categoría.");
+        throw new Error("No fue posible actualizar la descripción.");
       }
 
       limpiarFormulario();
@@ -175,33 +172,12 @@ export default function CategoriasPage() {
   const editarCategoria = (categoria) => {
     setEditId(categoria.id);
     setForm({
+      code: categoria.code || "",
       nombre: categoria.nombre || "",
       descripcion: categoria.descripcion || "",
       activo: Boolean(categoria.activo),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const eliminarCategoria = async (categoria) => {
-    const confirmar = window.confirm(`¿Eliminar la categoría "${categoria.nombre}"?`);
-    if (!confirmar) return;
-
-    setError("");
-
-    try {
-      const response = await fetch(`${API_URL}/categorias/${categoria.id}`, {
-        method: "DELETE",
-        headers: authHeaders,
-      });
-
-      if (!response.ok) {
-        throw new Error("No fue posible eliminar la categoría.");
-      }
-
-      await cargarCategorias();
-    } catch (err) {
-      setError(err.message || "Error eliminando categoría.");
-    }
   };
 
   return (
@@ -212,8 +188,7 @@ export default function CategoriasPage() {
             <span className="ct-eyebrow">Inventario inteligente</span>
             <h1>Categorías de equipos</h1>
             <p>
-              Organiza los activos por familias técnicas: aires acondicionados, CCTV,
-              plantas eléctricas, ascensores, bombas, tableros y más.
+              Catálogo canónico de las cuatro familias técnicas soportadas por la plataforma.
             </p>
           </div>
 
@@ -255,8 +230,8 @@ export default function CategoriasPage() {
           <article className="ct-card ct-form-card">
             <div className="ct-card-head">
               <div>
-                <h2>{editId ? "Editar categoría" : "Nueva categoría"}</h2>
-                <p>Define una categoría técnica para clasificar equipos.</p>
+                <h2>{editId ? "Editar descripción" : "Catálogo cerrado"}</h2>
+                <p>Los nombres y códigos son inmutables; selecciona una fila para ajustar su descripción.</p>
               </div>
             </div>
 
@@ -266,14 +241,15 @@ export default function CategoriasPage() {
                 <input
                   name="nombre"
                   value={form.nombre}
-                  onChange={handleChange}
-                  placeholder="Ej: Aires acondicionados"
+                  disabled
+                  placeholder="Selecciona una categoría"
                 />
               </label>
 
               <label>
-                Estado
-                <select name="activo" value={String(form.activo)} onChange={handleChange}>
+                Código funcional
+                <input value={form.code} disabled placeholder="Código canónico" />
+                <select hidden name="activo" value={String(form.activo)} onChange={handleChange}>
                   {ESTADO_OPTIONS.map((option) => (
                     <option key={String(option.value)} value={String(option.value)}>
                       {option.label}
@@ -295,7 +271,7 @@ export default function CategoriasPage() {
               <div className="ct-form-actions">
                 <button className="ct-btn-primary" disabled={saving} type="submit">
                   <Plus size={18} />
-                  {saving ? "Guardando..." : editId ? "Actualizar" : "Crear"}
+                  {saving ? "Guardando..." : "Actualizar descripción"}
                 </button>
 
                 {editId && (
@@ -318,7 +294,7 @@ export default function CategoriasPage() {
                 <Search size={18} />
                 <input
                   value={busqueda}
-                  onChange={(event) => setBusqueda(event.target.value)}
+                  onChange={(event) => { setBusqueda(event.target.value); setPage(1); }}
                   placeholder="Buscar categoría..."
                 />
               </div>
@@ -347,7 +323,7 @@ export default function CategoriasPage() {
                             <span className="ct-avatar"><Layers3 size={17} /></span>
                             <div>
                               <strong>{categoria.nombre}</strong>
-                              <small>ID: {categoria.id}</small>
+                              <small>{categoria.code}</small>
                             </div>
                           </div>
                         </td>
@@ -362,9 +338,6 @@ export default function CategoriasPage() {
                             <button title="Editar" onClick={() => editarCategoria(categoria)}>
                               <Edit3 size={16} />
                             </button>
-                            <button title="Eliminar" className="danger" onClick={() => eliminarCategoria(categoria)}>
-                              <Trash2 size={16} />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -377,7 +350,7 @@ export default function CategoriasPage() {
             <div className="ct-pagination">
               <span>Página {Math.min(page, totalPages)} de {totalPages}</span>
               <div>
-                <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>
+                <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}>
                   <option value={6}>6</option>
                   <option value={8}>8</option>
                   <option value={12}>12</option>

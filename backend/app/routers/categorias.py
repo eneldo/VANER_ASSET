@@ -9,49 +9,51 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.categoria import Categoria
-from app.schemas.categoria import CategoriaCreate, CategoriaUpdate, CategoriaOut
+from app.schemas.categoria import CategoriaUpdate, CategoriaOut
+from app.models.usuario import Usuario
+from app.routers.auth import obtener_usuario_actual
+from app.core.auth_dependencies import require_roles
 
 
 router = APIRouter(prefix="/categorias", tags=["Categorías"])
 
+CATEGORIAS_CANONICAS = {
+    "EQUIPOS_INDUSTRIALES": "Equipos Industriales",
+    "AIRES_ACONDICIONADOS": "Aires Acondicionados",
+    "CAMARAS_SEGURIDAD": "Cámaras de Seguridad",
+    "PROTECCION_CONTRA_INCENDIOS": "Sistemas de Protección Contra Incendios",
+}
+
 
 @router.post("/", response_model=CategoriaOut)
-def crear_categoria(data: CategoriaCreate, db: Session = Depends(get_db)):
-    """
-    Crea una nueva categoría de equipo.
-    Ejemplo: Biomédico, Refrigeración, CCTV, Cómputo.
-    """
-
-    # Validar que no exista una categoría con el mismo nombre
-    existente = db.query(Categoria).filter(Categoria.nombre == data.nombre).first()
-
-    if existente:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe una categoría con ese nombre"
-        )
-
-    nueva_categoria = Categoria(**data.model_dump())
-
-    db.add(nueva_categoria)
-    db.commit()
-    db.refresh(nueva_categoria)
-
-    return nueva_categoria
+def crear_categoria(usuario: Usuario = Depends(require_roles("ADMIN"))):
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="El catálogo es cerrado y contiene exactamente cuatro categorías.",
+    )
 
 
 @router.get("/", response_model=list[CategoriaOut])
-def listar_categorias(db: Session = Depends(get_db)):
+def listar_categorias(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
     """
     Lista todas las categorías registradas.
     """
 
-    categorias = db.query(Categoria).order_by(Categoria.nombre.asc()).all()
+    categorias = db.query(Categoria).filter(
+        Categoria.code.in_(CATEGORIAS_CANONICAS.keys())
+    ).order_by(Categoria.nombre.asc()).all()
     return categorias
 
 
 @router.get("/{categoria_id}", response_model=CategoriaOut)
-def obtener_categoria(categoria_id: UUID, db: Session = Depends(get_db)):
+def obtener_categoria(
+    categoria_id: UUID,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
     """
     Obtiene una categoría por ID.
     """
@@ -71,7 +73,8 @@ def obtener_categoria(categoria_id: UUID, db: Session = Depends(get_db)):
 def actualizar_categoria(
     categoria_id: UUID,
     data: CategoriaUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("ADMIN")),
 ):
     """
     Actualiza una categoría existente.
@@ -85,23 +88,11 @@ def actualizar_categoria(
             detail="Categoría no encontrada"
         )
 
-    datos = data.model_dump(exclude_unset=True)
-
-    # Validar duplicado si cambia el nombre
-    if "nombre" in datos:
-        duplicada = db.query(Categoria).filter(
-            Categoria.nombre == datos["nombre"],
-            Categoria.id != categoria_id
-        ).first()
-
-        if duplicada:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ya existe otra categoría con ese nombre"
-            )
-
-    for campo, valor in datos.items():
-        setattr(categoria, campo, valor)
+    if categoria.code not in CATEGORIAS_CANONICAS:
+        raise HTTPException(status_code=409, detail="Categoría histórica no canónica")
+    categoria.descripcion = data.descripcion
+    categoria.nombre = CATEGORIAS_CANONICAS[categoria.code]
+    categoria.activo = True
 
     db.commit()
     db.refresh(categoria)
@@ -110,7 +101,11 @@ def actualizar_categoria(
 
 
 @router.delete("/{categoria_id}")
-def eliminar_categoria(categoria_id: UUID, db: Session = Depends(get_db)):
+def eliminar_categoria(
+    categoria_id: UUID,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_roles("ADMIN")),
+):
     """
     Elimina una categoría.
     Nota: si ya está relacionada a equipos, PostgreSQL puede bloquear
@@ -125,7 +120,7 @@ def eliminar_categoria(categoria_id: UUID, db: Session = Depends(get_db)):
             detail="Categoría no encontrada"
         )
 
-    db.delete(categoria)
-    db.commit()
-
-    return {"message": "Categoría eliminada correctamente"}
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail="Las cuatro categorías canónicas no se pueden eliminar.",
+    )

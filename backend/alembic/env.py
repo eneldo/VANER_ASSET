@@ -47,6 +47,21 @@ import app.models.tecnico
 import app.models.auditoria
 import app.models.auditoria_evento
 import app.models.auditoria_pro
+import app.models.solicitud_correctiva
+import app.models.reporte_publicado
+import app.models.factura
+import app.models.ot_repuesto
+import app.models.ot_incidencia
+import app.models.plantilla_reporte
+import app.models.automatizacion
+import app.models.backup_historial
+import app.models.configuracion
+import app.models.configuracion_saas
+import app.models.devops_evento
+import app.models.log_sistema
+import app.models.monitor_estado
+import app.models.scheduler_inteligente
+import app.models.smtp_log
 
 # ============================================================
 # CONFIGURACIÓN BASE DE ALEMBIC
@@ -55,7 +70,10 @@ import app.models.auditoria_pro
 config = context.config
 
 # Usar la DATABASE_URL real del archivo .env
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option(
+    "sqlalchemy.url",
+    settings.MIGRATION_DATABASE_URL or settings.DATABASE_URL,
+)
 
 # Logging de Alembic
 if config.config_file_name is not None:

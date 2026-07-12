@@ -43,11 +43,6 @@ export default function GaleriaEvidencias({ equipoId, mantenimientoId }) {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [equipoId, mantenimientoId]);
-
   const cargar = async () => {
     try {
       setLoading(true);
@@ -71,6 +66,12 @@ export default function GaleriaEvidencias({ equipoId, mantenimientoId }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipoId, mantenimientoId]);
 
   return (
     <div style={styles.wrapper}>

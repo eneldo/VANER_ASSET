@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { getEmpresaId } from "./ClienteLayout";
+import { getEmpresaId } from "../../utils/multiempresa";
 import {
   RefreshCcw,
   Wrench,
@@ -36,7 +36,7 @@ export default function ClienteMantenimientos() {
     cargar();
   }, []);
 
-  const cargar = async () => {
+  async function cargar() {
     try {
       const empresaId = getEmpresaId();
 
@@ -96,7 +96,8 @@ export default function ClienteMantenimientos() {
   const registrosActuales = filtrados.slice(inicio, inicio + registrosPorPagina);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [filtro, busqueda]);
 
   return (

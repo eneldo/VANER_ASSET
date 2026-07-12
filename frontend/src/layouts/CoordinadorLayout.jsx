@@ -10,7 +10,7 @@ Mejoras:
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -23,6 +23,7 @@ import {
   PackageSearch,
   Image,
   FileText,
+  FileCheck2,
   X,
 } from "lucide-react";
 
@@ -44,10 +45,6 @@ export default function CoordinadorLayout() {
     }
   }, []);
 
-  useEffect(() => {
-    cargarPermisos();
-  }, []);
-
   const cargarPermisos = async () => {
     try {
       setCargandoPermisos(true);
@@ -60,6 +57,11 @@ export default function CoordinadorLayout() {
       setCargandoPermisos(false);
     }
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargarPermisos(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const esAdmin = String(user?.rol || "").toUpperCase() === "ADMIN";
   const esCoordinador = String(user?.rol || "").toUpperCase() === "COORDINADOR";
@@ -111,6 +113,12 @@ export default function CoordinadorLayout() {
       label: "Reportes",
       to: "/coordinador/informes",
       icon: FileBarChart,
+      permisos: ["INFORMES_VER", "REPORTES_VER", "COORDINADOR_INFORMES"],
+    },
+    {
+      label: "Aprobar y publicar",
+      to: "/coordinador/reportes-publicados",
+      icon: FileCheck2,
       permisos: ["INFORMES_VER", "REPORTES_VER", "COORDINADOR_INFORMES"],
     },
   ];

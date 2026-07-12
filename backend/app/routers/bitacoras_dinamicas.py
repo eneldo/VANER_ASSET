@@ -17,8 +17,25 @@ from app.models.tecnico import Tecnico
 from app.models.formato_dinamico import TipoFormato, BitacoraDinamica, BitacoraRespuesta
 from app.schemas.formato_dinamico_schema import BitacoraGuardarIn, BitacoraOut, BitacoraContextoOut
 from app.services.formato_selector import seleccionar_codigo_formato
+from app.models.usuario import Usuario
+from app.routers.auth import obtener_usuario_actual
 
 router = APIRouter(prefix="/bitacoras-dinamicas", tags=["Bitácoras Dinámicas PRO"])
+
+
+def autorizar_bitacora(usuario: Usuario, mantenimiento: Mantenimiento, db: Session, escritura=False):
+    rol = str(usuario.rol or "").upper()
+    if rol == "ADMIN":
+        return
+    if rol == "COORDINADOR" and str(usuario.empresa_id) == str(mantenimiento.empresa_id):
+        return
+    if not escritura and rol in {"EMPRESA", "CLIENTE"} and str(usuario.empresa_id) == str(mantenimiento.empresa_id):
+        return
+    if rol == "TECNICO":
+        tecnico = db.query(Tecnico).filter(Tecnico.usuario_id == usuario.id).first()
+        if tecnico and str(tecnico.id) == str(mantenimiento.tecnico_id):
+            return
+    raise HTTPException(status_code=403, detail="Sin acceso a la bitácora de esta OT")
 
 
 def equipo_to_dict(equipo: Equipo, categoria_nombre: str | None = None):
@@ -54,7 +71,11 @@ def mantenimiento_to_dict(m: Mantenimiento):
 
 
 @router.get("/mantenimiento/{mantenimiento_id}", response_model=BitacoraContextoOut)
-def obtener_bitacora_por_mantenimiento(mantenimiento_id: UUID, db: Session = Depends(get_db)):
+def obtener_bitacora_por_mantenimiento(
+    mantenimiento_id: UUID,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
     """
     Devuelve el mantenimiento, equipo, formato correspondiente y bitácora previa si existe.
     Esta es la ruta que consume el portal técnico.
@@ -63,6 +84,7 @@ def obtener_bitacora_por_mantenimiento(mantenimiento_id: UUID, db: Session = Dep
     mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == mantenimiento_id).first()
     if not mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+    autorizar_bitacora(usuario, mantenimiento, db, escritura=False)
 
     equipo = db.query(Equipo).filter(Equipo.id == mantenimiento.equipo_id).first()
     if not equipo:
@@ -112,7 +134,11 @@ def obtener_bitacora_por_mantenimiento(mantenimiento_id: UUID, db: Session = Dep
 
 
 @router.post("/guardar", response_model=BitacoraOut)
-def guardar_bitacora(data: BitacoraGuardarIn, db: Session = Depends(get_db)):
+def guardar_bitacora(
+    data: BitacoraGuardarIn,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
     """
     Crea o actualiza una bitácora dinámica y reemplaza sus respuestas.
     """
@@ -120,6 +146,7 @@ def guardar_bitacora(data: BitacoraGuardarIn, db: Session = Depends(get_db)):
     mantenimiento = db.query(Mantenimiento).filter(Mantenimiento.id == data.mantenimiento_id).first()
     if not mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
+    autorizar_bitacora(usuario, mantenimiento, db, escritura=True)
 
     bitacora = db.query(BitacoraDinamica).filter(BitacoraDinamica.mantenimiento_id == data.mantenimiento_id).first()
 
@@ -159,10 +186,25 @@ def guardar_bitacora(data: BitacoraGuardarIn, db: Session = Depends(get_db)):
 
 
 @router.get("/historial/equipo/{equipo_id}", response_model=list[BitacoraOut])
-def historial_por_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
+def historial_por_equipo(
+    equipo_id: UUID,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
     """Lista bitácoras dinámicas asociadas al historial de un equipo."""
 
-    mantenimientos = db.query(Mantenimiento.id).filter(Mantenimiento.equipo_id == equipo_id).all()
+    query = db.query(Mantenimiento).filter(Mantenimiento.equipo_id == equipo_id)
+    rol = str(usuario.rol or "").upper()
+    if rol == "TECNICO":
+        tecnico = db.query(Tecnico).filter(Tecnico.usuario_id == usuario.id).first()
+        if not tecnico:
+            return []
+        query = query.filter(Mantenimiento.tecnico_id == tecnico.id)
+    elif rol in {"COORDINADOR", "EMPRESA", "CLIENTE"}:
+        query = query.filter(Mantenimiento.empresa_id == usuario.empresa_id)
+    elif rol != "ADMIN":
+        raise HTTPException(status_code=403, detail="Sin acceso al historial")
+    mantenimientos = query.all()
     ids = [m.id for m in mantenimientos]
 
     if not ids:

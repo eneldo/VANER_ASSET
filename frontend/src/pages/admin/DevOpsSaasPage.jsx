@@ -50,7 +50,7 @@ export default function DevOpsSaasPage() {
     try {
       const respuesta = await obtenerEstadoDevOps();
       setData(respuesta);
-    } catch (error) {
+    } catch {
       setMensaje("No fue posible cargar estado DevOps.");
     } finally {
       setCargando(false);
@@ -63,7 +63,7 @@ export default function DevOpsSaasPage() {
     try {
       const respuesta = await obtenerLogsServicio(servicio, 100);
       setLogs(respuesta);
-    } catch (error) {
+    } catch {
       setMensaje("No fue posible cargar logs del servicio.");
     }
   };
@@ -74,13 +74,14 @@ export default function DevOpsSaasPage() {
       const respuesta = await ejecutarAccionDevOps(servicio, tipo);
       setMensaje(respuesta.mensaje || "Acción procesada.");
       await cargar();
-    } catch (error) {
+    } catch {
       setMensaje("Acción DevOps no disponible o no permitida.");
     }
   };
 
   useEffect(() => {
-    cargar();
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (

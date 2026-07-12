@@ -32,3 +32,18 @@ select,
 textarea {
   font-family: inherit;
 }
+/* Estado global de conectividad de la PWA técnica. */
+.offline-status {
+  position: fixed;
+  z-index: 100000;
+  inset: 0 0 auto;
+  padding: 8px 16px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 2px 10px rgb(15 23 42 / 20%);
+}
+
+.offline-status.offline { background: #b45309; }
+.offline-status.syncing { background: #0369a1; }

@@ -13,7 +13,7 @@
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../context/auth-context";
 import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
 
@@ -40,7 +40,6 @@ import {
   Search,
   ShieldAlert,
   Sparkles,
-  TrendingUp,
   UserCog,
   Wrench,
   X,
@@ -94,11 +93,12 @@ export default function DashboardAdmin() {
 
   useEffect(() => {
     cargarDashboard(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [vista, busqueda, registrosPorPagina]);
 
   async function cargarDashboard(firstLoad = false) {

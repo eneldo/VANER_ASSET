@@ -1030,6 +1030,28 @@
   align-items: center;
 }
 
+.tec-step-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.tec-step-progress span {
+  padding: 9px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tec-step-progress .complete { background: #dcfce7; color: #166534; }
+.tec-step-progress .pending { background: #fef3c7; color: #92400e; }
+
+@media (max-width: 700px) {
+  .tec-step-progress { grid-template-columns: 1fr 1fr; }
+}
+
 .tec-exec-upload button {
   border-radius: 16px;
   background: #ffffff;
@@ -1617,3 +1639,13 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+.tec-operational-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tec-operational-head h2 { margin: 0; }
+.tec-operational-head button { border: 0; border-radius: 9px; padding: 7px 10px; color: #1d4ed8; background: #dbeafe; font-weight: 800; cursor: pointer; }
+.tec-operational-row { display: grid; gap: 7px; margin-top: 9px; align-items: center; }
+.tec-operational-row.repuesto { grid-template-columns: 1.5fr 1fr 80px 110px 34px; }
+.tec-operational-row.incidencia { grid-template-columns: 105px 90px 1fr 95px 34px; }
+.tec-operational-row input,.tec-operational-row select { width: 100%; border: 1px solid #cbd5e1; border-radius: 9px; padding: 8px; }
+.tec-row-remove { border: 0; border-radius: 8px; padding: 7px; color: #991b1b; background: #fee2e2; cursor: pointer; font-size: 18px; }
+.tec-resolved-check { display: flex; align-items: center; gap: 5px; font-size: 12px; }.tec-resolved-check input { width: auto; }
+@media (max-width: 760px) { .tec-operational-row.repuesto,.tec-operational-row.incidencia { grid-template-columns: 1fr 1fr; }.tec-operational-row input:first-child { grid-column: 1 / -1; }.tec-row-remove { justify-self: end; } }

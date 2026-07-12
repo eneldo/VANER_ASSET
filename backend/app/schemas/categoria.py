@@ -10,6 +10,7 @@ from datetime import datetime
 
 
 class CategoriaBase(BaseModel):
+    code: str
     # Nombre de la categoría
     nombre: str
 
@@ -26,10 +27,8 @@ class CategoriaCreate(CategoriaBase):
 
 
 class CategoriaUpdate(BaseModel):
-    # Schema para actualizar categoría parcialmente
-    nombre: Optional[str] = None
+    # Solo la descripción es configurable; código/nombre/estado son canónicos.
     descripcion: Optional[str] = None
-    activo: Optional[bool] = None
 
 
 class CategoriaOut(CategoriaBase):

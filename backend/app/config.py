@@ -32,6 +32,10 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
+    # Debe apuntar a un rol propietario/DDL y usarse solo desde Alembic.
+    # La aplicación web debe conectarse con DATABASE_URL y un rol sin BYPASSRLS.
+    MIGRATION_DATABASE_URL: str | None = None
+
     # =====================================================
     # SEGURIDAD JWT
     # =====================================================
@@ -65,7 +69,7 @@ class Settings(BaseSettings):
     # =====================================================
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", ".env.local"),
         extra="ignore",
         case_sensitive=True
     )

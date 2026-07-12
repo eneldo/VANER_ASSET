@@ -9,8 +9,9 @@
 // - Sin firma obligatoria.
 // =========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import API from "../api/axios";
+import { isNetworkError, queueOfflineRequest } from "../utils/offlineQueue";
 
 import {
   X,
@@ -26,7 +27,6 @@ import {
   Cpu,
   MapPin,
   ShieldAlert,
-  CalendarDays,
   Settings,
   Image,
   ClipboardList,
@@ -42,7 +42,7 @@ export default function ModalEjecucionTecnica({
 }) {
   const mantenimiento = detalle?.mantenimiento || {};
   const equipo = detalle?.equipo_basico || {};
-  const evidenciasIniciales = detalle?.evidencias || [];
+  const evidenciasIniciales = useMemo(() => detalle?.evidencias || [], [detalle?.evidencias]);
 
   const mantenimientoId = mantenimiento.id;
 
@@ -50,6 +50,8 @@ export default function ModalEjecucionTecnica({
   const [accionesRealizadas, setAccionesRealizadas] = useState("");
   const [resultadoFinal, setResultadoFinal] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  const [repuestos, setRepuestos] = useState([]);
+  const [incidencias, setIncidencias] = useState([]);
 
   const [archivo, setArchivo] = useState(null);
   const [tipoEvidencia, setTipoEvidencia] = useState("DURANTE");
@@ -60,17 +62,53 @@ export default function ModalEjecucionTecnica({
   const [eliminandoId, setEliminandoId] = useState(null);
   const [previewEvidencia, setPreviewEvidencia] = useState(null);
   const [evidencias, setEvidencias] = useState(evidenciasIniciales);
+  const [tieneFirma, setTieneFirma] = useState(false);
 
   useEffect(() => {
-    setEstadoInicial(mantenimiento.estado_inicial || mantenimiento.estado_inicial_equipo || "");
-    setAccionesRealizadas(mantenimiento.acciones_realizadas || "");
-    setResultadoFinal(mantenimiento.resultado_final || "");
-    setObservaciones(mantenimiento.observaciones || "");
-  }, [mantenimiento.id]);
+    const timer = window.setTimeout(() => {
+      setEstadoInicial(mantenimiento.estado_inicial || mantenimiento.estado_inicial_equipo || "");
+      setAccionesRealizadas(mantenimiento.acciones_realizadas || "");
+      setResultadoFinal(mantenimiento.resultado_final || "");
+      setObservaciones(mantenimiento.observaciones || "");
+      setRepuestos(Array.isArray(detalle?.repuestos) ? detalle.repuestos : []);
+      setIncidencias(Array.isArray(detalle?.incidencias) ? detalle.incidencias : []);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [
+    mantenimiento.id,
+    mantenimiento.acciones_realizadas,
+    mantenimiento.estado_inicial,
+    mantenimiento.estado_inicial_equipo,
+    mantenimiento.observaciones,
+    mantenimiento.resultado_final,
+    detalle?.incidencias,
+    detalle?.repuestos,
+  ]);
 
   useEffect(() => {
-    setEvidencias(Array.isArray(evidenciasIniciales) ? evidenciasIniciales : []);
-  }, [detalle]);
+    const timer = window.setTimeout(
+      () => setEvidencias(Array.isArray(evidenciasIniciales) ? evidenciasIniciales : []),
+      0
+    );
+    return () => window.clearTimeout(timer);
+  }, [evidenciasIniciales]);
+
+  useEffect(() => {
+    let activo = true;
+    API.get(`/formatos-mantenimiento/mantenimiento/${mantenimientoId}`)
+      .then((res) => {
+        if (activo) setTieneFirma([res.data?.firma_usuario, res.data?.firma_operario].some((firma) => String(firma || "").startsWith("data:image/png;base64,")));
+      })
+      .catch(() => {
+        if (activo) setTieneFirma(false);
+      });
+    return () => { activo = false; };
+  }, [mantenimientoId]);
+
+  const tiposCargados = new Set(evidencias.map((item) => String(item.tipo || "").toUpperCase()));
+  const pasosCompletos = ["ANTES", "DURANTE", "DESPUES"].every((tipo) => tiposCargados.has(tipo));
+  const formularioCompleto = Boolean(estadoInicial.trim() && accionesRealizadas.trim() && resultadoFinal.trim());
+  const puedeFinalizar = pasosCompletos && formularioCompleto && tieneFirma;
 
   const cargarEvidencias = async () => {
     if (!mantenimientoId) {
@@ -88,16 +126,26 @@ export default function ModalEjecucionTecnica({
   };
 
   const guardarAvance = async (nuevoEstado = "") => {
+    if (repuestos.some((item) => !String(item.descripcion || "").trim() || Number(item.cantidad) <= 0)) {
+      alert("Completa la descripción y una cantidad positiva en cada repuesto.");
+      return;
+    }
+    if (incidencias.some((item) => !String(item.descripcion || "").trim())) {
+      alert("Completa la descripción de cada incidencia.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("usuario_id", usuarioId);
+    formData.append("estado_inicial", estadoInicial || "");
+    formData.append("acciones_realizadas", accionesRealizadas || "");
+    formData.append("resultado_final", resultadoFinal || "");
+    formData.append("observaciones", observaciones || "");
+    formData.append("repuestos_json", JSON.stringify(repuestos));
+    formData.append("incidencias_json", JSON.stringify(incidencias));
+    formData.append("nuevo_estado", nuevoEstado || "");
+
     try {
       setGuardando(true);
-
-      const formData = new FormData();
-      formData.append("usuario_id", usuarioId);
-      formData.append("estado_inicial", estadoInicial || "");
-      formData.append("acciones_realizadas", accionesRealizadas || "");
-      formData.append("resultado_final", resultadoFinal || "");
-      formData.append("observaciones", observaciones || "");
-      formData.append("nuevo_estado", nuevoEstado || "");
 
       await API.patch(
         `/dashboard-tecnico/mantenimiento/${mantenimientoId}/avance`,
@@ -117,7 +165,16 @@ export default function ModalEjecucionTecnica({
       }
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "No se pudo guardar el avance técnico.");
+      if (isNetworkError(error)) {
+        await queueOfflineRequest({
+          method: "patch",
+          url: `/dashboard-tecnico/mantenimiento/${mantenimientoId}/avance`,
+          data: formData,
+        });
+        alert("Sin conexión: el avance quedó guardado en este dispositivo y se sincronizará automáticamente.");
+        return;
+      }
+      alert(formatApiError(error, "No se pudo guardar el avance técnico."));
     } finally {
       setGuardando(false);
     }
@@ -128,15 +185,19 @@ export default function ModalEjecucionTecnica({
       alert("Selecciona una imagen o PDF.");
       return;
     }
+    if (["ANTES", "DURANTE", "DESPUES"].includes(tipoEvidencia) && !descripcionEvidencia.trim()) {
+      alert("Escribe el comentario obligatorio de esta etapa.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("usuario_id", usuarioId);
+    formData.append("tipo", tipoEvidencia);
+    formData.append("descripcion", descripcionEvidencia || "");
+    formData.append("archivo", archivo);
 
     try {
       setSubiendo(true);
-
-      const formData = new FormData();
-      formData.append("usuario_id", usuarioId);
-      formData.append("tipo", tipoEvidencia);
-      formData.append("descripcion", descripcionEvidencia || "");
-      formData.append("archivo", archivo);
 
       const res = await API.post(
         `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
@@ -145,6 +206,7 @@ export default function ModalEjecucionTecnica({
 
       setArchivo(null);
       setDescripcionEvidencia("");
+      setTipoEvidencia(nextEvidenceType(tipoEvidencia));
 
       if (res.data?.evidencia) {
         setEvidencias((prev) => [res.data.evidencia, ...prev]);
@@ -160,7 +222,27 @@ export default function ModalEjecucionTecnica({
       alert("Evidencia cargada correctamente.");
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "No se pudo subir la evidencia.");
+      if (isNetworkError(error)) {
+        const pendiente = await queueOfflineRequest({
+          method: "post",
+          url: `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
+          data: formData,
+        });
+        setEvidencias((prev) => [{
+          id: `offline-${pendiente.id}`,
+          tipo: tipoEvidencia,
+          descripcion: descripcionEvidencia,
+          nombre_original: archivo.name,
+          archivo_url: URL.createObjectURL(archivo),
+          pendiente_sincronizacion: true,
+        }, ...prev]);
+        setArchivo(null);
+        setDescripcionEvidencia("");
+        setTipoEvidencia(nextEvidenceType(tipoEvidencia));
+        alert("Sin conexión: la evidencia quedó protegida en este dispositivo y se sincronizará automáticamente.");
+        return;
+      }
+      alert(formatApiError(error, "No se pudo subir la evidencia."));
     } finally {
       setSubiendo(false);
     }
@@ -285,10 +367,49 @@ export default function ModalEjecucionTecnica({
             </section>
 
             <section className="tec-exec-form-card">
+              <div className="tec-operational-head"><h2>Repuestos utilizados</h2><button type="button" onClick={() => setRepuestos((prev) => [...prev, { descripcion: "", referencia: "", cantidad: 1, unidad: "UNIDAD", costo_unitario: "" }])}>+ Agregar</button></div>
+              {repuestos.length === 0 && <p>No se utilizaron repuestos.</p>}
+              {repuestos.map((item, index) => (
+                <div className="tec-operational-row repuesto" key={item.id || index}>
+                  <input aria-label="Descripción del repuesto" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
+                  <input aria-label="Referencia" placeholder="Referencia" value={item.referencia || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "referencia", e.target.value))} />
+                  <input aria-label="Cantidad" type="number" min="0.001" step="0.001" value={item.cantidad ?? 1} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "cantidad", e.target.value))} />
+                  <select aria-label="Unidad" value={item.unidad || "UNIDAD"} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "unidad", e.target.value))}><option>UNIDAD</option><option>METRO</option><option>LITRO</option><option>KILOGRAMO</option><option>JUEGO</option></select>
+                  <button type="button" className="tec-row-remove" onClick={() => setRepuestos((prev) => prev.filter((_, i) => i !== index))}>×</button>
+                </div>
+              ))}
+            </section>
+
+            <section className="tec-exec-form-card">
+              <div className="tec-operational-head"><h2>Incidencias encontradas</h2><button type="button" onClick={() => setIncidencias((prev) => [...prev, { tipo: "TECNICA", severidad: "MEDIA", descripcion: "", resuelta: false }])}>+ Agregar</button></div>
+              {incidencias.length === 0 && <p>No se registraron incidencias.</p>}
+              {incidencias.map((item, index) => (
+                <div className="tec-operational-row incidencia" key={item.id || index}>
+                  <select aria-label="Tipo de incidencia" value={item.tipo || "TECNICA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "tipo", e.target.value))}><option>TECNICA</option><option>SEGURIDAD</option><option>REPUESTO</option><option>OPERATIVA</option></select>
+                  <select aria-label="Severidad" value={item.severidad || "MEDIA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "severidad", e.target.value))}><option>BAJA</option><option>MEDIA</option><option>ALTA</option><option>CRITICA</option></select>
+                  <input aria-label="Descripción de incidencia" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
+                  <label className="tec-resolved-check"><input type="checkbox" checked={Boolean(item.resuelta)} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "resuelta", e.target.checked))} /> Resuelta</label>
+                  <button type="button" className="tec-row-remove" onClick={() => setIncidencias((prev) => prev.filter((_, i) => i !== index))}>×</button>
+                </div>
+              ))}
+            </section>
+
+            <section className="tec-exec-form-card">
               <h2>
                 <Image size={18} />
                 Evidencias fotográficas
               </h2>
+
+              <div className="tec-step-progress" role="list" aria-label="Progreso de evidencias">
+                {[["ANTES", "1. Estado inicial"], ["DURANTE", "2. Proceso"], ["DESPUES", "3. Estado final"]].map(([tipo, label]) => (
+                  <span key={tipo} role="listitem" className={tiposCargados.has(tipo) ? "complete" : "pending"}>
+                    {tiposCargados.has(tipo) ? "✓" : "○"} {label}
+                  </span>
+                ))}
+                <span role="listitem" className={tieneFirma ? "complete" : "pending"}>
+                  {tieneFirma ? "✓" : "○"} 4. Firma
+                </span>
+              </div>
 
               <div className="tec-exec-upload">
                 <select
@@ -296,8 +417,8 @@ export default function ModalEjecucionTecnica({
                   onChange={(e) => setTipoEvidencia(e.target.value)}
                 >
                   <option value="ANTES">Antes</option>
-                  <option value="DURANTE">Durante</option>
-                  <option value="DESPUES">Después</option>
+                  <option value="DURANTE" disabled={!tiposCargados.has("ANTES")}>Durante</option>
+                  <option value="DESPUES" disabled={!tiposCargados.has("ANTES") || !tiposCargados.has("DURANTE")}>Después</option>
                   <option value="SOPORTE">Soporte</option>
                 </select>
 
@@ -346,6 +467,7 @@ export default function ModalEjecucionTecnica({
                         <strong>{ev.tipo || "SOPORTE"}</strong>
                         <span>{ev.nombre_original || ev.filename || "Archivo"}</span>
                         <small>{ev.descripcion || "Sin descripción"}</small>
+                        {ev.pendiente_sincronizacion && <small>⏳ Pendiente de sincronización</small>}
 
                         <div className="tec-evidence-card-actions">
                           <button
@@ -361,7 +483,7 @@ export default function ModalEjecucionTecnica({
                             type="button"
                             className="tec-exec-danger"
                             onClick={() => eliminarEvidencia(ev.id)}
-                            disabled={eliminandoId === ev.id}
+                            disabled={eliminandoId === ev.id || ev.pendiente_sincronizacion}
                           >
                             <Trash2 size={15} />
                             {eliminandoId === ev.id ? "Eliminando..." : "Eliminar"}
@@ -377,11 +499,11 @@ export default function ModalEjecucionTecnica({
             <section className="tec-exec-form-card tec-exec-signature-optional">
               <h2>
                 <ClipboardList size={18} />
-                Firma digital del técnico
+                Firma digital del cliente o técnico
               </h2>
 
               <div className="tec-exec-signature-box">
-                <span>Firma opcional no requerida en esta fase</span>
+                <span>{tieneFirma ? "Firma registrada en el formato oficial" : "Firma obligatoria pendiente: complétala en Formato oficial"}</span>
               </div>
             </section>
           </main>
@@ -421,7 +543,8 @@ export default function ModalEjecucionTecnica({
           <button
             className="tec-exec-primary"
             onClick={() => guardarAvance("FINALIZADO")}
-            disabled={guardando}
+            disabled={guardando || !puedeFinalizar}
+            title={puedeFinalizar ? "Finalizar orden" : "Completa las tres fotos, los campos obligatorios y la firma"}
           >
             <CheckCircle size={16} />
             Finalizar
@@ -489,7 +612,7 @@ function formatDate(value) {
 
 function getFileUrl(url) {
   if (!url) return "#";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("blob:")) return url;
 
   const base = String(
     import.meta.env.VITE_API_URL ||
@@ -509,4 +632,24 @@ function isImage(url = "") {
   return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
     lower.includes(ext)
   );
+}
+
+function formatApiError(error, fallback) {
+  const detail = error?.response?.data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail?.faltantes)) {
+    return `${detail.mensaje || fallback}\n\nFalta:\n- ${detail.faltantes.join("\n- ")}`;
+  }
+  return detail.mensaje || fallback;
+}
+
+function nextEvidenceType(tipo) {
+  if (tipo === "ANTES") return "DURANTE";
+  if (tipo === "DURANTE") return "DESPUES";
+  return "SOPORTE";
+}
+
+function actualizarLista(lista, index, campo, valor) {
+  return lista.map((item, i) => i === index ? { ...item, [campo]: valor } : item);
 }

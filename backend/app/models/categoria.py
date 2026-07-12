@@ -10,12 +10,22 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.database import Base
 
+CATEGORIA_CODES = {
+    "EQUIPOS_INDUSTRIALES",
+    "AIRES_ACONDICIONADOS",
+    "CAMARAS_SEGURIDAD",
+    "PROTECCION_CONTRA_INCENDIOS",
+}
+
 
 class Categoria(Base):
     __tablename__ = "categorias"
 
     # Identificador único de la categoría
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Código funcional estable. El nombre es solo una etiqueta visible.
+    code = Column(String(50), nullable=False, unique=True)
 
     # Nombre de la categoría
     nombre = Column(String(100), nullable=False, unique=True)

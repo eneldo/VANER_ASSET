@@ -10,7 +10,7 @@
 // - Mantiene permisos, edición, detalle, reset password y paginación.
 // =========================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
 
@@ -67,7 +67,7 @@ export default function UsuariosPage() {
     cargarDatos();
   }, []);
 
-  const cargarDatos = async () => {
+  async function cargarDatos() {
     try {
       setCargando(true);
 
@@ -90,10 +90,10 @@ export default function UsuariosPage() {
 
   const requiereEmpresa = (rol) => rolesQueRequierenEmpresa.includes(rol);
 
-  function nombreEmpresa(empresaId) {
+  const nombreEmpresa = useCallback((empresaId) => {
     const emp = empresas.find((e) => String(e.id) === String(empresaId));
     return emp ? emp.nombre : "N/A";
-  }
+  }, [empresas]);
 
   const usuariosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase();
@@ -106,7 +106,7 @@ export default function UsuariosPage() {
         u.rol?.toLowerCase().includes(texto) ||
         nombreEmpresa(u.empresa_id)?.toLowerCase().includes(texto)
     );
-  }, [usuarios, busqueda, empresas]);
+  }, [usuarios, busqueda, nombreEmpresa]);
 
   const totalPaginas = Math.ceil(usuariosFiltrados.length / porPagina) || 1;
 

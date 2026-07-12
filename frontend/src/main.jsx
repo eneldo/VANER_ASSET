@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import OfflineStatus from "./components/OfflineStatus";
+import { syncOfflineQueue } from "./utils/offlineQueue";
 
 // ============================================================
 // ESTILOS BASE DEL SISTEMA
@@ -34,9 +36,25 @@ import "./styles/fase32_4/modulos-tecnico-pro.css";
 import "./styles/fase32_4/modulos-coordinador-pro.css";
 import "./styles/fase32_4/print-fixes.css";
 
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      window.addEventListener("online", () => syncOfflineQueue());
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data?.type === "SGA_SYNC_REQUESTED") syncOfflineQueue();
+      });
+      if (navigator.onLine && registration.active) syncOfflineQueue();
+    } catch (error) {
+      console.error("No fue posible iniciar la PWA:", error);
+    }
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
+      <OfflineStatus />
       <App />
     </AuthProvider>
   </React.StrictMode>

@@ -9,18 +9,12 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.database import get_db, Base, engine
+from app.database import get_db
 from app.models.backup_historial import BackupHistorial
 from app.schemas.backup_historial import BackupEjecutarRequest, BackupHistorialOut, BackupStatusOut
 from app.services.smart_backup_service import SmartBackupService
 
 router = APIRouter(prefix="/backups-inteligentes", tags=["Backups Inteligentes SaaS"])
-
-
-@router.on_event("startup")
-def crear_tablas_backups():
-    # Seguro en desarrollo y producción. No altera tablas existentes.
-    Base.metadata.create_all(bind=engine, tables=[BackupHistorial.__table__])
 
 
 @router.get("/status", response_model=BackupStatusOut)

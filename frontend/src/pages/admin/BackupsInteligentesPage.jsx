@@ -48,7 +48,7 @@ export default function BackupsInteligentesPage() {
       const [st, lista] = await Promise.all([getBackupsStatus(), listarBackups(50)]);
       setStatus(st);
       setItems(lista || []);
-    } catch (error) {
+    } catch {
       setMensaje("No fue posible cargar backups inteligentes. Verifique backend y router.");
     } finally {
       setLoading(false);
@@ -81,7 +81,8 @@ export default function BackupsInteligentesPage() {
   };
 
   useEffect(() => {
-    cargar();
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (

@@ -7,7 +7,7 @@
 // - Usa endpoint /cliente/{empresa_id}/equipos/{equipo_id}/hoja-vida.
 // ============================================================
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -46,11 +46,13 @@ export default function ClienteHojaVida() {
     };
   };
 
+  const cargarHojaVidaAlCambiarEquipo = useEffectEvent(() => cargarHojaVida());
+
   useEffect(() => {
-    cargarHojaVida();
+    cargarHojaVidaAlCambiarEquipo();
   }, [equipoId]);
 
-  const cargarHojaVida = async () => {
+  async function cargarHojaVida() {
     setLoading(true);
 
     try {

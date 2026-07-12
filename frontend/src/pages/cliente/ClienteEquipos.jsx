@@ -14,15 +14,14 @@
 // - Exportar CSV compatible con Excel.
 // ============================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { getEmpresaId } from "./ClienteLayout";
+import { getEmpresaId } from "../../utils/multiempresa";
 import {
   FileText,
   Printer,
   Download,
   Search,
-  MonitorCog,
   ArrowLeft,
   ClipboardList,
   Image,
@@ -38,11 +37,7 @@ export default function ClienteEquipos() {
   const [paginaActual, setPaginaActual] = useState(1);
   const registrosPorPagina = 10;
 
-  useEffect(() => {
-    cargar();
-  }, []);
-
-  const cargar = async () => {
+  async function cargar() {
     const empresaId = getEmpresaId();
 
     if (!empresaId) {
@@ -59,6 +54,11 @@ export default function ClienteEquipos() {
     setSedes(resSedes.data || []);
   };
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const verHojaVida = async (equipo) => {
     const empresaId = getEmpresaId();
 
@@ -71,9 +71,9 @@ export default function ClienteEquipos() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const nombreSede = (sedeId) => {
+  const nombreSede = useCallback((sedeId) => {
     return sedes.find((s) => String(s.id) === String(sedeId))?.nombre || "—";
-  };
+  }, [sedes]);
 
   const filtrados = useMemo(() => {
     const q = busqueda.toLowerCase();
@@ -91,14 +91,15 @@ export default function ClienteEquipos() {
 
       return texto.includes(q);
     });
-  }, [equipos, busqueda, sedes]);
+  }, [equipos, busqueda, nombreSede]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / registrosPorPagina));
   const inicioPagina = (paginaActual - 1) * registrosPorPagina;
   const equiposActuales = filtrados.slice(inicioPagina, inicioPagina + registrosPorPagina);
 
   useEffect(() => {
-    setPaginaActual(1);
+    const timer = window.setTimeout(() => setPaginaActual(1), 0);
+    return () => window.clearTimeout(timer);
   }, [busqueda]);
 
   const imprimirHojaVida = () => {

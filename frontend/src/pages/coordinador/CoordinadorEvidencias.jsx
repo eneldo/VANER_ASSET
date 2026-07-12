@@ -5,9 +5,9 @@ Archivo: frontend/src/pages/coordinador/CoordinadorEvidencias.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
-import { Image, RefreshCw, Search, ExternalLink, FileImage } from "lucide-react";
+import { RefreshCw, Search, ExternalLink, FileImage } from "lucide-react";
 import "../../styles/coordinador.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -25,7 +25,7 @@ export default function CoordinadorEvidencias() {
     cargarDatos();
   }, []);
 
-  const cargarDatos = async () => {
+  async function cargarDatos() {
     try {
       setCargando(true);
       setError("");

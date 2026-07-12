@@ -106,7 +106,8 @@ export default function RecoveryRestorePage() {
 
   useEffect(() => {
 
-    cargarDatos();
+    const timer = window.setTimeout(() => cargarDatos(), 0);
+    return () => window.clearTimeout(timer);
 
   }, []);
 

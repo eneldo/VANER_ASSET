@@ -25,7 +25,7 @@ export function getUserRole() {
 
 export function getEmpresaId() {
   const user = getStoredUser();
-  return user?.empresa_id || localStorage.getItem("empresa_id") || null;
+  return user?.empresa_id || user?.empresa?.id || localStorage.getItem("empresa_id") || null;
 }
 
 export function isAdminLike() {

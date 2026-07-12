@@ -5,7 +5,7 @@ Archivo: frontend/src/pages/coordinador/CoordinadorDashboard.jsx
 ===========================================================
 */
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -46,11 +46,12 @@ export default function CoordinadorDashboard() {
   const [catalogos, setCatalogos] = useState({ equipos: [], tecnicos: [] });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [actualizacionAutomaticaOk, setActualizacionAutomaticaOk] = useState(true);
 
-  const cargarDashboard = async () => {
+  const cargarDashboard = useCallback(async ({ silencioso = false } = {}) => {
     try {
-      setCargando(true);
-      setError("");
+      if (!silencioso) setCargando(true);
 
       const [resDashboard, resMantenimientos, resCatalogos] = await Promise.all([
         API.get("/coordinador/dashboard"),
@@ -61,17 +62,31 @@ export default function CoordinadorDashboard() {
       setDashboard(resDashboard.data || null);
       setMantenimientos(resMantenimientos.data || []);
       setCatalogos(resCatalogos.data || { equipos: [], tecnicos: [] });
+      setUltimaActualizacion(new Date());
+      setActualizacionAutomaticaOk(true);
+      setError("");
     } catch (err) {
       console.error("Error dashboard coordinador:", err);
+      setActualizacionAutomaticaOk(false);
       setError("No se pudo cargar el dashboard del coordinador.");
     } finally {
-      setCargando(false);
+      if (!silencioso) setCargando(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    cargarDashboard();
-  }, []);
+    const cargaInicial = window.setTimeout(() => cargarDashboard(), 0);
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        cargarDashboard({ silencioso: true });
+      }
+    }, 15000);
+
+    return () => {
+      window.clearTimeout(cargaInicial);
+      window.clearInterval(intervalo);
+    };
+  }, [cargarDashboard]);
 
   const metricas = useMemo(() => {
     const m = dashboard?.metricas || {};
@@ -109,10 +124,20 @@ export default function CoordinadorDashboard() {
           <p>Control centralizado de mantenimientos, técnicos, estados, inventario y operación diaria.</p>
         </div>
 
-        <button className="coord-btn secondary" onClick={cargarDashboard}>
-          <RefreshCw size={17} />
-          Actualizar
-        </button>
+        <div className="coord-live-controls">
+          <span
+            className={`coord-live-status ${actualizacionAutomaticaOk ? "online" : "offline"}`}
+            role="status"
+          >
+            <i aria-hidden="true" />
+            {actualizacionAutomaticaOk ? "Actualización automática cada 15 s" : "Conexión interrumpida"}
+            {ultimaActualizacion && ` · ${ultimaActualizacion.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`}
+          </span>
+          <button className="coord-btn secondary" onClick={() => cargarDashboard()} disabled={cargando}>
+            <RefreshCw size={17} className={cargando ? "coord-spin" : ""} />
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {error && (

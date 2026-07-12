@@ -9,7 +9,7 @@
 // - Preview modal para imagen/PDF.
 // =========================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
 
@@ -113,7 +113,7 @@ export default function EvidenciasPage() {
     cargarTodo();
   }, []);
 
-  const cargarTodo = async () => {
+  async function cargarTodo() {
     try {
       setLoading(true);
       setError("");
@@ -154,7 +154,7 @@ export default function EvidenciasPage() {
     }
   };
 
-  const getEquipoNombre = (equipoId) => {
+  const getEquipoNombre = useCallback((equipoId) => {
     const equipo = equipos.find((e) => String(e.id) === String(equipoId));
 
     return (
@@ -163,9 +163,9 @@ export default function EvidenciasPage() {
       equipo?.codigo ||
       `Equipo ${equipoId || ""}`
     );
-  };
+  }, [equipos]);
 
-  const getMantenimientoTexto = (mantenimientoId) => {
+  const getMantenimientoTexto = useCallback((mantenimientoId) => {
     const m = mantenimientos.find(
       (item) => String(item.id) === String(mantenimientoId)
     );
@@ -175,7 +175,7 @@ export default function EvidenciasPage() {
     return `#${m.id} · ${m.tipo || "Mantenimiento"} · ${
       m.estado || "Sin estado"
     }`;
-  };
+  }, [mantenimientos]);
 
   const filtradas = useMemo(() => {
     return evidencias.filter((e) => {
@@ -212,8 +212,8 @@ export default function EvidenciasPage() {
     filtroTipo,
     filtroEquipo,
     filtroMantenimiento,
-    equipos,
-    mantenimientos,
+    getEquipoNombre,
+    getMantenimientoTexto,
   ]);
 
   return (

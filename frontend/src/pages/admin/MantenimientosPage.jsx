@@ -10,7 +10,7 @@
 // - Edición conserva empresa/sede/equipo.
 // ============================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Wrench,
@@ -77,7 +77,7 @@ export default function MantenimientosPage() {
     cargarTodo();
   }, []);
 
-  const cargarTodo = async () => {
+  async function cargarTodo() {
     try {
       setLoading(true);
 
@@ -113,20 +113,20 @@ export default function MantenimientosPage() {
     return equipos.filter((e) => String(e.sede_id) === String(form.sede_id));
   }, [equipos, form.sede_id]);
 
-  const getEmpresa = (id) => {
+  const getEmpresa = useCallback((id) => {
     const empresa = empresas.find((e) => String(e.id) === String(id));
     return empresa?.nombre || empresa?.razon_social || "—";
-  };
+  }, [empresas]);
 
-  const getSede = (id) => {
+  const getSede = useCallback((id) => {
     const sede = sedes.find((s) => String(s.id) === String(id));
     return sede?.nombre || "—";
-  };
+  }, [sedes]);
 
-  const getEquipo = (id) => {
+  const getEquipo = useCallback((id) => {
     const equipo = equipos.find((e) => String(e.id) === String(id));
     return equipo?.nombre || equipo?.codigo_id || equipo?.codigo || "—";
-  };
+  }, [equipos]);
 
   const getTecnicoNombre = (tecnico) => {
     if (!tecnico) return "—";
@@ -142,10 +142,10 @@ export default function MantenimientosPage() {
     );
   };
 
-  const getTecnico = (id) => {
+  const getTecnico = useCallback((id) => {
     const tecnico = tecnicos.find((t) => String(t.id) === String(id));
     return getTecnicoNombre(tecnico);
-  };
+  }, [tecnicos]);
 
   const getEstado = (estado) =>
     ESTADOS[estado] || { label: estado || "—", className: "badge-blue" };
@@ -287,7 +287,7 @@ export default function MantenimientosPage() {
 
       return texto.includes(q);
     });
-  }, [mantenimientos, busqueda, empresas, sedes, equipos, tecnicos]);
+  }, [mantenimientos, busqueda, getEmpresa, getSede, getEquipo, getTecnico]);
 
   const totalPaginas = Math.max(
     1,

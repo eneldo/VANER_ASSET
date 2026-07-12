@@ -63,7 +63,8 @@ export default function LogsInteligentesPage() {
   }
 
   useEffect(() => {
-    cargar();
+    const timer = window.setTimeout(() => cargar(), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

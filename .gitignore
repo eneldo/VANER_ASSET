@@ -106,6 +106,7 @@ frontend/logs/
 *.7z
 *.tar
 *.gz
+*.dump
 
 # ----------------------------
 # Reportes generados

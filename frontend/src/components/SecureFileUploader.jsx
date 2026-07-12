@@ -4,7 +4,7 @@ UPLOADER SEGURO PRO
 ===========================================================
 */
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { subirEvidencia } from "../api/evidenciasApi";
 
