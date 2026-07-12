@@ -4,10 +4,10 @@ Este procedimiento debe ejecutarse antes de publicar o compartir el repositorio.
 
 ## Estado de ejecución — 12 de julio de 2026
 
-- `backend/.env` fue eliminado de todos los commits locales mediante `git-filter-repo`.
+- `backend/.env` fue eliminado de todos los commits mediante `git-filter-repo` y el historial saneado fue publicado en `origin/main` con `--force-with-lease`.
 - Se reintrodujo únicamente como plantilla sin credenciales operativas.
 - Se creó una copia de recuperación local restringida antes de la reescritura; contiene el historial anterior y no debe compartirse.
-- La revocación de la credencial en el proveedor sigue siendo obligatoria y debe registrarse cuando el entorno de staging/producción inyecte acceso administrativo.
+- La revocación de la credencial en el proveedor sigue siendo obligatoria y debe registrarse cuando el entorno de staging/producción inyecte acceso administrativo. La purga Git no sustituye esa revocación.
 
 ## 1. Contención y rotación
 
