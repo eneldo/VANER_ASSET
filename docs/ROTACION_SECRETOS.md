@@ -2,6 +2,13 @@
 
 Este procedimiento debe ejecutarse antes de publicar o compartir el repositorio. La eliminación de un archivo del estado actual no invalida credenciales que hayan quedado en commits anteriores.
 
+## Estado de ejecución — 12 de julio de 2026
+
+- `backend/.env` fue eliminado de todos los commits locales mediante `git-filter-repo`.
+- Se reintrodujo únicamente como plantilla sin credenciales operativas.
+- Se creó una copia de recuperación local restringida antes de la reescritura; contiene el historial anterior y no debe compartirse.
+- La revocación de la credencial en el proveedor sigue siendo obligatoria y debe registrarse cuando el entorno de staging/producción inyecte acceso administrativo.
+
 ## 1. Contención y rotación
 
 1. Identificar las credenciales históricas sin copiarlas a tickets, chats ni registros.
