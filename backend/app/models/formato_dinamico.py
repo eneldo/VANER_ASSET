@@ -1,7 +1,7 @@
 # ============================================================
 # MODELOS: FORMATOS Y BITÁCORAS DINÁMICAS PRO
 # Archivo: backend/app/models/formato_dinamico.py
-# Fase 33 - SGA PRO
+# Fase 33 - SGAHolding
 # ============================================================
 # Estos modelos permiten que una bitácora cambie automáticamente
 # según el tipo de equipo asignado al mantenimiento.

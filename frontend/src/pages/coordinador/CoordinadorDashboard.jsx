@@ -119,7 +119,7 @@ export default function CoordinadorDashboard() {
     <div className="coord-page">
       <div className="coord-hero">
         <div>
-          <span className="coord-eyebrow">SGA PRO · PANEL OPERATIVO</span>
+          <span className="coord-eyebrow">SGAHolding · PANEL OPERATIVO</span>
           <h2>Dashboard Coordinador</h2>
           <p>Control centralizado de mantenimientos, técnicos, estados, inventario y operación diaria.</p>
         </div>

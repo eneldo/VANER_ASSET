@@ -1,5 +1,5 @@
 # ============================================================
-# FASE 26 - SGA PRO
+# FASE 26 - SGAHolding
 # Schemas Pydantic para Reportes y Auditoría
 # Archivo: backend/app/schemas/reporte_schema.py
 # ============================================================

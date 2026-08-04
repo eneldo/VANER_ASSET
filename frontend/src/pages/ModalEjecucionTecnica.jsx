@@ -1,5 +1,5 @@
 // =========================================================
-// MODAL EJECUCIÓN TÉCNICA PRO - SGA PRO
+// MODAL EJECUCIÓN TÉCNICA PRO - SGAHolding
 // Archivo: frontend/src/pages/ModalEjecucionTecnica.jsx
 //
 // Funciones:

@@ -108,7 +108,7 @@ export default function Sidebar({
         </div>
 
         <div>
-          <h2>SGA PRO</h2>
+          <h2>SGAHolding</h2>
           <p>Gestión Empresarial</p>
         </div>
 

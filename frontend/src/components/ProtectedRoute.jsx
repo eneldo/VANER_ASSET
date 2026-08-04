@@ -1,5 +1,5 @@
 // =========================================================
-// PROTECTED ROUTE - SGA PRO
+// PROTECTED ROUTE - SGAHolding
 // Archivo: frontend/src/components/ProtectedRoute.jsx
 // =========================================================
 

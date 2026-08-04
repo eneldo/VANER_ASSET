@@ -1,5 +1,5 @@
 # ============================================================
-# ROUTER CLIENTE - PORTAL MULTIEMPRESA SGA PRO
+# ROUTER CLIENTE - PORTAL MULTIEMPRESA SGAHolding
 # Archivo: backend/app/routers/cliente.py
 #
 # Objetivo:

@@ -1,5 +1,5 @@
 // =========================================================
-// DASHBOARD TÉCNICO PRO - SGA PRO
+// DASHBOARD TÉCNICO PRO - SGAHolding
 // Archivo: frontend/src/pages/DashboardTecnico.jsx
 //
 // Fase A + B:
@@ -334,7 +334,7 @@ export default function DashboardTecnico() {
         <div className="tec-brand">
           <div className="tec-logo">SGA</div>
           <div>
-            <h2>SGA PRO</h2>
+            <h2>SGAHolding</h2>
             <p>Portal Técnico</p>
           </div>
         </div>
@@ -365,7 +365,7 @@ export default function DashboardTecnico() {
       <main className="tec-main">
         <div className="tec-header">
           <div>
-            <p className="tec-kicker">SGA PRO · PORTAL TÉCNICO</p>
+            <p className="tec-kicker">SGAHolding · PORTAL TÉCNICO</p>
             <h1>Dashboard Técnico</h1>
             <p>Gestiona únicamente tus mantenimientos asignados.</p>
           </div>

@@ -1,5 +1,5 @@
 # =========================================================
-# SEGURIDAD SGA PRO - FASE 31.1
+# SEGURIDAD SGAHolding - FASE 31.1
 # JWT PRO + REFRESH TOKENS + LOGOUT SEGURO
 #
 # Este archivo reemplaza/actualiza backend/app/security.py

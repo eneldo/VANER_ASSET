@@ -1,5 +1,5 @@
 # ================================================================
-# SGA PRO - FASE 31.2
+# SGAHolding - FASE 31.2
 # Archivo: backend/app/routers/permisos.py
 # Objetivo:
 #   API PRO para roles, permisos y permisos directos por usuario.

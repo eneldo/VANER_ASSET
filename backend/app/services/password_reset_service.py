@@ -116,21 +116,21 @@ def enviar_email_recuperacion(destinatario: str, reset_url: str) -> None:
         return
 
     msg = EmailMessage()
-    msg["Subject"] = "Recuperación de contraseña - SGA PRO"
+    msg["Subject"] = "Recuperación de contraseña - SGAHolding"
     msg["From"] = smtp_from
     msg["To"] = destinatario
     msg.set_content(
         f"""
 Hola,
 
-Recibimos una solicitud para recuperar tu contraseña en SGA PRO.
+Recibimos una solicitud para recuperar tu contraseña en SGAHolding.
 
 Ingresa al siguiente enlace para crear una nueva contraseña:
 {reset_url}
 
 Este enlace vence en 30 minutos. Si no solicitaste este cambio, ignora este mensaje.
 
-SGA PRO - Plataforma empresarial SaaS
+SGAHolding - Plataforma empresarial SaaS
 """.strip()
     )
 

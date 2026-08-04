@@ -1,5 +1,5 @@
 # =========================================================
-# ROUTER DASHBOARD TÉCNICO PRO - SGA PRO
+# ROUTER DASHBOARD TÉCNICO PRO - SGAHolding
 # Archivo: backend/app/routers/dashboard_tecnico.py
 #
 # Funciones:

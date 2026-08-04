@@ -1,5 +1,5 @@
 // ============================================================
-// CLIENTE LAYOUT - SGA PRO
+// CLIENTE LAYOUT - SGAHolding
 // Archivo: frontend/src/pages/cliente/ClienteLayout.jsx
 // Portal Cliente estable y funcional
 // ============================================================
@@ -69,7 +69,7 @@ export default function ClienteLayout() {
           <div className="cliente-logo">SGA</div>
 
           <div>
-            <h2>SGA PRO</h2>
+            <h2>SGAHolding</h2>
             <p>Portal Empresa</p>
           </div>
         </div>

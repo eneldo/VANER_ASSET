@@ -23,7 +23,7 @@ class ConfiguracionSistema(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Datos plataforma
-    nombre_plataforma = Column(String(150), nullable=False, default="SGA PRO SaaS")
+    nombre_plataforma = Column(String(150), nullable=False, default="SGAHolding SaaS")
     empresa_propietaria = Column(String(180), nullable=True)
     nit = Column(String(50), nullable=True)
     correo_soporte = Column(String(160), nullable=True)

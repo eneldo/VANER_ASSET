@@ -1,6 +1,6 @@
 # ============================================================
 # UTILIDAD: Exportador Excel PRO
-# Proyecto: SGA PRO - Fase 27 Exportación PRO
+# Proyecto: SGAHolding - Fase 27 Exportación PRO
 # Archivo: backend/app/utils/excel_exporter.py
 #
 # Función:

@@ -1,5 +1,5 @@
 # =========================================================
-# ROUTER AUTH - SGA PRO
+# ROUTER AUTH - SGAHolding
 # Archivo: backend/app/routers/auth.py
 #
 # FIX PRODUCCIÓN:

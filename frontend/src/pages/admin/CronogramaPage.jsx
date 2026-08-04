@@ -1,7 +1,7 @@
 // ============================================================
 // PÁGINA: Cronograma PRO Admin
 // Archivo: frontend/src/pages/admin/CronogramaPage.jsx
-// Fase 28 - SGA PRO
+// Fase 28 - SGAHolding
 // ============================================================
 // Objetivo:
 //   Visualizar la agenda de mantenimientos programados.

@@ -1,6 +1,6 @@
 # ============================================================
 # MODELO: Auditoría del Sistema
-# Proyecto: SGA PRO
+# Proyecto: SGAHolding
 # Descripción:
 # Registra eventos importantes del sistema como creación,
 # edición, eliminación, cambios de estado e ingresos críticos.

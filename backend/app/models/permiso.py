@@ -1,5 +1,5 @@
 # ================================================================
-# SGA PRO - FASE 31.2
+# SGAHolding - FASE 31.2
 # Archivo: backend/app/models/permiso.py
 # Objetivo:
 #   Modelos SQLAlchemy para roles, permisos y asignaciones.

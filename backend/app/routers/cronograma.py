@@ -1,7 +1,7 @@
 # ============================================================
 # ROUTER: Cronograma PRO de Mantenimientos
 # Archivo: backend/app/routers/cronograma.py
-# Fase 28 - SGA PRO
+# Fase 28 - SGAHolding
 # ============================================================
 # Objetivo:
 #   Centralizar los endpoints del cronograma para ADMIN,

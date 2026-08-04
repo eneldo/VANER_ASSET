@@ -1,5 +1,5 @@
 # =========================================================
-# CONFIGURACIÓN GENERAL SGA PRO
+# CONFIGURACIÓN GENERAL SGAHolding
 # Archivo: app/config.py
 # Compatible con Pydantic v2 + Alembic + Producción
 # =========================================================
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # INFORMACIÓN GENERAL
     # =====================================================
 
-    APP_NAME: str = "SGA PRO"
+    APP_NAME: str = "SGAHolding"
     APP_ENV: str = "development"
 
     # development / production

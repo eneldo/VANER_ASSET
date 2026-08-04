@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class ConfiguracionBase(BaseModel):
     # Datos plataforma
-    nombre_plataforma: str = Field(default="SGA PRO SaaS", max_length=150)
+    nombre_plataforma: str = Field(default="SGAHolding SaaS", max_length=150)
     empresa_propietaria: Optional[str] = None
     nit: Optional[str] = None
     correo_soporte: Optional[str] = None

@@ -1,6 +1,6 @@
 # ============================================================
 # UTILIDAD: Exportador PDF PRO sin dependencias externas
-# Proyecto: SGA PRO - Fase 27 Exportación PRO
+# Proyecto: SGAHolding - Fase 27 Exportación PRO
 # Archivo: backend/app/utils/pdf_exporter.py
 #
 # Función:

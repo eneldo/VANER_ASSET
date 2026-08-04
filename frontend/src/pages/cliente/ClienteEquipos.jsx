@@ -1,6 +1,6 @@
 // ============================================================
 // CLIENTE EQUIPOS + HOJA DE VIDA NIVEL DIOS
-// Portal Cliente SGA PRO
+// Portal Cliente SGAHolding
 //
 // Funciones:
 // - Inventario completo de empresa.

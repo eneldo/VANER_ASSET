@@ -1,7 +1,7 @@
 # =========================================================
 # MODELO EMPRESA
 # Tabla: empresas
-# Guarda las empresas cliente del sistema SGA PRO
+# Guarda las empresas cliente del sistema SGAHolding
 # =========================================================
 
 import uuid

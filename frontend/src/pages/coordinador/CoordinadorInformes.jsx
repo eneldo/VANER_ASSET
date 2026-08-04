@@ -163,7 +163,7 @@ export default function CoordinadorInformes() {
       <div id="informe-coordinador-print">
         <div className="coord-report-header">
           <div>
-            <h1>Informe Coordinador SGA PRO</h1>
+            <h1>Informe Coordinador SGAHolding</h1>
             <p>Fecha de generación: {new Date().toLocaleString("es-CO")}</p>
           </div>
           <FileBarChart size={34} />

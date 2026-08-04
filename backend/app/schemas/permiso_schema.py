@@ -1,5 +1,5 @@
 # ================================================================
-# SGA PRO - FASE 31.2
+# SGAHolding - FASE 31.2
 # Archivo: backend/app/schemas/permiso_schema.py
 # Objetivo:
 #   Esquemas Pydantic para exponer roles, permisos y asignaciones.

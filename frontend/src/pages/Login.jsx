@@ -1,5 +1,5 @@
 // ============================================================
-// LOGIN ULTRA PRO - SGA PRO
+// LOGIN ULTRA PRO - SGAHolding
 // Archivo: frontend/src/pages/Login.jsx
 // ============================================================
 // Login empresarial SaaS:
@@ -87,7 +87,7 @@ export default function Login() {
 
         <div className="hero-content">
           <div className="brand-chip">
-            <img src="/logo.png" alt="SGA PRO" />
+            <img src="/logo.png" alt="SGAHolding" />
             <div>
               <strong>SGA HOLDING SAS</strong>
               <span>Gestión inteligente de activos</span>
@@ -113,12 +113,12 @@ export default function Login() {
       <section className="login-panel">
         <form className="login-card-pro" onSubmit={handleLogin}>
           <div className="login-logo-wrap">
-            <img src="/logo.png" alt="SGA PRO" />
+            <img src="/logo.png" alt="SGAHolding" />
           </div>
 
           <div className="login-title">
             <h2>Bienvenidos</h2>
-            <p>Acceso seguro a SGA PRO</p>
+            <p>Acceso seguro a SGAHolding</p>
           </div>
 
           {error && <div className="login-error">{error}</div>}

@@ -159,7 +159,7 @@ export default function CoordinadorLayout() {
           </div>
           {open && (
             <div>
-              <h2>SGA PRO</h2>
+              <h2>SGAHolding</h2>
               <span>Portal Coordinador</span>
             </div>
           )}

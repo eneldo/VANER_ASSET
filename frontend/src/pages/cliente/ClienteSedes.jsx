@@ -1,6 +1,6 @@
 // ============================================================
 // CLIENTE SEDES PRO - FASE 24.1
-// Portal Cliente Multiempresa SGA PRO
+// Portal Cliente Multiempresa SGAHolding
 //
 // Funciones:
 // - Lista sedes de la empresa autenticada.

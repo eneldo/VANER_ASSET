@@ -1,6 +1,6 @@
 # ============================================================
 # ROUTER: Exportaciones PRO
-# Proyecto: SGA PRO - Fase 27
+# Proyecto: SGAHolding - Fase 27
 # Archivo: backend/app/routers/exportaciones.py
 #
 # Objetivo:
@@ -152,7 +152,7 @@ def exportar_reporte_general(
     )
     filas = _rows_to_dicts(db.execute(sql))
     columnas = ["indicador", "total"]
-    return _generar_archivo(formato, "reporte_general_sga", "Reporte General SGA PRO", columnas, filas)
+    return _generar_archivo(formato, "reporte_general_sga", "Reporte General SGAHolding", columnas, filas)
 
 
 # ============================================================
@@ -215,7 +215,7 @@ def exportar_equipos(
         "marca", "modelo", "serie", "ubicacion", "estado", "criticidad", "fecha_creacion",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_equipos", "Reporte de Equipos SGA PRO", columnas, filas)
+    return _generar_archivo(formato, "reporte_equipos", "Reporte de Equipos SGAHolding", columnas, filas)
 
 
 # ============================================================
@@ -272,7 +272,7 @@ def exportar_mantenimientos(
         "descripcion", "observaciones", "costo", "creado_en",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_mantenimientos", "Reporte de Mantenimientos SGA PRO", columnas, filas)
+    return _generar_archivo(formato, "reporte_mantenimientos", "Reporte de Mantenimientos SGAHolding", columnas, filas)
 
 
 # ============================================================
@@ -325,4 +325,4 @@ def exportar_auditoria(
         "descripcion", "entidad", "entidad_id", "ip_origen",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_auditoria", "Reporte de Auditoría SGA PRO", columnas, filas)
+    return _generar_archivo(formato, "reporte_auditoria", "Reporte de Auditoría SGAHolding", columnas, filas)

@@ -1,5 +1,5 @@
 # ============================================================
-# SGA PRO — CORE PERMISSIONS
+# SGAHolding — CORE PERMISSIONS
 # Archivo: backend/app/core/permissions.py
 #
 # Control centralizado de:
