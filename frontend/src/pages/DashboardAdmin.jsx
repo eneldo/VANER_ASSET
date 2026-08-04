@@ -1,11 +1,11 @@
-// ============================================================
+﻿// ============================================================
 // DASHBOARD ADMIN SaaS PRO - SGA Empresarial
 // Fase 33.1
 // Archivo: frontend/src/pages/DashboardAdmin.jsx
 //
 // Objetivo:
 // - Dashboard ejecutivo para ADMIN.
-// - KPIs SaaS, alertas, gráficas, acciones rápidas y vista rápida.
+// - KPIs SaaS, alertas, grÃ¡ficas, acciones rÃ¡pidas y vista rÃ¡pida.
 // - Responsive PC / tablet / celular.
 // - Compatible con backend actual: empresas, sedes, equipos,
 //   mantenimientos y técnicos.
@@ -163,8 +163,8 @@ export default function DashboardAdmin() {
 
       return {
         ...sede,
-        empresa_nombre: empresa?.nombre || sede.empresa_nombre || "—",
-        empresa_nit: empresa?.nit || "—",
+        empresa_nombre: empresa?.nombre || sede.empresa_nombre || "â€”",
+        empresa_nit: empresa?.nit || "â€”",
         total_equipos: equiposSede.length,
         total_mantenimientos: mantenimientosSede.length,
         pendientes: pendientes.length,
@@ -190,9 +190,9 @@ export default function DashboardAdmin() {
           tecnico.nombre ||
           tecnico.nombres ||
           `Técnico ${String(tecnico.id || "").slice(0, 6)}`,
-        email_visible: usuario.email || tecnico.email || "—",
-        telefono_visible: tecnico.telefono || usuario.telefono || "—",
-        especialidad_visible: tecnico.especialidad || tecnico.cargo || "—",
+        email_visible: usuario.email || tecnico.email || "â€”",
+        telefono_visible: tecnico.telefono || usuario.telefono || "â€”",
+        especialidad_visible: tecnico.especialidad || tecnico.cargo || "â€”",
         total_mantenimientos: asignados.length,
         activos: activos.length,
         finalizados: finalizados.length,
@@ -208,8 +208,8 @@ export default function DashboardAdmin() {
 
       return {
         ...equipo,
-        sede_nombre: sede?.nombre || equipo.sede_nombre || "—",
-        empresa_nombre: empresa?.nombre || sede?.empresa_nombre || equipo.empresa_nombre || "—",
+        sede_nombre: sede?.nombre || equipo.sede_nombre || "â€”",
+        empresa_nombre: empresa?.nombre || sede?.empresa_nombre || equipo.empresa_nombre || "â€”",
         total_mantenimientos: mantEquipo.length,
       };
     });
@@ -223,10 +223,10 @@ export default function DashboardAdmin() {
       return {
         ...m,
         estado_normalizado: normalizeEstado(m.estado),
-        equipo_nombre: m.equipo_nombre || equipo?.nombre || "—",
-        empresa_nombre: m.empresa_nombre || equipo?.empresa_nombre || "—",
-        sede_nombre: m.sede_nombre || equipo?.sede_nombre || "—",
-        tecnico_nombre: m.tecnico_nombre || tecnico?.nombre_visible || "—",
+        equipo_nombre: m.equipo_nombre || equipo?.nombre || "â€”",
+        empresa_nombre: m.empresa_nombre || equipo?.empresa_nombre || "â€”",
+        sede_nombre: m.sede_nombre || equipo?.sede_nombre || "â€”",
+        tecnico_nombre: m.tecnico_nombre || tecnico?.nombre_visible || "â€”",
       };
     });
   }, [mantenimientos, equiposEnriquecidos, tecnicosEnriquecidos]);
@@ -259,7 +259,7 @@ export default function DashboardAdmin() {
     });
 
     const criticos = equiposEnriquecidos.filter((e) =>
-      ["ALTA", "CRITICA", "CRÍTICA"].includes(normalizeEstado(e.criticidad))
+      ["ALTA", "CRITICA", "CRÃTICA"].includes(normalizeEstado(e.criticidad))
     );
 
     const fueraServicio = equiposEnriquecidos.filter((e) =>
@@ -397,14 +397,10 @@ export default function DashboardAdmin() {
       <main className="dadmin-pro-main">
         <section className="dadmin-hero">
           <div className="dadmin-hero-copy">
-            <div className="dadmin-kicker">
-              <Sparkles size={15} />
-              SGA EMPRESARIAL · ADMIN SaaS PRO
-            </div>
-            <h1>Centro de control operativo</h1>
+                        <h1>Dashboard General</h1>
             <p>
               Monitorea empresas, sedes, equipos, mantenimientos, técnicos, alertas críticas
-              y cumplimiento general desde una vista ejecutiva responsive.
+              desde una vista ejecutiva.
             </p>
           </div>
 
@@ -551,7 +547,7 @@ export default function DashboardAdmin() {
             <div>
               <span className="dadmin-section-tag">
                 <Activity size={15} />
-                Vista rápida inteligente
+                Vista rÃ¡pida inteligente
               </span>
               <h2>{labelVista(vista)}</h2>
               <p>Consulta, filtra y navega registros operativos sin salir del dashboard.</p>
@@ -611,11 +607,8 @@ export default function DashboardAdmin() {
 function KpiCard({ title, value, icon, tone, onClick }) {
   return (
     <button type="button" className={`dadmin-kpi ${tone}`} onClick={onClick}>
+      <div className="dadmin-kpi-row"><span>{title}</span><strong>{value}</strong></div>
       <div className="dadmin-kpi-icon">{icon}</div>
-      <div>
-        <span>{title}</span>
-        <strong>{value}</strong>
-      </div>
       <ArrowRight className="dadmin-kpi-arrow" size={17} />
     </button>
   );
@@ -639,9 +632,7 @@ function HealthCard({ score, cumplimiento }) {
           <b>{score}</b>
         </div>
         <div>
-          <p>Cumplimiento general</p>
-          <h3>{cumplimiento}%</h3>
-          <small>Basado en mantenimientos finalizados frente al total registrado.</small>
+          
         </div>
       </div>
     </article>
@@ -786,19 +777,19 @@ function DataTable({
       {totalPaginas > 1 && (
         <div className="dadmin-pagination">
           <button type="button" disabled={paginaSegura === 1} onClick={() => setPaginaActual(1)}>
-            « Primero
+            Â« Primero
           </button>
           <button type="button" disabled={paginaSegura === 1} onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}>
-            ‹ Anterior
+            â€¹ Anterior
           </button>
           <span>
-            Página <b>{paginaSegura}</b> de <b>{totalPaginas}</b>
+            PÃ¡gina <b>{paginaSegura}</b> de <b>{totalPaginas}</b>
           </span>
           <button type="button" disabled={paginaSegura === totalPaginas} onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}>
-            Siguiente ›
+            Siguiente â€º
           </button>
           <button type="button" disabled={paginaSegura === totalPaginas} onClick={() => setPaginaActual(totalPaginas)}>
-            Último »
+            Ãšltimo Â»
           </button>
         </div>
       )}
@@ -821,8 +812,8 @@ function SedeDetalle({ sede, onClose }) {
 
       <div className="dadmin-side-info">
         <InfoLine icon={<Factory size={15} />} label="Empresa" value={sede.empresa_nombre} />
-        <InfoLine icon={<MapPinned size={15} />} label="Dirección" value={sede.direccion} />
-        <InfoLine icon={<Phone size={15} />} label="Teléfono" value={sede.telefono} />
+        <InfoLine icon={<MapPinned size={15} />} label="DirecciÃ³n" value={sede.direccion} />
+        <InfoLine icon={<Phone size={15} />} label="TelÃ©fono" value={sede.telefono} />
         <InfoLine icon={<Mail size={15} />} label="NIT empresa" value={sede.empresa_nit} />
       </div>
 
@@ -836,12 +827,12 @@ function SedeDetalle({ sede, onClose }) {
       <MiniList
         title="Equipos de la sede"
         icon={<MonitorCog size={15} />}
-        items={(sede.equipos || []).slice(0, 8).map((e) => ({ title: e.nombre, text: `${e.estado || "Sin estado"} · ${e.criticidad || "Sin criticidad"}` }))}
+        items={(sede.equipos || []).slice(0, 8).map((e) => ({ title: e.nombre, text: `${e.estado || "Sin estado"} Â· ${e.criticidad || "Sin criticidad"}` }))}
       />
       <MiniList
-        title="Últimos mantenimientos"
+        title="Ãšltimos mantenimientos"
         icon={<ClipboardList size={15} />}
-        items={(sede.mantenimientos || []).slice(0, 6).map((m) => ({ title: m.tipo, text: `${m.estado || "Sin estado"} · ${formatValue(m.fecha_programada)}` }))}
+        items={(sede.mantenimientos || []).slice(0, 6).map((m) => ({ title: m.tipo, text: `${m.estado || "Sin estado"} Â· ${formatValue(m.fecha_programada)}` }))}
       />
     </aside>
   );
@@ -896,8 +887,8 @@ function startOfDay(date) {
 }
 
 function shortName(value) {
-  const text = String(value || "—");
-  return text.length > 18 ? `${text.slice(0, 18)}…` : text;
+  const text = String(value || "â€”");
+  return text.length > 18 ? `${text.slice(0, 18)}â€¦` : text;
 }
 
 function labelVista(vista) {
@@ -912,7 +903,7 @@ function labelVista(vista) {
     criticos: "Equipos críticos",
     fuera_servicio: "Equipos fuera de servicio",
   };
-  return labels[vista] || "Vista rápida";
+  return labels[vista] || "Vista rÃ¡pida";
 }
 
 function renderCell(column, value) {
@@ -923,8 +914,8 @@ function renderCell(column, value) {
 }
 
 function formatValue(value) {
-  if (value === null || value === undefined || value === "") return "—";
-  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (value === null || value === undefined || value === "") return "â€”";
+  if (typeof value === "boolean") return value ? "SÃ­" : "No";
 
   if (typeof value === "string" && (value.includes("T") || /^\d{4}-\d{2}-\d{2}/.test(value))) {
     const d = new Date(value);

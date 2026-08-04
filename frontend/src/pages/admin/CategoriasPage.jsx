@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // SGA SaaS PRO - CategoríasPage
 // Fase 33.3 - Categorías SaaS PRO
 // Módulo responsive, profesional y compatible con backend actual
@@ -185,10 +185,9 @@ export default function CategoriasPage() {
       <section className="ct-page">
         <header className="ct-hero">
           <div>
-            <span className="ct-eyebrow">Inventario inteligente</span>
             <h1>Categorías de equipos</h1>
             <p>
-              Catálogo canónico de las cuatro familias técnicas soportadas por la plataforma.
+              
             </p>
           </div>
 
