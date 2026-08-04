@@ -5,10 +5,38 @@
 import os
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
-BACKUP_DIR = "app/backups/postgres"
+BACKUP_DIR = (Path(os.getenv("BACKUP_DIR") or "app/backups").resolve() / "postgres")
 
-os.makedirs(BACKUP_DIR, exist_ok=True)
+BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _required_env(name: str) -> str:
+    value = (os.getenv(name) or "").strip()
+    if not value:
+        raise RuntimeError(f"Falta la variable obligatoria {name}")
+    return value
+
+
+def _database_settings() -> tuple[str, str, str, str]:
+    return (
+        _required_env("POSTGRES_DB"),
+        _required_env("POSTGRES_USER"),
+        _required_env("POSTGRES_PASSWORD"),
+        _required_env("POSTGRES_HOST"),
+    )
+
+
+def _safe_backup_path(filename: str) -> Path:
+    safe_name = Path(filename or "").name
+    if safe_name != filename or not safe_name.lower().endswith(".sql"):
+        raise ValueError("Nombre de backup inválido")
+
+    path = (BACKUP_DIR / safe_name).resolve()
+    if path.parent != BACKUP_DIR:
+        raise ValueError("Ruta de backup inválida")
+    return path
 
 
 def generar_backup():
@@ -20,12 +48,9 @@ def generar_backup():
 
     archivo = f"sga_backup_{fecha}.sql"
 
-    ruta = os.path.join(BACKUP_DIR, archivo)
+    ruta = BACKUP_DIR / archivo
 
-    db_name = os.getenv("POSTGRES_DB", "sga_pro")
-    db_user = os.getenv("POSTGRES_USER", "postgres")
-    db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    db_name, db_user, db_password, db_host = _database_settings()
 
     comando = [
         "pg_dump",
@@ -36,7 +61,7 @@ def generar_backup():
         "-F",
         "p",
         "-f",
-        ruta,
+        str(ruta),
         db_name
     ]
 
@@ -46,7 +71,8 @@ def generar_backup():
     subprocess.run(
         comando,
         env=env,
-        check=True
+        check=True,
+        timeout=300,
     )
 
     return ruta
@@ -57,14 +83,13 @@ def restaurar_backup(archivo_backup):
     Restaura backup PostgreSQL
     """
 
-    db_name = os.getenv("POSTGRES_DB", "sga_pro")
-    db_user = os.getenv("POSTGRES_USER", "postgres")
-    db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    if (os.getenv("ALLOW_DATABASE_RESTORE") or "false").lower() != "true":
+        raise PermissionError("La restauración de base de datos está deshabilitada")
 
-    ruta = os.path.join(BACKUP_DIR, archivo_backup)
+    db_name, db_user, db_password, db_host = _database_settings()
+    ruta = _safe_backup_path(archivo_backup)
 
-    if not os.path.exists(ruta):
+    if not ruta.is_file():
         raise Exception("Backup no encontrado")
 
     comando = [
@@ -76,7 +101,7 @@ def restaurar_backup(archivo_backup):
         "-d",
         db_name,
         "-f",
-        ruta
+        str(ruta)
     ]
 
     env = os.environ.copy()
@@ -85,7 +110,8 @@ def restaurar_backup(archivo_backup):
     subprocess.run(
         comando,
         env=env,
-        check=True
+        check=True,
+        timeout=900,
     )
 
     return True

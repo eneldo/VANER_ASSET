@@ -11,7 +11,7 @@
 #   - Validación de tokens con tipo: access / refresh
 # =========================================================
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Optional
 from uuid import uuid4
@@ -52,6 +52,10 @@ def _minutes(value: Any, default: int) -> int:
         return default
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def get_access_token_minutes() -> int:
     """Minutos de vida del access token."""
     return _minutes(getattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES", 30), 30)
@@ -59,7 +63,8 @@ def get_access_token_minutes() -> int:
 
 def get_refresh_token_minutes() -> int:
     """Minutos de vida del refresh token. Default: 7 días."""
-    return _minutes(getattr(settings, "REFRESH_TOKEN_EXPIRE_MINUTES", 60 * 24 * 7), 60 * 24 * 7)
+    days = _minutes(getattr(settings, "REFRESH_TOKEN_EXPIRE_DAYS", 7), 7)
+    return max(days, 1) * 60 * 24
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -69,7 +74,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     Duración recomendada: corta.
     """
     payload = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=get_access_token_minutes()))
+    expire = utc_now() + (expires_delta or timedelta(minutes=get_access_token_minutes()))
 
     payload.update({
         "exp": expire,
@@ -90,7 +95,7 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
     """
     payload = data.copy()
     jti = str(uuid4())
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=get_refresh_token_minutes()))
+    expire = utc_now() + (expires_delta or timedelta(minutes=get_refresh_token_minutes()))
 
     payload.update({
         "exp": expire,

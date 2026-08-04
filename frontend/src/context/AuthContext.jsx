@@ -11,7 +11,6 @@ import {
   clearSession,
   getStoredUser,
   getAccessToken,
-  getRefreshToken,
 } from "../utils/authStorage";
 
 function initialUser() {
@@ -45,7 +44,6 @@ export function AuthProvider({ children }) {
 
     saveSession({
       access_token: data.access_token,
-      refresh_token: data.refresh_token,
       user: loggedUser,
     });
 
@@ -56,13 +54,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      const refreshToken = getRefreshToken();
-
-      if (refreshToken) {
-        await api.post("/auth/logout", {
-          refresh_token: refreshToken,
-        });
-      }
+      await api.post("/auth/logout", {});
     } catch (error) {
       console.warn("Logout remoto no disponible o falló:", error);
     } finally {

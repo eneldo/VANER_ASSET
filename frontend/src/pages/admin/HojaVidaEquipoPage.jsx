@@ -17,6 +17,8 @@ import API from "../../api/axios";
 import { FileText, Save, ArrowLeft, Printer } from "lucide-react";
 import "../../styles/sidebar.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+
 export default function HojaVidaEquipoPage() {
   const { equipoId } = useParams();
   const navigate = useNavigate();
@@ -299,7 +301,7 @@ export default function HojaVidaEquipoPage() {
           <div className="hoja-logo-box">
             {encabezado?.empresa_logo_url ? (
               <img
-                src={`http://127.0.0.1:8000${encabezado.empresa_logo_url}`}
+                src={`${API_URL}${encabezado.empresa_logo_url}`}
                 alt="Logo empresa"
               />
             ) : (

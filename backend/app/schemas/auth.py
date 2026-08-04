@@ -13,7 +13,7 @@ class LoginRequest(BaseModel):
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: Optional[str] = None
 
 
 class LogoutRequest(BaseModel):
@@ -22,7 +22,7 @@ class LogoutRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
     expires_in: int
     usuario_id: str
@@ -33,7 +33,7 @@ class TokenResponse(BaseModel):
 
 class RefreshResponse(BaseModel):
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
     expires_in: int
     usuario_id: str

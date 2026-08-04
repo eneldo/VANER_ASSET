@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import API from "../api/axios";
+import { clearSession } from "../utils/authStorage";
 import "../styles/coordinador.css";
 
 export default function CoordinadorLayout() {
@@ -125,12 +126,14 @@ export default function CoordinadorLayout() {
 
   const menuVisible = menuItems.filter((item) => tienePermiso(...item.permisos));
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    navigate("/");
+  const logout = async () => {
+    try {
+      await API.post("/auth/logout", {});
+    } finally {
+      clearSession();
+      localStorage.removeItem("token");
+      navigate("/");
+    }
   };
 
   const cerrarMobile = () => setMobileOpen(false);

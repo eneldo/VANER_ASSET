@@ -12,9 +12,7 @@
 import axios from "axios";
 import {
   getAccessToken,
-  getRefreshToken,
   updateAccessToken,
-  updateRefreshToken,
   clearSession,
 } from "../utils/authStorage";
 
@@ -23,6 +21,7 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 const api = axios.create({
   baseURL: API_URL,
   timeout: 30000,
+  withCredentials: true,
 });
 
 let isRefreshing = false;
@@ -48,23 +47,12 @@ const leerAccessTokenSeguro = () => {
   );
 };
 
-const leerRefreshTokenSeguro = () => {
-  return getRefreshToken?.() || localStorage.getItem("refresh_token");
-};
-
 const guardarAccessTokenSeguro = (token) => {
   if (!token) return;
 
   updateAccessToken?.(token);
   localStorage.setItem("access_token", token);
   localStorage.setItem("token", token);
-};
-
-const guardarRefreshTokenSeguro = (token) => {
-  if (!token) return;
-
-  updateRefreshToken?.(token);
-  localStorage.setItem("refresh_token", token);
 };
 
 const cerrarSesionSegura = () => {
@@ -122,13 +110,6 @@ api.interceptors.response.use(
     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
 
-      const refreshToken = leerRefreshTokenSeguro();
-
-      if (!refreshToken) {
-        cerrarSesionSegura();
-        return Promise.reject(error);
-      }
-
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -143,15 +124,15 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await axios.post(`${API_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        const response = await axios.post(
+          `${API_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
 
         const newAccessToken = response.data.access_token;
-        const newRefreshToken = response.data.refresh_token;
 
         guardarAccessTokenSeguro(newAccessToken);
-        guardarRefreshTokenSeguro(newRefreshToken);
 
         processQueue(null, newAccessToken);
 

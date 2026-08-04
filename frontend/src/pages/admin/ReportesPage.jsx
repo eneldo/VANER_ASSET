@@ -29,9 +29,11 @@ import {
 } from "lucide-react";
 
 import Sidebar from "../../components/Sidebar";
+import api from "../../api/axios";
+import { clearSession } from "../../utils/authStorage";
 import "../../styles/reportes.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export default function ReportesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -218,12 +220,14 @@ export default function ReportesPage() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout", {});
+    } finally {
+      clearSession();
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    }
   };
 
   const irPrimeraPagina = () => setPaginaActual(1);

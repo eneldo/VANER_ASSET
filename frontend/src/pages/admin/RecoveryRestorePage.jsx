@@ -82,10 +82,17 @@ export default function RecoveryRestorePage() {
 
     if (!confirmar) return;
 
+    const confirmacion = window.prompt(
+      'Escribe RESTAURAR_BASE_DE_DATOS para continuar'
+    );
+
+    if (confirmacion !== 'RESTAURAR_BASE_DE_DATOS') return;
+
     try {
 
       await axios.post("/recovery/restore", {
-        archivo_backup: archivo
+        archivo_backup: archivo,
+        confirmacion
       });
 
       alert("Sistema restaurado correctamente");

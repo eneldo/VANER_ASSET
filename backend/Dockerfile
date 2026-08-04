@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     postgresql-client \
+    qpdf \
     && rm -rf /var/lib/apt/lists/*
 
 # =========================================================
@@ -46,8 +47,10 @@ COPY . .
 # CREAR CARPETAS
 # =========================================================
 
-RUN mkdir -p /app/uploads/evidencias
-RUN mkdir -p /app/exports
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/uploads/evidencias /app/backups/postgres /app/exports \
+    && chmod +x /app/entrypoint.sh \
+    && chown -R appuser:appuser /app
 
 # =========================================================
 # PUERTO
@@ -59,4 +62,8 @@ EXPOSE 8000
 # COMANDO INICIO
 # =========================================================
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+USER appuser
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

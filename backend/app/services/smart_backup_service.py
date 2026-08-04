@@ -14,16 +14,17 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.models.backup_historial import BackupHistorial
 
 # Carpeta persistente recomendada. En Docker/Dokploy puede sobrescribirse con BACKUP_DIR.
-BACKUP_DIR = Path(os.getenv("BACKUP_DIR") or "/app/backups").resolve()
+BACKUP_DIR = Path(os.getenv("BACKUP_DIR") or "app/backups").resolve()
 BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
 # Ruta correcta para SGA_SaaS en Docker: /app/app/uploads.
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR") or "/app/app/uploads").resolve()
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR") or "app/uploads").resolve()
 
 
 class SmartBackupService:
@@ -102,15 +103,32 @@ class SmartBackupService:
 
     def _dump_postgres(self, destino: Path):
         database_url = os.getenv("DATABASE_URL", "")
-        pg_user = os.getenv("POSTGRES_USER") or "postgres"
-        pg_db = os.getenv("POSTGRES_DB") or "SGA"
-        pg_host = os.getenv("POSTGRES_HOST") or "sga_postgres"
-        pg_port = os.getenv("POSTGRES_PORT") or "5432"
         env = os.environ.copy()
 
-        # Si DATABASE_URL está definida, pg_dump puede usarla directamente.
-        cmd = ["pg_dump", database_url] if database_url.startswith("postgres") else [
-            "pg_dump", "-h", pg_host, "-p", pg_port, "-U", pg_user, pg_db
+        if database_url.startswith("postgres"):
+            url = make_url(database_url)
+            pg_user = url.username
+            pg_db = url.database
+            pg_host = url.host
+            pg_port = str(url.port or 5432)
+            pg_password = url.password
+        else:
+            pg_user = os.getenv("POSTGRES_USER")
+            pg_db = os.getenv("POSTGRES_DB")
+            pg_host = os.getenv("POSTGRES_HOST")
+            pg_port = os.getenv("POSTGRES_PORT") or "5432"
+            pg_password = os.getenv("POSTGRES_PASSWORD")
+
+        if not all((pg_user, pg_db, pg_host, pg_password)):
+            raise RuntimeError("Configuración PostgreSQL incompleta para generar el backup")
+
+        env["PGPASSWORD"] = pg_password
+        cmd = [
+            "pg_dump",
+            "-h", pg_host,
+            "-p", pg_port,
+            "-U", pg_user,
+            "-d", pg_db,
         ]
 
         with destino.open("wb") as f:

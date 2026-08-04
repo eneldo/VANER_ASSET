@@ -14,7 +14,7 @@ import "../../styles/formatoMantenimiento.css";
 import SignaturePad from "../../components/SignaturePad";
 import { isNetworkError, queueOfflineRequest } from "../../utils/offlineQueue";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const TEMPLATES = {
   AIRE_ACONDICIONADO: {

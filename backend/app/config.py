@@ -44,7 +44,14 @@ class Settings(BaseSettings):
 
     ALGORITHM: str = "HS256"
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    REFRESH_COOKIE_NAME: str = 'sga_refresh_token'
+    REFRESH_COOKIE_PATH: str = '/auth'
+    REFRESH_COOKIE_SECURE: bool = False
+    REFRESH_COOKIE_SAMESITE: str = 'lax'
+    RUN_SCHEDULER: bool = True
 
     # =====================================================
     # UPLOADS / ARCHIVOS

@@ -92,6 +92,9 @@ def default_config_payload() -> dict:
             "permitir_pdf": True,
             "permitir_imagen": True,
             "compresion_imagen": True,
+            "compresion_pdf": True,
+            "calidad_imagen": 82,
+            "max_dimension_imagen": 2048,
         },
         "mantenimiento": {
             "dias_alerta_vencimiento": 3,

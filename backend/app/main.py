@@ -9,8 +9,11 @@ from pathlib import Path
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database import get_db
 from app.middleware.audit_middleware import AuditMiddleware
 from app.middleware.rate_limit import InMemoryRateLimitMiddleware as RateLimitMiddleware
 from app.middleware.request_id import RequestIDMiddleware
@@ -73,6 +76,9 @@ from app.routers import plantillas_reporte
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
+    docs_url=None if settings.APP_ENV.lower() == "production" else "/docs",
+    redoc_url=None if settings.APP_ENV.lower() == "production" else "/redoc",
+    openapi_url=None if settings.APP_ENV.lower() == "production" else "/openapi.json",
 )
 
 
@@ -193,13 +199,15 @@ app.include_router(plantillas_reporte.router)
 @app.on_event("startup")
 def startup_automatizacion_saas():
     """Inicia el scheduler SaaS sin afectar módulos existentes."""
-    iniciar_scheduler_sga()
+    if settings.RUN_SCHEDULER:
+        iniciar_scheduler_sga()
 
 
 @app.on_event("shutdown")
 def shutdown_automatizacion_saas():
     """Detiene el scheduler de forma segura al apagar FastAPI."""
-    detener_scheduler_sga()
+    if settings.RUN_SCHEDULER:
+        detener_scheduler_sga()
 
 
 # =========================================================
@@ -213,5 +221,15 @@ def root():
         "message": "Backend SGA PRO funcionando correctamente",
         "version": "1.0.0",
         "fase": "34.2.9 - BI Ejecutivo SaaS PRO",
-        "uploads_dir": str(UPLOADS_DIR),
     }
+
+
+@app.get("/health/live", include_in_schema=False)
+def health_live():
+    return {"status": "ok"}
+
+
+@app.get("/health/ready", include_in_schema=False)
+def health_ready(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+    return {"status": "ready"}

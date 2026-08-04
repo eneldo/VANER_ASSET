@@ -10,28 +10,33 @@
 # =========================================================
 
 from datetime import datetime, timedelta
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from pydantic import BaseModel
 from sqlalchemy import or_, text, func
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db, establecer_contexto_tenant
+from app.models.refresh_token import RefreshToken
 from app.models.usuario import Usuario
-from app.schemas.auth import LoginRequest, TokenResponse
-from app.security import verify_password, create_access_token
+from app.schemas.auth import LoginRequest, LogoutRequest, RefreshRequest, RefreshResponse, TokenResponse
+from app.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    get_access_token_minutes,
+    hash_token,
+    utc_now,
+    verify_password,
+)
 from app.services.security_logger import registrar_evento_seguridad, get_client_ip
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
 
 
 def _jwt_secret_key():
@@ -54,6 +59,53 @@ def _crear_payload_usuario(usuario: Usuario, tipo: str = "access"):
         "empresa_id": empresa_id,
         "type": tipo,
     }
+
+
+def _set_refresh_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        value=token,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        httponly=True,
+        secure=settings.REFRESH_COOKIE_SECURE,
+        samesite=settings.REFRESH_COOKIE_SAMESITE,
+        path=settings.REFRESH_COOKIE_PATH,
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        path=settings.REFRESH_COOKIE_PATH,
+        secure=settings.REFRESH_COOKIE_SECURE,
+        httponly=True,
+        samesite=settings.REFRESH_COOKIE_SAMESITE,
+    )
+
+
+def _refresh_token_from_request(data: RefreshRequest | LogoutRequest, request: Request) -> str | None:
+    return data.refresh_token or request.cookies.get(settings.REFRESH_COOKIE_NAME)
+
+
+def _guardar_refresh_token(
+    db: Session,
+    *,
+    usuario: Usuario,
+    token: str,
+    jti: str,
+    expires_at: datetime,
+    request: Request,
+) -> RefreshToken:
+    registro = RefreshToken(
+        usuario_id=usuario.id,
+        token_hash=hash_token(token),
+        jti=jti,
+        expires_at=expires_at,
+        user_agent=request.headers.get("User-Agent"),
+        ip_address=get_client_ip(request),
+    )
+    db.add(registro)
+    return registro
 
 
 def obtener_usuario_actual(
@@ -125,14 +177,15 @@ def _registrar_intento_login(
         text(
             """
             INSERT INTO login_intentos
-                (username, ip_origen, exitoso, motivo, user_agent, request_id,
+                (id, username, ip_origen, exitoso, motivo, user_agent, request_id,
                  intentos_fallidos, bloqueado_hasta)
             VALUES
-                (:username, :ip_origen, :exitoso, :motivo, :user_agent, :request_id,
+                (:id, :username, :ip_origen, :exitoso, :motivo, :user_agent, :request_id,
                  :intentos_fallidos, :bloqueado_hasta)
             """
         ),
         {
+            "id": uuid4(),
             "username": _normalizar_username(username),
             "ip_origen": get_client_ip(request),
             "exitoso": exitoso,
@@ -147,7 +200,7 @@ def _registrar_intento_login(
 
 
 def _contar_fallidos_recientes(db: Session, username: str, ip_origen: str) -> int:
-    desde = datetime.utcnow() - timedelta(minutes=VENTANA_MINUTOS)
+    desde = utc_now() - timedelta(minutes=VENTANA_MINUTOS)
 
     total = db.execute(
         text(
@@ -195,7 +248,7 @@ def _minutos_restantes(bloqueo) -> int:
     if not bloqueo:
         return BLOQUEO_MINUTOS
 
-    ahora = datetime.utcnow()
+    ahora = utc_now()
 
     try:
         diferencia = bloqueo.replace(tzinfo=None) - ahora
@@ -205,8 +258,8 @@ def _minutos_restantes(bloqueo) -> int:
         return BLOQUEO_MINUTOS
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
+@router.post("/login", response_model=TokenResponse, response_model_exclude_none=True)
+def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     username_original = (data.username or "").strip()
     username_normalizado = _normalizar_username(username_original)
     ip_origen = get_client_ip(request)
@@ -246,7 +299,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         fallidos = _contar_fallidos_recientes(db, username_normalizado, ip_origen) + 1
 
         bloqueado_hasta = (
-            datetime.utcnow() + timedelta(minutes=BLOQUEO_MINUTOS)
+            utc_now() + timedelta(minutes=BLOQUEO_MINUTOS)
             if fallidos >= MAX_LOGIN_FALLIDOS
             else None
         )
@@ -308,7 +361,7 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         fallidos = _contar_fallidos_recientes(db, username_normalizado, ip_origen) + 1
 
         bloqueado_hasta = (
-            datetime.utcnow() + timedelta(minutes=BLOQUEO_MINUTOS)
+            utc_now() + timedelta(minutes=BLOQUEO_MINUTOS)
             if fallidos >= MAX_LOGIN_FALLIDOS
             else None
         )
@@ -349,10 +402,20 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
         _crear_payload_usuario(usuario, tipo="access")
     )
 
-    refresh_token = create_access_token(
-        _crear_payload_usuario(usuario, tipo="refresh"),
-        expires_delta=timedelta(days=7),
+    refresh_token, refresh_jti, refresh_expires_at = create_refresh_token(
+        _crear_payload_usuario(usuario, tipo="refresh")
     )
+
+    _guardar_refresh_token(
+        db,
+        usuario=usuario,
+        token=refresh_token,
+        jti=refresh_jti,
+        expires_at=refresh_expires_at,
+        request=request,
+    )
+    db.commit()
+    _set_refresh_cookie(response, refresh_token)
 
     _registrar_intento_login(
         db,
@@ -380,9 +443,9 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
 
     return TokenResponse(
         access_token=access_token,
-        refresh_token=refresh_token,
+        refresh_token=None,
         token_type="bearer",
-        expires_in=3600,
+        expires_in=get_access_token_minutes() * 60,
         usuario_id=str(usuario.id),
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
@@ -390,9 +453,11 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=RefreshResponse, response_model_exclude_none=True)
 def refresh_token(
-    data: RefreshTokenRequest,
+    data: RefreshRequest,
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db),
 ):
     credenciales_error = HTTPException(
@@ -402,19 +467,36 @@ def refresh_token(
     )
 
     try:
-        payload = jwt.decode(
-            data.refresh_token,
-            _jwt_secret_key(),
-            algorithms=[_jwt_algorithm()],
-        )
+        token = _refresh_token_from_request(data, request)
+        if not token:
+            raise credenciales_error
+
+        payload = decode_token(token)
 
         usuario_id = payload.get("sub")
         tipo = payload.get("type")
+        jti = payload.get("jti")
 
-        if not usuario_id or tipo != "refresh":
+        if not usuario_id or tipo != "refresh" or not jti:
             raise credenciales_error
 
     except JWTError:
+        raise credenciales_error
+
+    ahora = utc_now()
+    sesion = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token_hash == hash_token(token))
+        .with_for_update()
+        .first()
+    )
+
+    if (
+        not sesion
+        or sesion.jti != jti
+        or sesion.revoked_at is not None
+        or sesion.expires_at <= ahora
+    ):
         raise credenciales_error
 
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
@@ -426,16 +508,28 @@ def refresh_token(
         _crear_payload_usuario(usuario, tipo="access")
     )
 
-    nuevo_refresh_token = create_access_token(
-        _crear_payload_usuario(usuario, tipo="refresh"),
-        expires_delta=timedelta(days=7),
+    nuevo_refresh_token, nuevo_jti, nueva_expiracion = create_refresh_token(
+        _crear_payload_usuario(usuario, tipo="refresh")
     )
+
+    sesion.revoked_at = ahora
+    sesion.replaced_by_jti = nuevo_jti
+    _guardar_refresh_token(
+        db,
+        usuario=usuario,
+        token=nuevo_refresh_token,
+        jti=nuevo_jti,
+        expires_at=nueva_expiracion,
+        request=request,
+    )
+    db.commit()
+    _set_refresh_cookie(response, nuevo_refresh_token)
 
     return {
         "access_token": nuevo_access_token,
-        "refresh_token": nuevo_refresh_token,
+        "refresh_token": None,
         "token_type": "bearer",
-        "expires_in": 3600,
+        "expires_in": get_access_token_minutes() * 60,
         "usuario_id": str(usuario.id),
         "nombre_completo": usuario.nombre_completo,
         "rol": usuario.rol,
@@ -454,3 +548,26 @@ def auth_me(usuario: Usuario = Depends(obtener_usuario_actual)):
         "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
         "activo": usuario.activo,
     }
+
+
+@router.post("/logout")
+def logout(
+    data: LogoutRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    token = _refresh_token_from_request(data, request)
+
+    if token:
+        sesion = (
+            db.query(RefreshToken)
+            .filter(RefreshToken.token_hash == hash_token(token))
+            .first()
+        )
+        if sesion and sesion.revoked_at is None:
+            sesion.revoked_at = utc_now()
+            db.commit()
+
+    _clear_refresh_cookie(response)
+    return {"ok": True, "message": "Sesión cerrada correctamente"}

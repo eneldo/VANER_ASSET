@@ -25,7 +25,7 @@ import AdminLayout from "./AdminLayout";
 import { configuracionApi } from "../../api/configuracionApi";
 import "../../styles/configuracion-saas-pro.css";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 const DEFAULT_CONFIG = {
   nombre_plataforma: "SGA SaaS PRO",
@@ -58,6 +58,9 @@ const DEFAULT_CONFIG = {
     permitir_pdf: true,
     permitir_imagen: true,
     compresion_imagen: true,
+    compresion_pdf: true,
+    calidad_imagen: 82,
+    max_dimension_imagen: 2048,
   },
   mantenimiento: {
     dias_alerta_vencimiento: 3,
@@ -332,8 +335,10 @@ export default function ConfiguracionPage() {
           <div className="cfg-grid two">
             <div className="cfg-field"><label>Peso máximo por archivo (MB)</label><input type="number" value={config.evidencias.max_mb} onChange={(e) => updateBlock("evidencias", "max_mb", Number(e.target.value))} /></div>
             <div className="cfg-field"><label>Formatos permitidos</label><input value={formatos} onChange={(e) => updateBlock("evidencias", "formatos_permitidos", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} /></div>
+            <div className="cfg-field"><label>Calidad de imagen (%)</label><input type="number" min="50" max="95" value={config.evidencias.calidad_imagen} onChange={(e) => updateBlock("evidencias", "calidad_imagen", Number(e.target.value))} /></div>
+            <div className="cfg-field"><label>Dimensión máxima (px)</label><input type="number" min="800" max="4096" value={config.evidencias.max_dimension_imagen} onChange={(e) => updateBlock("evidencias", "max_dimension_imagen", Number(e.target.value))} /></div>
           </div>
-          <div className="cfg-switches"><Toggle checked={config.evidencias.requiere_descripcion} onChange={(v) => updateBlock("evidencias", "requiere_descripcion", v)} label="Requiere descripción" /><Toggle checked={config.evidencias.permitir_pdf} onChange={(v) => updateBlock("evidencias", "permitir_pdf", v)} label="Permitir PDF" /><Toggle checked={config.evidencias.permitir_imagen} onChange={(v) => updateBlock("evidencias", "permitir_imagen", v)} label="Permitir imágenes" /><Toggle checked={config.evidencias.compresion_imagen} onChange={(v) => updateBlock("evidencias", "compresion_imagen", v)} label="Compresión de imagen" /></div>
+          <div className="cfg-switches"><Toggle checked={config.evidencias.requiere_descripcion} onChange={(v) => updateBlock("evidencias", "requiere_descripcion", v)} label="Requiere descripción" /><Toggle checked={config.evidencias.permitir_pdf} onChange={(v) => updateBlock("evidencias", "permitir_pdf", v)} label="Permitir PDF" /><Toggle checked={config.evidencias.permitir_imagen} onChange={(v) => updateBlock("evidencias", "permitir_imagen", v)} label="Permitir imágenes" /><Toggle checked={config.evidencias.compresion_imagen} onChange={(v) => updateBlock("evidencias", "compresion_imagen", v)} label="Compresión de imagen" /><Toggle checked={config.evidencias.compresion_pdf} onChange={(v) => updateBlock("evidencias", "compresion_pdf", v)} label="Compresión PDF" /></div>
         </section>
       );
     }

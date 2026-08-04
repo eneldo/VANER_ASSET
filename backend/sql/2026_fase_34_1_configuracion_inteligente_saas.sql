@@ -42,7 +42,7 @@ VALUES (
     '#22c55e',
     '{"host":"","port":587,"username":"","password":"","from_email":"","from_name":"SGA SaaS PRO","use_tls":true,"use_ssl":false}'::jsonb,
     '{"habilitado":true,"frecuencia":"DIARIO","hora":"02:00","retencion_dias":30,"incluir_evidencias":true,"ruta_destino":"app/exports/backups"}'::jsonb,
-    '{"max_mb":15,"formatos_permitidos":["jpg","jpeg","png","pdf","webp"],"requiere_descripcion":false,"permitir_pdf":true,"permitir_imagen":true,"compresion_imagen":true}'::jsonb,
+    '{"max_mb":15,"formatos_permitidos":["jpg","jpeg","png","pdf","webp"],"requiere_descripcion":false,"permitir_pdf":true,"permitir_imagen":true,"compresion_imagen":true,"compresion_pdf":true,"calidad_imagen":82,"max_dimension_imagen":2048}'::jsonb,
     '{"dias_alerta_vencimiento":3,"permitir_reprogramacion":true,"requiere_evidencia_finalizar":true,"requiere_observacion_finalizar":true,"estados_permitidos":["PROGRAMADO","ASIGNADO","EN_PROCESO","PAUSADO","FINALIZADO","ANULADO"]}'::jsonb,
     '{"email_habilitado":true,"whatsapp_habilitado":false,"whatsapp_provider":"","whatsapp_token":"","notificar_asignacion":true,"notificar_vencimiento":true,"notificar_finalizacion":true,"notificar_cliente":true,"correos_copia":[]}'::jsonb
 )

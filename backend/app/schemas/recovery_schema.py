@@ -16,6 +16,7 @@ class BackupResponse(BaseModel):
 
 class RestoreRequest(BaseModel):
     archivo_backup: str
+    confirmacion: str
 
 
 class SystemStatusResponse(BaseModel):

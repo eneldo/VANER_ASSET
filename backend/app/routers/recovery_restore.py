@@ -84,15 +84,32 @@ def restaurar(data: RestoreRequest):
 
     try:
 
+        if data.confirmacion != "RESTAURAR_BASE_DE_DATOS":
+            raise HTTPException(
+                status_code=400,
+                detail="Confirmación de restauración inválida"
+            )
+
         return RecoveryService.ejecutar_restore(
             data.archivo_backup
         )
 
-    except Exception as e:
+    except HTTPException:
+
+        raise
+
+    except PermissionError as e:
+
+        raise HTTPException(
+            status_code=403,
+            detail=str(e)
+        )
+
+    except Exception:
 
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="No fue posible restaurar la base de datos"
         )
 
 

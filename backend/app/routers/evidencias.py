@@ -38,6 +38,7 @@ from app.routers.auth import obtener_usuario_actual
 from app.config import settings
 from app.services.evidencia_service import (
     save_secure_file,
+    get_evidence_upload_config,
     get_evidencia_path,
     EVIDENCIAS_DIR,
 )
@@ -225,7 +226,7 @@ async def subir_evidencia(
         )
 
     try:
-        saved = await save_secure_file(archivo)
+        saved = await save_secure_file(archivo, get_evidence_upload_config(db))
 
         nueva = Evidencia(
             mantenimiento_id=mantenimiento_id,

@@ -35,6 +35,9 @@ class EvidenciasConfig(BaseModel):
     permitir_pdf: bool = True
     permitir_imagen: bool = True
     compresion_imagen: bool = True
+    compresion_pdf: bool = True
+    calidad_imagen: int = Field(default=82, ge=50, le=95)
+    max_dimension_imagen: int = Field(default=2048, ge=800, le=4096)
 
 
 class MantenimientoConfig(BaseModel):

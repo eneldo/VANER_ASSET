@@ -6,6 +6,9 @@
 
 from datetime import datetime
 
+from app.database import SessionLocal
+from app.services.smart_backup_service import SmartBackupService
+
 
 def ejecutar_backup_job():
     """
@@ -13,15 +16,22 @@ def ejecutar_backup_job():
     """
 
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    db = SessionLocal()
 
-    print("================================================")
-    print("SGA SaaS PRO - BACKUP JOB")
-    print(f"Fecha ejecución: {ahora}")
-    print("Backup automático ejecutado correctamente.")
-    print("================================================")
-
-    return {
-        "ok": True,
-        "mensaje": "Backup automático ejecutado",
-        "fecha": ahora,
-    }
+    try:
+        backup = SmartBackupService(db).ejecutar_backup(
+            tipo="AUTOMATICO",
+            incluir_db=True,
+            incluir_uploads=True,
+            incluir_codigo=False,
+            creado_por="scheduler",
+        )
+        return {
+            "ok": True,
+            "mensaje": "Backup automático ejecutado",
+            "fecha": ahora,
+            "backup_id": str(backup.id),
+            "archivo": backup.nombre_archivo,
+        }
+    finally:
+        db.close()

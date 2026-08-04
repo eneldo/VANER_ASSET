@@ -7,13 +7,11 @@
 // ============================================================
 
 const ACCESS_TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
 const USER_KEY = "user";
 const SESSION_CREATED_AT_KEY = "session_created_at";
 
-export function saveSession({ access_token, refresh_token, user }) {
+export function saveSession({ access_token, user }) {
   if (access_token) localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
-  if (refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
   if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
 
   localStorage.setItem(SESSION_CREATED_AT_KEY, new Date().toISOString());
@@ -21,10 +19,6 @@ export function saveSession({ access_token, refresh_token, user }) {
 
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function getStoredUser() {
@@ -43,15 +37,9 @@ export function updateAccessToken(token) {
   }
 }
 
-export function updateRefreshToken(token) {
-  if (token) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  }
-}
-
 export function clearSession() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem("refresh_token");
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(SESSION_CREATED_AT_KEY);
 }

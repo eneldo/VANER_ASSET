@@ -70,11 +70,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 https://fonts.gstatic.com;
 
             connect-src
-                'self'
-                https://api.sga.vaner.cloud
-                https://sga.vaner.cloud
-                http://api.sga.vaner.cloud
-                http://sga.vaner.cloud;
+                'self';
 
             worker-src
                 'self'

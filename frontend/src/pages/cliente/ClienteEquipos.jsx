@@ -28,6 +28,8 @@ import {
   Wrench,
 } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || "/api";
+
 export default function ClienteEquipos() {
   const [equipos, setEquipos] = useState([]);
   const [sedes, setSedes] = useState([]);
@@ -538,13 +540,13 @@ function Check({ label, value }) {
 function getLogoUrl(url) {
   if (!url) return null;
   if (url.startsWith("http")) return url;
-  return `http://127.0.0.1:8000${url}`;
+  return `${API_URL}${url}`;
 }
 
 function getFileUrl(url) {
   if (!url) return "#";
   if (url.startsWith("http")) return url;
-  return `http://127.0.0.1:8000${url}`;
+  return `${API_URL}${url}`;
 }
 
 function formatValue(value) {

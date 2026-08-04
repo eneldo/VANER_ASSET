@@ -4,11 +4,13 @@ services:
     container_name: sga_postgres
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB es obligatoria}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER es obligatoria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD es obligatoria}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD es obligatoria}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/docker/init-app-role.sh:/docker-entrypoint-initdb.d/10-init-app-role.sh:ro
     networks:
       - sga_internal
     healthcheck:
@@ -26,11 +28,22 @@ services:
       APP_NAME: ${APP_NAME}
       APP_ENV: ${APP_ENV}
       DEBUG: ${DEBUG}
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_KEY: ${SECRET_KEY}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:?MIGRATION_DATABASE_URL es obligatoria}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria}
       ALGORITHM: ${ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS}
+      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-sga_refresh_token}
+      REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/auth}
+      REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-true}
+      REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-lax}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?BACKEND_CORS_ORIGINS es obligatoria}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      RUN_SCHEDULER: ${RUN_SCHEDULER:-true}
+      ALLOW_DATABASE_RESTORE: ${ALLOW_DATABASE_RESTORE:-false}
       UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -40,10 +53,16 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./backend/app/uploads:/app/uploads
-      - ./backend/app/backups:/app/app/backups
+      - uploads_data:/app/uploads
+      - backups_data:/app/backups
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - sga_internal
       - dokploy-network
@@ -52,19 +71,27 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_URL: ${VITE_API_URL:-/api}
     container_name: sga_frontend
     restart: always
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     expose:
       - "80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - sga_internal
       - dokploy-network
 
 volumes:
   postgres_data:
+  uploads_data:
+  backups_data:
 
 networks:
   sga_internal:

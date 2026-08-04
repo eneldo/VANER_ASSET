@@ -4,6 +4,8 @@
 // =========================================================
 
 import { NavLink, useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { clearSession } from "../utils/authStorage";
 
 import {
   LayoutDashboard,
@@ -56,14 +58,17 @@ export default function Sidebar({
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (typeof onLogout === "function") {
-      onLogout();
+      await onLogout();
     } else {
+      try {
+        await api.post("/auth/logout", {});
+      } catch {
+        // La sesión local siempre se elimina aunque el backend no responda.
+      }
+      clearSession();
       localStorage.removeItem("token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user");
 
       navigate("/");
     }

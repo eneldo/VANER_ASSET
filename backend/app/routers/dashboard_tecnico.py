@@ -34,7 +34,7 @@ from app.models.evidencia import Evidencia
 from app.models.formato_mantenimiento import FormatoMantenimiento
 from app.models.ot_repuesto import OtRepuesto
 from app.models.ot_incidencia import OtIncidencia
-from app.services.evidencia_service import save_secure_file
+from app.services.evidencia_service import get_evidence_upload_config, save_secure_file
 from app.routers.auth import obtener_usuario_actual
 from app.routers.evidencias import crear_url_firmada
 
@@ -649,7 +649,7 @@ async def subir_evidencia_tecnico(
         )
 
     try:
-        saved = await save_secure_file(archivo)
+        saved = await save_secure_file(archivo, get_evidence_upload_config(db))
 
         evidencia = Evidencia(
             mantenimiento_id=mantenimiento.id,

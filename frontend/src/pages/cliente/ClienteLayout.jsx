@@ -5,6 +5,8 @@
 // ============================================================
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import api from "../../api/axios";
+import { clearSession } from "../../utils/authStorage";
 
 import {
   LayoutDashboard,
@@ -26,14 +28,15 @@ export default function ClienteLayout() {
   // LOGOUT
   // ============================================================
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("empresa_id");
-
-    navigate("/");
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout", {});
+    } finally {
+      clearSession();
+      localStorage.removeItem("token");
+      localStorage.removeItem("empresa_id");
+      navigate("/");
+    }
   };
 
   // ============================================================
