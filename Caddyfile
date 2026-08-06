@@ -1,0 +1,53 @@
+﻿# ============================================================
+# Caddyfile - SGA SaaS
+# Reverse proxy + HTTPS automático con Let's Encrypt
+# ============================================================
+
+sgaholding.online, www.sgaholding.online {
+    # Redirigir www -> sin www
+    @www host www.sgaholding.online
+    redir @www https://sgaholding.online{uri} permanent
+
+    # Encoding
+    encode gzip zstd
+
+    # Logs
+    log {
+        output file /var/log/caddy/sga.log
+        level info
+    }
+
+    # Headers de seguridad globales
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # ── API Backend ──
+    handle /api/* {
+        reverse_proxy sga_backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # ── Health check ──
+    handle /health/* {
+        reverse_proxy sga_backend:8000
+    }
+
+    # ── Frontend ──
+    handle {
+        reverse_proxy sga_frontend:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}

@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16
     container_name: sga_postgres
@@ -65,7 +65,7 @@ services:
       start_period: 30s
     networks:
       - sga_internal
-      - dokploy-network
+      - caddy_net
 
   frontend:
     build:
@@ -86,7 +86,7 @@ services:
       retries: 3
     networks:
       - sga_internal
-      - dokploy-network
+      - caddy_net
 
 volumes:
   postgres_data:
@@ -97,5 +97,6 @@ networks:
   sga_internal:
     driver: bridge
 
-  dokploy-network:
+  caddy_net:
+    name: caddy_net
     external: true
