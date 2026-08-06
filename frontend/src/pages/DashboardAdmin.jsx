@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // DASHBOARD ADMIN SaaS PRO - SGA Empresarial
 // Fase 33.1
 // Archivo: frontend/src/pages/DashboardAdmin.jsx
@@ -424,7 +424,7 @@ export default function DashboardAdmin() {
         )}
 
         <section className="dadmin-executive-grid">
-          <HealthCard score={saludOperativa} cumplimiento={metricas.cumplimiento} />
+          <HealthCard score={saludOperativa} />
 
           <KpiCard title="Empresas" value={empresas.length} icon={<Building2 />} tone="blue" onClick={() => cambiarVista("empresas")} />
           <KpiCard title="Sedes" value={sedes.length} icon={<MapPin />} tone="cyan" onClick={() => cambiarVista("sedes")} />
@@ -614,7 +614,7 @@ function KpiCard({ title, value, icon, tone, onClick }) {
   );
 }
 
-function HealthCard({ score, cumplimiento }) {
+function HealthCard({ score }) {
   const estado = score >= 80 ? "Excelente" : score >= 60 ? "Controlado" : score >= 40 ? "Atención" : "Crítico";
 
   return (
