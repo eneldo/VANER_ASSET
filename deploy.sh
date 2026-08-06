@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # ============================================================
 # SGA SaaS - Despliegue en VPS con Caddy
 # Usa imágenes pre-built de Docker Hub (vanstralhen/sga-*)
@@ -9,6 +9,9 @@ set -euo pipefail
 DOMAIN="sgaholding.online"
 PROJECT_DIR="/opt/sga_saas"
 COMPOSE_FILE="$PROJECT_DIR/docker-compose.prod.yml"
+ENV_FILE="$PROJECT_DIR/.env"
+
+cd "$PROJECT_DIR"
 
 echo "=============================================="
 echo " SGA SaaS - Despliegue Producción con Caddy"
@@ -58,24 +61,21 @@ fi
 
 # --- 4. .env ---
 echo "[4/6] Verificando .env..."
-if [ ! -f "$PROJECT_DIR/.env" ]; then
-  echo ""
-  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo " NO SE ENCONTRÓ .env"
-  echo " Creá uno basado en .env.example y configurá:"
-  echo "   - POSTGRES_PASSWORD"
-  echo "   - POSTGRES_APP_PASSWORD"
-  echo "   - SECRET_KEY"
-  echo "   - BACKEND_CORS_ORIGINS=https://$DOMAIN"
-  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo ""
-  read -r -p "¿Creaste el .env? Presiona ENTER para continuar..."
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: No se encontró $ENV_FILE"
+  echo "Créalo desde .env.example, configura los secretos y vuelve a ejecutar."
+  exit 1
+fi
+
+if grep -Eq '(^|=)CAMBIAR_' "$ENV_FILE"; then
+  echo "ERROR: $ENV_FILE todavía contiene valores CAMBIAR_*"
+  exit 1
 fi
 
 # --- 5. Pull + Deploy ---
 echo "[5/6] Pull imágenes y desplegar..."
-docker compose -f "$COMPOSE_FILE" pull
-docker compose -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
 
 # --- 6. Verificación ---
 echo ""
@@ -84,11 +84,11 @@ sleep 5
 
 echo ""
 echo "Estado de contenedores:"
-docker compose -f "$COMPOSE_FILE" ps
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
 
 echo ""
 echo "Logs recientes backend:"
-docker compose -f "$COMPOSE_FILE" logs --tail=20 backend
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=20 backend
 
 echo ""
 echo "=============================================="
@@ -96,5 +96,5 @@ echo "✅ Despliegue completado!"
 echo "   https://$DOMAIN"
 echo "=============================================="
 echo ""
-echo "Logs en vivo:  docker compose -f $COMPOSE_FILE logs -f"
-echo "Reiniciar:     docker compose -f $COMPOSE_FILE up -d --force-recreate"
+echo "Logs en vivo:  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE logs -f"
+echo "Reiniciar:     docker compose --env-file $ENV_FILE -f $COMPOSE_FILE up -d --force-recreate"
