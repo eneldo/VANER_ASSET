@@ -23,9 +23,9 @@ WORKDIR /app
 # DEPENDENCIAS SISTEMA
 # =========================================================
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
     postgresql-client \
     qpdf \
     && rm -rf /var/lib/apt/lists/*

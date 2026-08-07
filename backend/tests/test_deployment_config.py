@@ -60,5 +60,27 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertLess(dockerfile.index("ARG NODE_IMAGE="), first_from)
         self.assertLess(dockerfile.index("ARG NGINX_IMAGE="), first_from)
 
+    def test_imagenes_actualizan_paquetes_del_sistema(self):
+        backend = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+        frontend = (ROOT / "frontend" / "Dockerfile").read_text(encoding="utf-8")
+
+        self.assertIn("apt-get upgrade -y", backend)
+        self.assertIn("--no-install-recommends", backend)
+        self.assertNotIn("    gcc \\n", backend)
+        self.assertNotIn("    libpq-dev \\n", backend)
+        self.assertIn("apk upgrade --no-cache", frontend)
+
+    def test_requisitos_incluyen_versiones_corregidas(self):
+        requirements = (ROOT / "backend" / "requirements.txt").read_text(encoding="utf-8")
+
+        for requirement in (
+            "cryptography==50.0.0",
+            "pillow==12.3.0",
+            "pyasn1==0.6.4",
+            "python-multipart==0.0.32",
+            "starlette==1.3.1",
+        ):
+            self.assertIn(requirement, requirements)
+
 if __name__ == "__main__":
     unittest.main()
