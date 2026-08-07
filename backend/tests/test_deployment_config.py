@@ -12,6 +12,8 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertIn("uploads_data:/app/uploads", compose)
         self.assertIn("backups_data:/app/backups", compose)
         self.assertIn("MIGRATION_DATABASE_URL", compose)
+        self.assertIn("BACKUP_DATABASE_URL", compose)
+        self.assertIn("POSTGRES_BACKUP_PASSWORD", compose)
         self.assertIn("migrate:", compose)
         self.assertIn('entrypoint: ["alembic"]', compose)
         self.assertIn("BACKEND_CORS_ORIGINS", compose)
@@ -20,6 +22,7 @@ class DeploymentConfigTests(unittest.TestCase):
         backend = compose.split("  backend:", 1)[1].split("  frontend:", 1)[0]
         self.assertNotIn("MIGRATION_DATABASE_URL", backend)
         self.assertNotIn("POSTGRES_PASSWORD", backend)
+        self.assertNotIn("POSTGRES_BACKUP_PASSWORD", backend)
 
     def test_backend_arranca_migraciones_sin_root(self):
         dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
@@ -38,6 +41,15 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertIn("postgresql-client-16", dockerfile)
         self.assertIn("apt.postgresql.org/pub/repos/apt bookworm-pgdg main", dockerfile)
         self.assertIn("postgres:16-bookworm", compose)
+
+    def test_rol_backup_es_lectura_global_sin_administracion(self):
+        init_script = (ROOT / "backend" / "docker" / "init-app-role.sh").read_text(encoding="utf-8")
+
+        self.assertIn("sga_backup", init_script)
+        self.assertIn("BYPASSRLS", init_script)
+        self.assertIn("pg_read_all_data", init_script)
+        self.assertIn("default_transaction_read_only = on", init_script)
+        self.assertIn("NOCREATEDB NOCREATEROLE NOSUPERUSER", init_script)
 
     def test_compose_produccion_fuerza_entorno_seguro(self):
         compose = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")

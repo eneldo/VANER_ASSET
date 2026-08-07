@@ -1,15 +1,28 @@
 \set ON_ERROR_STOP on
 
 -- Ejecutar como propietario de la base:
--- psql "$MIGRATION_DATABASE_URL" -v app_password="..." -f sql/provision_app_role.sql
+-- psql "$MIGRATION_DATABASE_URL" -v app_password="..." -v backup_password="..." -f sql/provision_app_role.sql
 
 SELECT 'CREATE ROLE sga_app NOINHERIT LOGIN NOCREATEDB NOCREATEROLE NOSUPERUSER NOBYPASSRLS'
 WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sga_app')
 \gexec
 
+SELECT 'CREATE ROLE sga_backup INHERIT LOGIN NOCREATEDB NOCREATEROLE NOSUPERUSER BYPASSRLS CONNECTION LIMIT 2'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sga_backup')
+\gexec
+
 ALTER ROLE sga_app PASSWORD :'app_password';
-GRANT CONNECT ON DATABASE sga_clean TO sga_app;
+ALTER ROLE sga_app NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER NOBYPASSRLS NOREPLICATION;
+ALTER ROLE sga_backup PASSWORD :'backup_password';
+ALTER ROLE sga_backup INHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER BYPASSRLS NOREPLICATION CONNECTION LIMIT 2;
+ALTER ROLE sga_backup SET default_transaction_read_only = on;
+SELECT format('GRANT CONNECT ON DATABASE %I TO sga_app', current_database())
+\gexec
+SELECT format('GRANT CONNECT ON DATABASE %I TO sga_backup', current_database())
+\gexec
 GRANT USAGE ON SCHEMA public TO sga_app;
+GRANT pg_read_all_data TO sga_backup;
+REVOKE CREATE ON SCHEMA public FROM sga_backup;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO sga_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO sga_app;
 

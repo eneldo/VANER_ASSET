@@ -13,6 +13,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER es obligatoria}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD es obligatoria}
       POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD es obligatoria}
+      POSTGRES_BACKUP_PASSWORD: ${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD es obligatoria}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/docker/init-app-role.sh:/docker-entrypoint-initdb.d/10-init-app-role.sh:ro
@@ -52,6 +53,7 @@ services:
       APP_ENV: production
       DEBUG: "false"
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
+      BACKUP_DATABASE_URL: ${BACKUP_DATABASE_URL:?BACKUP_DATABASE_URL es obligatoria}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?CONFIG_ENCRYPTION_KEY es obligatoria}
       ALGORITHM: ${ALGORITHM:-HS256}

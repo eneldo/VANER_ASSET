@@ -130,7 +130,12 @@ class SmartBackupService:
         return remote_key
 
     def _dump_postgres(self, destino: Path):
-        database_url = os.getenv("DATABASE_URL", "")
+        database_url = settings.BACKUP_DATABASE_URL
+        if not database_url and settings.APP_ENV.lower() != "production":
+            database_url = settings.DATABASE_URL
+        if not database_url:
+            raise RuntimeError("BACKUP_DATABASE_URL es obligatoria para generar backups")
+
         env = os.environ.copy()
 
         if database_url.startswith("postgres"):

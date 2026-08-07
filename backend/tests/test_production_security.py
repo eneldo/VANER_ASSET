@@ -14,6 +14,7 @@ def production_settings(**overrides):
         "APP_ENV": "production",
         "DEBUG": False,
         "DATABASE_URL": "postgresql://app:password@postgres:5432/sga",
+        "BACKUP_DATABASE_URL": "postgresql://sga_backup:password@postgres:5432/sga",
         "SECRET_KEY": "s" * 64,
         "CONFIG_ENCRYPTION_KEY": Fernet.generate_key().decode("ascii"),
         "FRONTEND_URL": "https://sgaholding.online",
@@ -33,6 +34,18 @@ class ProductionSecurityTests(unittest.TestCase):
     def test_rechaza_frontend_sin_https(self):
         with self.assertRaises(ValueError):
             production_settings(FRONTEND_URL="http://sgaholding.online")
+
+    def test_requiere_rol_backup_dedicado(self):
+        with self.assertRaises(ValueError):
+            production_settings(BACKUP_DATABASE_URL=None)
+        with self.assertRaises(ValueError):
+            production_settings(
+                BACKUP_DATABASE_URL="postgresql://app:otra-password@postgres:5432/sga"
+            )
+        with self.assertRaises(ValueError):
+            production_settings(
+                BACKUP_DATABASE_URL="postgresql://sga_owner:otra-password@postgres:5432/sga"
+            )
 
     def test_secretos_se_cifran_y_enmascaran(self):
         key = Fernet.generate_key().decode("ascii")

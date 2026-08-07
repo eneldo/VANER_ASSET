@@ -8,6 +8,7 @@ from base64 import urlsafe_b64decode
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -38,6 +39,7 @@ class Settings(BaseSettings):
     # Debe apuntar a un rol propietario/DDL y usarse solo desde Alembic.
     # La aplicación web debe conectarse con DATABASE_URL y un rol sin BYPASSRLS.
     MIGRATION_DATABASE_URL: str | None = None
+    BACKUP_DATABASE_URL: str | None = None
 
     # =====================================================
     # SEGURIDAD JWT
@@ -108,6 +110,20 @@ class Settings(BaseSettings):
             raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES cannot exceed 60 in production")
         if not self.CONFIG_ENCRYPTION_KEY:
             raise ValueError("CONFIG_ENCRYPTION_KEY is required in production")
+        if not self.BACKUP_DATABASE_URL:
+            raise ValueError("BACKUP_DATABASE_URL is required in production")
+
+        try:
+            app_database = make_url(self.DATABASE_URL)
+            backup_database = make_url(self.BACKUP_DATABASE_URL)
+        except Exception as exc:
+            raise ValueError("Database URLs must be valid") from exc
+        if not backup_database.username:
+            raise ValueError("BACKUP_DATABASE_URL must include a username")
+        if backup_database.username == app_database.username:
+            raise ValueError("BACKUP_DATABASE_URL must use a dedicated backup role")
+        if backup_database.username != "sga_backup":
+            raise ValueError("BACKUP_DATABASE_URL must use the sga_backup role")
 
         try:
             decoded_key = urlsafe_b64decode(self.CONFIG_ENCRYPTION_KEY.encode("ascii"))
