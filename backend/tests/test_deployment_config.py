@@ -31,6 +31,14 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertNotIn("alembic upgrade head", entrypoint)
         self.assertIn('exec "$@"', entrypoint)
 
+    def test_backend_usa_pg_dump_compatible_con_postgres_16(self):
+        dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+        compose = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
+
+        self.assertIn("postgresql-client-16", dockerfile)
+        self.assertIn("apt.postgresql.org/pub/repos/apt bookworm-pgdg main", dockerfile)
+        self.assertIn("postgres:16-bookworm", compose)
+
     def test_compose_produccion_fuerza_entorno_seguro(self):
         compose = (ROOT / "docker-compose.prod.yml").read_text(encoding="utf-8")
         backend = compose.split("  backend:", 1)[1].split("  frontend:", 1)[0]
