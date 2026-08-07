@@ -3,6 +3,7 @@
 # =========================================================
 
 ARG NODE_IMAGE=node:24.15.0-alpine3.22
+ARG NGINX_IMAGE=nginx:1.28.0-alpine
 FROM ${NODE_IMAGE} AS build
 
 WORKDIR /app
@@ -24,7 +25,6 @@ RUN npm run build
 # NGINX PRODUCCIÓN
 # =========================================================
 
-ARG NGINX_IMAGE=nginx:1.28.0-alpine
 FROM ${NGINX_IMAGE}
 
 COPY --from=build /app/dist /usr/share/nginx/html

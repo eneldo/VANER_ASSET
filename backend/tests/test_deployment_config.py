@@ -53,5 +53,12 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertEqual(offenders, [])
 
 
+    def test_frontend_declara_imagenes_antes_del_primer_from(self):
+        dockerfile = (ROOT / "frontend" / "Dockerfile").read_text(encoding="utf-8")
+        first_from = dockerfile.index("FROM ")
+
+        self.assertLess(dockerfile.index("ARG NODE_IMAGE="), first_from)
+        self.assertLess(dockerfile.index("ARG NGINX_IMAGE="), first_from)
+
 if __name__ == "__main__":
     unittest.main()
