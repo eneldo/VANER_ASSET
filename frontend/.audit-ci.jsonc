@@ -1,0 +1,7 @@
+{
+  // GHSA-qwww-vcr4-c8h2 only affects React Router RSC mode.
+  // This project is a browser-only Vite SPA and CI separately forbids RSC APIs.
+  "high": true,
+  "skip-dev": true,
+  "allowlist": ["GHSA-qwww-vcr4-c8h2"]
+}

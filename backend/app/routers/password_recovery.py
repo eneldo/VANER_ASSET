@@ -49,7 +49,7 @@ class ResetPasswordRequest(BaseModel):
     """Payload para guardar nueva contraseña."""
 
     token: str = Field(..., min_length=20)
-    new_password: str = Field(..., min_length=8, max_length=72)
+    new_password: str = Field(..., min_length=12, max_length=128)
 
 
 @router.post("/forgot-password")
@@ -82,9 +82,12 @@ def forgot_password(
     if not usuario or not getattr(usuario, "activo", True):
         return respuesta
 
-    token, _registro = crear_token_recuperacion(db, usuario, request)
+    token, registro = crear_token_recuperacion(db, usuario, request)
     reset_url = construir_reset_url(token)
-    enviar_email_recuperacion(usuario.email, reset_url)
+    try:
+        enviar_email_recuperacion(db, usuario.email, reset_url)
+    except Exception:
+        marcar_token_usado(db, registro)
 
     return respuesta
 

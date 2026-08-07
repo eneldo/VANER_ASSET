@@ -11,15 +11,16 @@
 # - Devuelve errores claros para SMTP, backup y carga inicial.
 # ============================================================
 
+import io
 import os
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from PIL import Image, UnidentifiedImageError
 
-from app.database import engine, get_db
+from app.database import get_db
 from app.models.configuracion_saas import ConfiguracionSaaS
 from app.schemas.configuracion_saas import (
     ApiResponse,
@@ -29,6 +30,13 @@ from app.schemas.configuracion_saas import (
 )
 from app.services.backup_service import create_backup_marker
 from app.services.email_service import send_test_email
+from app.services.secret_store import (
+    decrypt_mapping,
+    encrypt_secret,
+    ENCRYPTED_PREFIX,
+    mask_secret,
+    merge_secret,
+)
 
 router = APIRouter(prefix="/configuracion-saas", tags=["Configuración SaaS"])
 
@@ -38,24 +46,7 @@ UPLOAD_ROOT = Path(os.getenv("UPLOAD_DIR", "app/uploads")).resolve()
 LOGOS_DIR = UPLOAD_ROOT / "logos"
 LOGOS_DIR.mkdir(parents=True, exist_ok=True)
 
-ALLOWED_LOGO_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
-
-
-def ensure_configuracion_table() -> None:
-    """
-    Garantiza que la tabla de esta fase exista.
-
-    Esto evita que producción falle con 500 si el SQL no fue ejecutado
-    en la base real del contenedor/VPS. No reemplaza Alembic, pero deja
-    esta fase estable para despliegue inmediato.
-    """
-    try:
-        ConfiguracionSaaS.__table__.create(bind=engine, checkfirst=True)
-    except SQLAlchemyError as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"No fue posible validar/crear la tabla configuracion_saas: {exc}",
-        ) from exc
+ALLOWED_LOGO_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
 def default_config_payload() -> dict:
@@ -130,10 +121,26 @@ def get_or_create_config(db: Session) -> ConfiguracionSaaS:
     Obtiene el registro único id=1.
     Si no existe, lo crea automáticamente.
     """
-    ensure_configuracion_table()
-
     config = db.query(ConfiguracionSaaS).filter(ConfiguracionSaaS.id == 1).first()
     if config:
+        changed = False
+        smtp = dict(config.smtp or {})
+        smtp_password = str(smtp.get("password") or "")
+        if smtp_password and not smtp_password.startswith(ENCRYPTED_PREFIX):
+            smtp["password"] = encrypt_secret(smtp_password)
+            config.smtp = smtp
+            changed = True
+
+        notifications = dict(config.notificaciones or {})
+        whatsapp_token = str(notifications.get("whatsapp_token") or "")
+        if whatsapp_token and not whatsapp_token.startswith(ENCRYPTED_PREFIX):
+            notifications["whatsapp_token"] = encrypt_secret(whatsapp_token)
+            config.notificaciones = notifications
+            changed = True
+
+        if changed:
+            db.commit()
+            db.refresh(config)
         return config
 
     config = ConfiguracionSaaS(**default_config_payload())
@@ -143,11 +150,20 @@ def get_or_create_config(db: Session) -> ConfiguracionSaaS:
     return config
 
 
+def public_config(config: ConfiguracionSaaS) -> dict:
+    data = ConfiguracionSaaSOut.model_validate(config).model_dump(mode="json")
+    data["smtp"]["password"] = mask_secret((config.smtp or {}).get("password"))
+    data["notificaciones"]["whatsapp_token"] = mask_secret(
+        (config.notificaciones or {}).get("whatsapp_token")
+    )
+    return data
+
+
 @router.get("/", response_model=ConfiguracionSaaSOut)
 def obtener_configuracion(db: Session = Depends(get_db)):
     """Obtiene la configuración global actual de la plataforma."""
     try:
-        return get_or_create_config(db)
+        return public_config(get_or_create_config(db))
     except HTTPException:
         raise
     except Exception as exc:
@@ -163,13 +179,26 @@ def guardar_configuracion(payload: ConfiguracionSaaSUpdate, db: Session = Depend
     config = get_or_create_config(db)
 
     data = payload.model_dump(mode="json")
+    smtp = dict(data.get("smtp") or {})
+    smtp["password"] = merge_secret(
+        (config.smtp or {}).get("password"),
+        smtp.get("password"),
+    )
+    data["smtp"] = smtp
+
+    notifications = dict(data.get("notificaciones") or {})
+    notifications["whatsapp_token"] = merge_secret(
+        (config.notificaciones or {}).get("whatsapp_token"),
+        notifications.get("whatsapp_token"),
+    )
+    data["notificaciones"] = notifications
 
     for key, value in data.items():
         setattr(config, key, value)
 
     db.commit()
     db.refresh(config)
-    return config
+    return public_config(config)
 
 
 @router.post("/logo", response_model=ApiResponse)
@@ -187,7 +216,7 @@ async def subir_logo(file: UploadFile = File(...), db: Session = Depends(get_db)
     if extension not in ALLOWED_LOGO_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail="Formato no permitido. Usa PNG, JPG, JPEG, WEBP o SVG.",
+            detail="Formato no permitido. Usa PNG, JPG, JPEG o WEBP.",
         )
 
     content = await file.read()
@@ -195,6 +224,12 @@ async def subir_logo(file: UploadFile = File(...), db: Session = Depends(get_db)
 
     if len(content) > max_bytes:
         raise HTTPException(status_code=400, detail="El logo supera 5 MB.")
+
+    try:
+        with Image.open(io.BytesIO(content)) as image:
+            image.verify()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise HTTPException(status_code=400, detail="El archivo no es una imagen válida.") from exc
 
     safe_name = f"logo_sga_{uuid4().hex}{extension}"
     destination = LOGOS_DIR / safe_name
@@ -221,7 +256,7 @@ def probar_correo(payload: TestEmailRequest, db: Session = Depends(get_db)):
 
     try:
         send_test_email(
-            config.smtp or {},
+            decrypt_mapping(config.smtp or {}, {"password", "clave"}),
             str(payload.to_email),
             payload.subject,
             payload.message,

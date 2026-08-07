@@ -18,6 +18,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.models.backup_historial import BackupHistorial
+from app.config import settings
 
 # Carpeta persistente recomendada. En Docker/Dokploy puede sobrescribirse con BACKUP_DIR.
 BACKUP_DIR = Path(os.getenv("BACKUP_DIR") or "app/backups").resolve()
@@ -80,6 +81,10 @@ class SmartBackupService:
                     if item.is_file():
                         zf.write(item, arcname=item.name)
 
+            remote_key = self._upload_remote_backup(zip_path)
+            if remote_key:
+                metadata["remote_key"] = remote_key
+
             registro.estado = "EXITOSO"
             registro.nombre_archivo = zip_name
             registro.ruta_archivo = str(zip_path)
@@ -100,6 +105,29 @@ class SmartBackupService:
             raise HTTPException(status_code=500, detail=registro.mensaje)
         finally:
             shutil.rmtree(work_dir, ignore_errors=True)
+
+    def _upload_remote_backup(self, backup_path: Path) -> str | None:
+        if not settings.S3_BACKUP_ENABLED:
+            return None
+
+        import boto3
+
+        client = boto3.client(
+            "s3",
+            endpoint_url=settings.S3_BACKUP_ENDPOINT_URL,
+            region_name=settings.S3_BACKUP_REGION,
+            aws_access_key_id=settings.S3_BACKUP_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.S3_BACKUP_SECRET_ACCESS_KEY,
+        )
+        prefix = settings.S3_BACKUP_PREFIX.strip("/")
+        remote_key = f"{prefix}/{backup_path.name}" if prefix else backup_path.name
+        client.upload_file(
+            str(backup_path),
+            settings.S3_BACKUP_BUCKET,
+            remote_key,
+            ExtraArgs={"ServerSideEncryption": "AES256"},
+        )
+        return remote_key
 
     def _dump_postgres(self, destino: Path):
         database_url = os.getenv("DATABASE_URL", "")

@@ -1,10 +1,9 @@
-.venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
 .env
-alembic/versions/__pycache__
-uploads
-exports
+.env.*
 .git
+node_modules
+.npm-cache
+dist
+.vite
+coverage
+*.log

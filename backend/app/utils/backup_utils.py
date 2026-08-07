@@ -6,6 +6,7 @@ import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from sqlalchemy.engine import make_url
 
 BACKUP_DIR = (Path(os.getenv("BACKUP_DIR") or "app/backups").resolve() / "postgres")
 
@@ -19,13 +20,11 @@ def _required_env(name: str) -> str:
     return value
 
 
-def _database_settings() -> tuple[str, str, str, str]:
-    return (
-        _required_env("POSTGRES_DB"),
-        _required_env("POSTGRES_USER"),
-        _required_env("POSTGRES_PASSWORD"),
-        _required_env("POSTGRES_HOST"),
-    )
+def _database_settings(url_env: str) -> tuple[str, str, str, str, str]:
+    url = make_url(_required_env(url_env))
+    if not all((url.database, url.username, url.password, url.host)):
+        raise RuntimeError(f"{url_env} does not contain a complete PostgreSQL URL")
+    return url.database, url.username, url.password, url.host, str(url.port or 5432)
 
 
 def _safe_backup_path(filename: str) -> Path:
@@ -50,12 +49,14 @@ def generar_backup():
 
     ruta = BACKUP_DIR / archivo
 
-    db_name, db_user, db_password, db_host = _database_settings()
+    db_name, db_user, db_password, db_host, db_port = _database_settings("DATABASE_URL")
 
     comando = [
         "pg_dump",
         "-h",
         db_host,
+        "-p",
+        db_port,
         "-U",
         db_user,
         "-F",
@@ -86,7 +87,9 @@ def restaurar_backup(archivo_backup):
     if (os.getenv("ALLOW_DATABASE_RESTORE") or "false").lower() != "true":
         raise PermissionError("La restauración de base de datos está deshabilitada")
 
-    db_name, db_user, db_password, db_host = _database_settings()
+    db_name, db_user, db_password, db_host, db_port = _database_settings(
+        "MIGRATION_DATABASE_URL"
+    )
     ruta = _safe_backup_path(archivo_backup)
 
     if not ruta.is_file():
@@ -96,6 +99,8 @@ def restaurar_backup(archivo_backup):
         "psql",
         "-h",
         db_host,
+        "-p",
+        db_port,
         "-U",
         db_user,
         "-d",

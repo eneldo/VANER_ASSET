@@ -3,7 +3,7 @@
 # Validación de creación, edición, respuesta y reset password
 # =========================================================
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -14,7 +14,7 @@ class AdminCreate(BaseModel):
     nombre_completo: str
     username: str
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=12, max_length=128)
 
 
 class UsuarioCreate(BaseModel):
@@ -22,7 +22,7 @@ class UsuarioCreate(BaseModel):
     nombre_completo: str
     username: str
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=12, max_length=128)
     rol: str
     empresa_id: Optional[UUID] = None
 
@@ -39,7 +39,7 @@ class UsuarioUpdate(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     # Nueva contraseña del usuario
-    nueva_password: str
+    nueva_password: str = Field(..., min_length=12, max_length=128)
 
 
 class UsuarioOut(BaseModel):

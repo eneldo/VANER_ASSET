@@ -6,6 +6,7 @@
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from app.config import settings
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -40,7 +41,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # - Swagger assets
         # =====================================================
 
-        csp = """
+        if settings.APP_ENV.lower() == "production":
+            csp = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        else:
+            csp = """
             default-src 'self';
 
             script-src
@@ -87,7 +91,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
             form-action
                 'self';
-        """
+            """
 
         response.headers["Content-Security-Policy"] = " ".join(csp.split())
 

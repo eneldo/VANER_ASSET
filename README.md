@@ -32,6 +32,12 @@ openssl rand -hex 32
 
 Reemplazar en `.env` todos los valores `CAMBIAR_*` y usar claves distintas para PostgreSQL, el rol de aplicación y JWT.
 
+Generar también una clave Fernet para `CONFIG_ENCRYPTION_KEY`:
+
+`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+
+El workflow `Release immutable images` publica backend y frontend usando el SHA completo del commit. Configurar ese SHA en `IMAGE_TAG`; producción no utiliza la etiqueta mutable `latest`.
+
 ### 3. Desplegar
 
 ```bash
@@ -41,12 +47,22 @@ chmod +x deploy.sh
 
 El script crea la red externa `caddy_net`, inicia Caddy, descarga las imágenes publicadas y levanta PostgreSQL, backend y frontend.
 
-### 4. Verificar
+### 4. Crear el primer administrador
+
+Después del primer despliegue, ejecutar el bootstrap local dentro del contenedor. La contraseña se solicita de forma interactiva y no queda en el historial del shell:
+
+`docker compose --env-file .env -f docker-compose.prod.yml exec backend python scripts/create_initial_admin.py --name "Administrador" --username admin --email admin@dominio.com`
+
+El comando se niega a crear otro usuario cuando ya existe un ADMIN. El endpoint HTTP de bootstrap permanece deshabilitado mientras `BOOTSTRAP_ADMIN_TOKEN` esté vacío.
+
+### 5. Verificar
 
 ```bash
 curl -f https://sgaholding.online/health/ready
 curl -f https://sgaholding.online/api/health/ready
 ```
+
+Verificar además que cada backup muestre una clave remota en S3/R2 y ejecutar una restauración de prueba en una base temporal antes de abrir el servicio a usuarios.
 
 ## Estructura
 

@@ -10,11 +10,8 @@
 # =========================================================
 
 import hashlib
-import os
 import secrets
-import smtplib
 from datetime import datetime, timedelta
-from email.message import EmailMessage
 from typing import Optional
 
 from fastapi import Request
@@ -22,6 +19,8 @@ from sqlalchemy.orm import Session
 
 from app.models.password_reset import PasswordResetToken
 from app.models.usuario import Usuario
+from app.config import settings
+from app.services.smtp_inteligente_service import enviar_correo_smtp
 
 
 def generar_token_plano() -> str:
@@ -91,50 +90,25 @@ def marcar_token_usado(db: Session, registro: PasswordResetToken) -> None:
 
 def construir_reset_url(token: str) -> str:
     """Construye URL frontend de recuperación."""
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
     return f"{frontend_url}/reset-password?token={token}"
 
 
-def enviar_email_recuperacion(destinatario: str, reset_url: str) -> None:
-    """
-    Envía email si SMTP está configurado.
-    En desarrollo, si no hay SMTP, imprime el enlace en consola del backend.
-    """
-    smtp_host = os.getenv("SMTP_HOST")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "no-reply@sga.local")
-
-    if not smtp_host or not smtp_user or not smtp_password:
-        print("\n=========================================================")
-        print("FASE 31.7 - ENLACE DE RECUPERACIÓN EN MODO DESARROLLO")
-        print(f"Email: {destinatario}")
-        print(f"URL:   {reset_url}")
-        print("Configura SMTP_HOST, SMTP_USER y SMTP_PASSWORD para envío real.")
-        print("=========================================================\n")
-        return
-
-    msg = EmailMessage()
-    msg["Subject"] = "Recuperación de contraseña - SGAHolding"
-    msg["From"] = smtp_from
-    msg["To"] = destinatario
-    msg.set_content(
-        f"""
-Hola,
-
-Recibimos una solicitud para recuperar tu contraseña en SGAHolding.
-
-Ingresa al siguiente enlace para crear una nueva contraseña:
-{reset_url}
-
-Este enlace vence en 30 minutos. Si no solicitaste este cambio, ignora este mensaje.
-
-SGAHolding - Plataforma empresarial SaaS
-""".strip()
+def enviar_email_recuperacion(db: Session, destinatario: str, reset_url: str) -> None:
+    mensaje = (
+        "Recibimos una solicitud para recuperar tu contraseña. "
+        "El enlace vence en 30 minutos. Si no solicitaste el cambio, ignora este mensaje."
     )
-
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.send_message(msg)
+    html = (
+        "<p>Recibimos una solicitud para recuperar tu contraseña.</p>"
+        f'<p><a href="{reset_url}">Crear una nueva contraseña</a></p>'
+        "<p>El enlace vence en 30 minutos. Si no solicitaste el cambio, ignora este mensaje.</p>"
+    )
+    enviar_correo_smtp(
+        db,
+        destinatario=destinatario,
+        asunto="Recuperación de contraseña - SGAHolding",
+        mensaje=mensaje,
+        plantilla="password_reset",
+        html=html,
+    )

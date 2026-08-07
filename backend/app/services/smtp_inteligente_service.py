@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.models.configuracion_saas import ConfiguracionSaaS
 from app.models.smtp_log import SMTPLog
+from app.services.secret_store import decrypt_mapping
 
 try:
     from app.models.automatizacion import Automatizacion
@@ -32,7 +33,7 @@ def obtener_configuracion_smtp(db: Session) -> Dict[str, Any]:
     if not config:
         return {}
 
-    return config.smtp or {}
+    return decrypt_mapping(config.smtp or {}, {"password", "clave"})
 
 
 def smtp_configurado(smtp: Dict[str, Any]) -> bool:

@@ -152,6 +152,7 @@ app.mount(
 # =========================================================
 
 app.include_router(auth.router)
+app.include_router(usuarios.bootstrap_router)
 ADMIN_ONLY = [Depends(require_roles("ADMIN"))]
 
 app.include_router(usuarios.router, dependencies=ADMIN_ONLY)

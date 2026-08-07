@@ -5,7 +5,7 @@
 
 services:
   postgres:
-    image: postgres:16
+    image: ${POSTGRES_IMAGE:-postgres:16-bookworm}
     container_name: sga_postgres
     restart: always
     environment:
@@ -24,39 +24,61 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: vanstralhen/sga-backend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
+    pull_policy: always
+    restart: "no"
+    entrypoint: ["alembic"]
+    command: ["upgrade", "head"]
+    environment:
+      APP_ENV: migration
+      DEBUG: "false"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:?MIGRATION_DATABASE_URL es obligatoria}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sga_internal
+
   backend:
-    image: vanstralhen/sga-backend:latest
+    image: vanstralhen/sga-backend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
     container_name: sga_backend
     pull_policy: always
     restart: always
     environment:
-      APP_NAME: ${APP_NAME}
-      APP_ENV: ${APP_ENV}
-      DEBUG: ${DEBUG}
+      APP_NAME: ${APP_NAME:-SGAHolding}
+      APP_ENV: production
+      DEBUG: "false"
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
-      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:?MIGRATION_DATABASE_URL es obligatoria}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria}
-      ALGORITHM: ${ALGORITHM}
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
-      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?CONFIG_ENCRYPTION_KEY es obligatoria}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
       REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-sga_refresh_token}
       REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/auth}
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-true}
       REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-lax}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?BACKEND_CORS_ORIGINS es obligatoria}
-      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL es obligatoria}
+      BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN:-}
+      RUN_MIGRATIONS: "false"
       RUN_SCHEDULER: ${RUN_SCHEDULER:-true}
       ALLOW_DATABASE_RESTORE: ${ALLOW_DATABASE_RESTORE:-false}
       UPLOAD_DIR: /app/uploads
       BACKUP_DIR: /app/backups
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
+      S3_BACKUP_ENABLED: ${S3_BACKUP_ENABLED:-false}
+      S3_BACKUP_ENDPOINT_URL: ${S3_BACKUP_ENDPOINT_URL:-}
+      S3_BACKUP_REGION: ${S3_BACKUP_REGION:-auto}
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-}
+      S3_BACKUP_ACCESS_KEY_ID: ${S3_BACKUP_ACCESS_KEY_ID:-}
+      S3_BACKUP_SECRET_ACCESS_KEY: ${S3_BACKUP_SECRET_ACCESS_KEY:-}
+      S3_BACKUP_PREFIX: ${S3_BACKUP_PREFIX:-sga-production}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - uploads_data:/app/uploads
       - backups_data:/app/backups
@@ -73,7 +95,7 @@ services:
       - caddy_net
 
   frontend:
-    image: vanstralhen/sga-frontend:latest
+    image: vanstralhen/sga-frontend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
     container_name: sga_frontend
     pull_policy: always
     restart: always

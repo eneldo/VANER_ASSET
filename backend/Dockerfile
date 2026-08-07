@@ -3,7 +3,8 @@
 # Dockerfile Producción
 # =========================================================
 
-FROM python:3.12-slim
+ARG PYTHON_IMAGE=python:3.12.11-slim-bookworm
+FROM ${PYTHON_IMAGE}
 
 # =========================================================
 # VARIABLES
@@ -41,7 +42,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # COPIAR PROYECTO
 # =========================================================
 
-COPY . .
+COPY alembic.ini entrypoint.sh ./
+COPY alembic ./alembic
+COPY app ./app
+COPY scripts ./scripts
 
 # =========================================================
 # CREAR CARPETAS

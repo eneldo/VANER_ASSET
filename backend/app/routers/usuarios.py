@@ -11,13 +11,16 @@
 # - TECNICO: requiere empresa_id.
 # =========================================================
 
+from hmac import compare_digest
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from app.database import get_db
+from app.config import settings
 from app.models.usuario import Usuario
 from app.models.empresa import Empresa
 from app.schemas.usuario import (
@@ -31,6 +34,7 @@ from app.security import hash_password
 
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
+bootstrap_router = APIRouter(prefix="/usuarios", tags=["Bootstrap"], include_in_schema=False)
 
 
 # =========================================================
@@ -107,12 +111,24 @@ def limpiar_empresa_si_admin(rol: str, empresa_id):
 # CREAR ADMIN INICIAL
 # =========================================================
 
-@router.post("/crear-admin-inicial")
-def crear_admin_inicial(data: AdminCreate, db: Session = Depends(get_db)):
+@bootstrap_router.post("/crear-admin-inicial")
+def crear_admin_inicial(
+    data: AdminCreate,
+    bootstrap_token: Annotated[str | None, Header(alias="X-Bootstrap-Token")] = None,
+    db: Session = Depends(get_db),
+):
     """
     Crea el primer usuario administrador del sistema.
     Solo debe usarse durante la configuración inicial.
     """
+
+    expected_token = settings.BOOTSTRAP_ADMIN_TOKEN
+    if (
+        not expected_token
+        or not bootstrap_token
+        or not compare_digest(bootstrap_token, expected_token)
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ruta no disponible")
 
     admin_existente = db.query(Usuario).filter(Usuario.rol == "ADMIN").first()
 

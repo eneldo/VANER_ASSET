@@ -20,12 +20,17 @@ La aplicación se publica en `sgaholding.online` y consume el backend por la rut
 4. Mantener `MIGRATION_DATABASE_URL` con el rol propietario usado únicamente por Alembic.
 5. Configurar `BACKEND_CORS_ORIGINS=https://sgaholding.online`.
 6. Mantener `VITE_API_URL=/api` y `REFRESH_COOKIE_SECURE=true`.
+7. Generar `CONFIG_ENCRYPTION_KEY` con Fernet y guardarla fuera del repositorio.
+8. Definir `IMAGE_TAG` con el SHA exacto publicado por CI.
+9. Configurar S3/R2 y mantener `S3_BACKUP_ENABLED=true`.
 
 ## Primera instalación
 
-El script `backend/docker/init-app-role.sh` crea el rol restringido `sga_app` solamente cuando PostgreSQL inicializa un volumen nuevo. El backend ejecuta `alembic upgrade head` antes de iniciar Uvicorn.
+El script `backend/docker/init-app-role.sh` crea el rol restringido `sga_app` solamente cuando PostgreSQL inicializa un volumen nuevo. El servicio one-shot `migrate` ejecuta `alembic upgrade head` antes de iniciar el backend. El proceso web no recibe la URL de migración ni la contraseña propietaria.
 
 Si la base ya existe, se debe provisionar o actualizar manualmente `sga_app`, ejecutar `backend/sql/provision_app_role.sql` con el propietario y verificar RLS mediante `backend/scripts/verify_postgres_rls.py`.
+
+Crear el primer administrador con `docker compose --env-file .env -f docker-compose.prod.yml exec backend python scripts/create_initial_admin.py --name "Administrador" --username admin --email admin@dominio.com`. La contraseña se solicita de forma interactiva y el comando se niega a crear un segundo ADMIN.
 
 ## DNS y acceso
 

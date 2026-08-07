@@ -5,6 +5,7 @@
 # Ejecutar como root o usuario con acceso a docker
 # ============================================================
 set -euo pipefail
+umask 077
 
 DOMAIN="sgaholding.online"
 PROJECT_DIR="/opt/sga_saas"
@@ -12,6 +13,30 @@ COMPOSE_FILE="$PROJECT_DIR/docker-compose.prod.yml"
 ENV_FILE="$PROJECT_DIR/.env"
 
 cd "$PROJECT_DIR"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: No se encontró $ENV_FILE"
+  echo "Créalo desde .env.example, configura los secretos y vuelve a ejecutar."
+  exit 1
+fi
+
+if grep -Eq '(^|=)CAMBIAR_' "$ENV_FILE"; then
+  echo "ERROR: $ENV_FILE todavía contiene valores CAMBIAR_*"
+  exit 1
+fi
+
+chmod 600 "$ENV_FILE"
+set -a
+. "$ENV_FILE"
+set +a
+CADDY_IMAGE="${CADDY_IMAGE:-caddy:2.10.0-alpine}"
+
+on_error() {
+  echo "ERROR: el despliegue no terminó correctamente"
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 || true
+}
+trap on_error ERR
 
 echo "=============================================="
 echo " SGA SaaS - Despliegue Producción con Caddy"
@@ -24,6 +49,7 @@ echo ""
 echo "[1/6] Verificando requisitos..."
 docker --version || { echo "ERROR: Docker no está instalado"; exit 1; }
 docker compose version || { echo "ERROR: docker compose no disponible"; exit 1; }
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config --quiet
 
 # --- 2. Red de Caddy ---
 echo "[2/6] Preparando red caddy_net..."
@@ -42,46 +68,30 @@ if [ ! -f "$PROJECT_DIR/Caddyfile" ]; then
 fi
 cp "$PROJECT_DIR/Caddyfile" /etc/caddy/Caddyfile
 
-if docker ps --format '{{.Names}}' | grep -q "^caddy$"; then
-  echo "  Caddy ya está corriendo -> recargando..."
-  docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
-else
-  echo "  Iniciando Caddy..."
-  docker run -d \
-    --name caddy \
-    --restart always \
-    --network caddy_net \
-    -p 80:80 -p 443:443 \
-    -v /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
-    -v caddy_data:/data \
-    -v caddy_config:/config \
-    -v /var/log/caddy:/var/log/caddy \
-    caddy:latest
-fi
+docker pull "$CADDY_IMAGE"
+docker rm -f caddy >/dev/null 2>&1 || true
+docker run -d \
+  --name caddy \
+  --restart always \
+  --network caddy_net \
+  -p 80:80 -p 443:443 \
+  -v /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \
+  -v caddy_data:/data \
+  -v caddy_config:/config \
+  -v /var/log/caddy:/var/log/caddy \
+  "$CADDY_IMAGE"
 
 # --- 4. .env ---
-echo "[4/6] Verificando .env..."
-if [ ! -f "$ENV_FILE" ]; then
-  echo "ERROR: No se encontró $ENV_FILE"
-  echo "Créalo desde .env.example, configura los secretos y vuelve a ejecutar."
-  exit 1
-fi
-
-if grep -Eq '(^|=)CAMBIAR_' "$ENV_FILE"; then
-  echo "ERROR: $ENV_FILE todavía contiene valores CAMBIAR_*"
-  exit 1
-fi
+echo "[4/6] Variables y permisos de .env verificados"
 
 # --- 5. Pull + Deploy ---
 echo "[5/6] Pull imágenes y desplegar..."
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans --wait --wait-timeout 180
 
 # --- 6. Verificación ---
 echo ""
 echo "[6/6] Verificando servicios..."
-sleep 5
-
 echo ""
 echo "Estado de contenedores:"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
@@ -89,6 +99,11 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
 echo ""
 echo "Logs recientes backend:"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=20 backend
+
+curl --fail --silent --show-error --retry 8 --retry-delay 3 \
+  "https://$DOMAIN/health/ready" >/dev/null
+
+trap - ERR
 
 echo ""
 echo "=============================================="
