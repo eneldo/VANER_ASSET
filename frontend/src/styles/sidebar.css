@@ -28,6 +28,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 2200;
+  transition: width 0.24s ease, min-width 0.24s ease, padding 0.24s ease;
 }
 
 .sga-sidebar::-webkit-scrollbar { width: 8px; }
@@ -69,6 +70,33 @@
   font-size: 11px;
   color: #b9c7ff;
   font-weight: 700;
+}
+
+.sga-sidebar-toggle {
+  align-self: flex-end;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  margin: -22px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.sga-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sga-sidebar-toggle:focus-visible {
+  outline: 3px solid rgba(103, 232, 249, 0.35);
+  outline-offset: 2px;
 }
 
 .sga-menu-title {
@@ -174,6 +202,65 @@
 
 .sga-logout:hover { background: rgba(255, 255, 255, 0.08); }
 
+@media (min-width: 1025px) {
+  .sga-sidebar.collapsed {
+    width: 78px;
+    min-width: 78px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .sga-sidebar.collapsed .sga-brand {
+    justify-content: center;
+  }
+
+  .sga-sidebar.collapsed .sga-sidebar-toggle {
+    align-self: center;
+    margin-top: -20px;
+  }
+
+  .sga-sidebar.collapsed .sga-logo {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+  }
+
+  .sga-sidebar.collapsed .sga-brand > div:not(.sga-logo),
+  .sga-sidebar.collapsed .sga-menu-title,
+  .sga-sidebar.collapsed .sga-menu-item span,
+  .sga-sidebar.collapsed .sga-user-info,
+  .sga-sidebar.collapsed .sga-logout span {
+    display: none;
+  }
+
+  .sga-sidebar.collapsed .sga-menu {
+    padding-right: 0;
+  }
+
+  .sga-sidebar.collapsed .sga-menu-item,
+  .sga-sidebar.collapsed .sga-logout {
+    justify-content: center;
+    gap: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .sga-sidebar.collapsed .sga-menu-item:hover {
+    transform: none;
+  }
+
+  .sga-sidebar.collapsed .sga-user-card {
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .sga-sidebar.collapsed .sga-user-avatar {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+  }
+}
+
 @media (max-width: 1024px) {
   .sga-sidebar {
     position: fixed;
@@ -205,6 +292,7 @@
   }
 
   .sga-brand { padding-right: 44px; }
+  .sga-sidebar-toggle { display: none; }
 }
 
 

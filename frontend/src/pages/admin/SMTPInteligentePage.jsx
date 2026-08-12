@@ -26,6 +26,7 @@ import {
   obtenerPlantillasSMTP,
   probarSMTP,
 } from "../../api/smtpInteligenteApi";
+import AdminLayout from "./AdminLayout";
 
 export default function SMTPInteligentePage() {
   const [estado, setEstado] = useState(null);
@@ -121,7 +122,8 @@ export default function SMTPInteligentePage() {
   const statusClass = estado?.configurado ? "ok" : "warn";
 
   return (
-    <div className="smtp-pro-page">
+    <AdminLayout contentClassName="admin-content-pro--flush">
+      <div className="smtp-pro-page">
       <section className="smtp-hero">
         <div>
           <p className="smtp-kicker">FASE 34.2.3 · SMTP</p>
@@ -312,7 +314,8 @@ export default function SMTPInteligentePage() {
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </AdminLayout>
   );
 }

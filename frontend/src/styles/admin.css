@@ -31,6 +31,10 @@ body {
   background: var(--sga-bg, #f5f8ff);
 }
 
+.admin-content-pro--flush {
+  padding: 0;
+}
+
 .admin-content-pro::-webkit-scrollbar,
 .table-wrap::-webkit-scrollbar,
 .equipos-table-wrap::-webkit-scrollbar,
@@ -339,6 +343,7 @@ body {
 @media (max-width: 1024px) {
   .admin-layout-pro { display: block; overflow: visible; height: auto; min-height: 100vh; }
   .admin-content-pro { min-height: 100vh; height: auto; padding: 76px 18px 70px; }
+  .admin-content-pro.admin-content-pro--flush { padding: 64px 0 0; }
   .admin-mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
   .list-header,
   .empresas-toolbar-pro,

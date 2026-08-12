@@ -20,6 +20,7 @@ import {
   Tags,
   UserCog,
   ShieldCheck,
+  Menu,
   X,
   Settings,
   Receipt,
@@ -33,6 +34,8 @@ export default function Sidebar({
   onLogout,
   isOpen = false,
   onClose,
+  collapsed = false,
+  onToggleCollapsed,
 }) {
   const navigate = useNavigate();
 
@@ -83,7 +86,10 @@ export default function Sidebar({
     isActive ? "sga-menu-item active" : "sga-menu-item";
 
   return (
-    <aside className={`sga-sidebar ${isOpen ? "open" : ""}`}>
+    <aside
+      id="sga-admin-sidebar"
+      className={`sga-sidebar ${isOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}
+    >
 
       {/* ================================================= */}
       {/* BOTÓN CERRAR MOBILE */}
@@ -118,6 +124,20 @@ export default function Sidebar({
       {/* MENÚ */}
       {/* ================================================= */}
 
+      {typeof onToggleCollapsed === "function" && (
+        <button
+          type="button"
+          className="sga-sidebar-toggle"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Expandir menu lateral" : "Contraer menu lateral"}
+          aria-expanded={!collapsed}
+          aria-controls="sga-admin-sidebar"
+          title={collapsed ? "Expandir menu" : "Contraer menu"}
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
       <p className="sga-menu-title">
         MÓDULO PRINCIPAL
       </p>
@@ -136,6 +156,8 @@ export default function Sidebar({
           }
           onClick={closeMobile}
           className={itemClass}
+          aria-label="Dashboard"
+          title={collapsed ? "Dashboard" : undefined}
         >
           <LayoutDashboard size={17} />
           <span>Dashboard</span>
@@ -152,6 +174,8 @@ export default function Sidebar({
               to="/admin/empresas"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Empresas"
+              title={collapsed ? "Empresas" : undefined}
             >
               <Building2 size={17} />
               <span>Empresas</span>
@@ -161,6 +185,8 @@ export default function Sidebar({
               to="/admin/sedes"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Sedes"
+              title={collapsed ? "Sedes" : undefined}
             >
               <MapPin size={17} />
               <span>Sedes</span>
@@ -170,6 +196,8 @@ export default function Sidebar({
               to="/admin/categorias"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Categorías"
+              title={collapsed ? "Categorías" : undefined}
             >
               <Tags size={17} />
               <span>Categorías</span>
@@ -179,6 +207,8 @@ export default function Sidebar({
               to="/admin/tecnicos"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Técnicos"
+              title={collapsed ? "Técnicos" : undefined}
             >
               <UserCog size={17} />
               <span>Técnicos</span>
@@ -188,6 +218,8 @@ export default function Sidebar({
               to="/admin/usuarios"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Usuarios"
+              title={collapsed ? "Usuarios" : undefined}
             >
               <Users size={17} />
               <span>Usuarios</span>
@@ -197,6 +229,8 @@ export default function Sidebar({
               to="/admin/equipos"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Equipos"
+              title={collapsed ? "Equipos" : undefined}
             >
               <MonitorCog size={17} />
               <span>Equipos</span>
@@ -206,6 +240,8 @@ export default function Sidebar({
               to="/admin/mantenimientos"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Mantenimientos"
+              title={collapsed ? "Mantenimientos" : undefined}
             >
               <Wrench size={17} />
               <span>Mantenimientos</span>
@@ -215,6 +251,8 @@ export default function Sidebar({
               to="/admin/evidencias"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Evidencias"
+              title={collapsed ? "Evidencias" : undefined}
             >
               <Image size={17} />
               <span>Evidencias</span>
@@ -224,17 +262,31 @@ export default function Sidebar({
               to="/admin/reportes"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Reportes PRO"
+              title={collapsed ? "Reportes PRO" : undefined}
             >
               <FileText size={17} />
               <span>Reportes PRO</span>
             </NavLink>
 
-            <NavLink to="/admin/facturacion" onClick={closeMobile} className={itemClass}>
+            <NavLink
+              to="/admin/facturacion"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Facturación"
+              title={collapsed ? "Facturación" : undefined}
+            >
               <Receipt size={17} />
               <span>Facturación</span>
             </NavLink>
 
-            <NavLink to="/admin/plantillas-reportes" onClick={closeMobile} className={itemClass}>
+            <NavLink
+              to="/admin/plantillas-reportes"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Plantillas PDF"
+              title={collapsed ? "Plantillas PDF" : undefined}
+            >
               <FileCog size={17} />
               <span>Plantillas PDF</span>
             </NavLink>
@@ -243,6 +295,8 @@ export default function Sidebar({
               to="/admin/auditoria"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Auditoría PRO"
+              title={collapsed ? "Auditoría PRO" : undefined}
             >
               <ShieldCheck size={17} />
               <span>Auditoría PRO</span>
@@ -256,6 +310,8 @@ export default function Sidebar({
               to="/admin/configuracion-sistema"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Configuración Sistema"
+              title={collapsed ? "Configuración Sistema" : undefined}
             >
               <Settings size={17} />
               <span>Configuración Sistema</span>
@@ -275,6 +331,8 @@ export default function Sidebar({
               to="/tecnico/mantenimientos"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Mis mantenimientos"
+              title={collapsed ? "Mis mantenimientos" : undefined}
             >
               <Wrench size={17} />
               <span>Mis mantenimientos</span>
@@ -284,6 +342,8 @@ export default function Sidebar({
               to="/tecnico/evidencias"
               onClick={closeMobile}
               className={itemClass}
+              aria-label="Evidencias"
+              title={collapsed ? "Evidencias" : undefined}
             >
               <Image size={17} />
               <span>Evidencias</span>
@@ -323,6 +383,8 @@ export default function Sidebar({
         <button
           className="sga-logout"
           onClick={handleLogout}
+          aria-label="Cerrar sesión"
+          title={collapsed ? "Cerrar sesión" : undefined}
         >
           <LogOut size={17} />
           <span>Cerrar sesión</span>

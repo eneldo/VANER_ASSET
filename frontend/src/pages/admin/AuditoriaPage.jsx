@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import api from "../../api/axios";
-import Sidebar from "../../components/Sidebar";
+import AdminLayout from "./AdminLayout";
 import "../../styles/auditoria-pro.css";
 
 const SEVERIDADES = ["", "INFO", "MEDIA", "ALTA", "CRITICA"];
@@ -37,16 +37,7 @@ function formatDate(value) {
   });
 }
 
-function getStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user"));
-  } catch {
-    return null;
-  }
-}
-
 export default function AuditoriaPage() {
-  const [user] = useState(() => getStoredUser());
   const [resumen, setResumen] = useState(null);
   const [eventos, setEventos] = useState([]);
   const [total, setTotal] = useState(0);
@@ -208,10 +199,7 @@ export default function AuditoriaPage() {
   };
 
   return (
-    <div className="audit-shell">
-      <Sidebar user={user} />
-
-      <main className="audit-main">
+    <AdminLayout className="audit-shell" contentClassName="audit-main">
         <section className="audit-header">
           <div>
             <span className="audit-eyebrow">FASE 31.5 · Seguridad SaaS</span>
@@ -453,7 +441,6 @@ export default function AuditoriaPage() {
             </button>
           </div>
         </section>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }

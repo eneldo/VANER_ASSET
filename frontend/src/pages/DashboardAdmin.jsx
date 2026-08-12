@@ -11,11 +11,10 @@
 //   mantenimientos y técnicos.
 // ============================================================
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/auth-context";
-import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
+import AdminLayout from "./admin/AdminLayout";
 
 import {
   Activity,
@@ -61,7 +60,6 @@ import {
   YAxis,
 } from "recharts";
 
-import "../styles/sidebar.css";
 import "./DashboardAdmin.css";
 
 const COLORS = ["#2563eb", "#06b6d4", "#22c55e", "#f59e0b", "#ef4444", "#7c3aed"];
@@ -78,7 +76,6 @@ const initialState = {
 };
 
 export default function DashboardAdmin() {
-  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [data, setData] = useState(initialState);
@@ -381,20 +378,14 @@ export default function DashboardAdmin() {
 
   if (loading) {
     return (
-      <div className="dadmin-pro-shell">
-        <Sidebar user={user} onLogout={logout} />
-        <main className="dadmin-pro-main">
-          <DashboardSkeleton />
-        </main>
-      </div>
+      <AdminLayout className="dadmin-pro-shell" contentClassName="dadmin-pro-main">
+        <DashboardSkeleton />
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="dadmin-pro-shell">
-      <Sidebar user={user} onLogout={logout} />
-
-      <main className="dadmin-pro-main">
+    <AdminLayout className="dadmin-pro-shell" contentClassName="dadmin-pro-main">
         <section className="dadmin-hero">
           <div className="dadmin-hero-copy">
                         <h1>Dashboard General</h1>
@@ -595,8 +586,7 @@ export default function DashboardAdmin() {
             )}
           </div>
         </section>
-      </main>
-    </div>
+    </AdminLayout>
   );
 }
 

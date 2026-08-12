@@ -5,8 +5,8 @@
 
 .ct-page {
   width: 100%;
-  max-width: 1540px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding-bottom: 52px;
 }
 

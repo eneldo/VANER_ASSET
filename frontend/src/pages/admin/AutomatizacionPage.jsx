@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import automatizacionApi from "../../api/automatizacionApi";
+import AdminLayout from "./AdminLayout";
 import "../../styles/automatizacion-saas-pro.css";
 
 const ICONOS = {
@@ -127,7 +128,8 @@ export default function AutomatizacionPage() {
   };
 
   return (
-    <main className="auto-saas-page">
+    <AdminLayout contentClassName="admin-content-pro--flush">
+      <div className="auto-saas-page">
       <section className="auto-hero">
         <div>
           <span className="auto-eyebrow">FASE 34.2.1 · SGA SaaS PRO</span>
@@ -300,7 +302,8 @@ export default function AutomatizacionPage() {
             </tbody>
           </table>
         </div>
-      </section>
-    </main>
+        </section>
+      </div>
+    </AdminLayout>
   );
 }
