@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
+import { construirPayloadEmpresa, obtenerMensajeError } from "./empresaFormUtils";
 
 import {
   Building2,
@@ -147,15 +148,7 @@ export default function EmpresasPage() {
     try {
       setGuardando(true);
 
-      const payload = {
-        ...form,
-        nombre: form.nombre.trim(),
-        nit: form.nit?.trim() || "",
-        telefono: form.telefono?.trim() || "",
-        direccion: form.direccion?.trim() || "",
-        correo: form.correo?.trim() || "",
-        logo_url: form.logo_url?.trim() || "",
-      };
+      const payload = construirPayloadEmpresa(form);
 
       if (editandoId) {
         await API.put(`/empresas/${editandoId}`, payload);
@@ -169,7 +162,7 @@ export default function EmpresasPage() {
       await cargarEmpresas();
     } catch (error) {
       console.error("Error guardando empresa:", error);
-      alert(error.response?.data?.detail || "Error guardando empresa");
+      alert(obtenerMensajeError(error, "Error guardando empresa"));
     } finally {
       setGuardando(false);
     }

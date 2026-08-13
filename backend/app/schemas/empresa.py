@@ -3,7 +3,7 @@
 # Validan entrada y salida de datos de empresas
 # =========================================================
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -23,6 +23,14 @@ class EmpresaBase(BaseModel):
     # Estado
     activo: bool = True
 
+    @field_validator("nit", "telefono", "direccion", "correo", "logo_url", mode="before")
+    @classmethod
+    def normalizar_campos_opcionales(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
 
 class EmpresaCreate(EmpresaBase):
     # Schema usado para crear empresa
@@ -38,6 +46,14 @@ class EmpresaUpdate(BaseModel):
     correo: Optional[EmailStr] = None
     logo_url: Optional[str] = None
     activo: Optional[bool] = None
+
+    @field_validator("nit", "telefono", "direccion", "correo", "logo_url", mode="before")
+    @classmethod
+    def normalizar_campos_opcionales(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
 
 
 class EmpresaOut(EmpresaBase):

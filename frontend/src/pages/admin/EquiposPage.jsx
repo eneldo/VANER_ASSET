@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   Search,
   Plus,
@@ -122,6 +122,20 @@ function limpiarPayload(obj) {
   return data;
 }
 
+function cargarHojaEnFormulario(hoja) {
+  return Object.fromEntries(
+    Object.entries(hojaInicial).map(([campo, valorInicial]) => {
+      const valor = hoja?.[campo];
+
+      if (typeof valorInicial === "boolean") {
+        return [campo, Boolean(valor)];
+      }
+
+      return [campo, valor ?? ""];
+    })
+  );
+}
+
 function boolText(value) {
   return value ? "Sí" : "No";
 }
@@ -145,6 +159,9 @@ export default function EquiposPage() {
   const [hojaForm, setHojaForm] = useState(hojaInicial);
   const [equipoCreadoId, setEquipoCreadoId] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
+  const [hojaExistente, setHojaExistente] = useState(false);
+  const [cargandoHojaEdicion, setCargandoHojaEdicion] = useState(false);
+  const solicitudHojaEdicion = useRef(0);
 
   const [detalle, setDetalle] = useState(null);
   const [hojaCompleta, setHojaCompleta] = useState(null);
@@ -153,6 +170,7 @@ export default function EquiposPage() {
   const [modalImportar, setModalImportar] = useState(false);
   const [archivoImportar, setArchivoImportar] = useState(null);
   const [resultadoImportacion, setResultadoImportacion] = useState(null);
+  const [exportando, setExportando] = useState(false);
 
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -235,29 +253,50 @@ export default function EquiposPage() {
     paginaActual * equiposPorPagina
   );
 
+  const inventarioDuplicado = useMemo(() => {
+    const numero = equipoForm.inventario.trim().toLowerCase();
+    if (!numero) return false;
+
+    const inventarioOriginal = String(
+      equipos.find((equipo) => String(equipo.id) === String(editandoId || ""))?.inventario || ""
+    ).trim().toLowerCase();
+    if (editandoId && numero === inventarioOriginal) return false;
+
+    return equipos.some((equipo) => (
+      String(equipo.id) !== String(editandoId || "")
+      && String(equipo.inventario || "").trim().toLowerCase() === numero
+    ));
+  }, [equipos, equipoForm.inventario, editandoId]);
+
   const totalEquipos = equipos.length;
   const operativos = equipos.filter((e) => e.estado === "OPERATIVO").length;
   const mantenimiento = equipos.filter((e) => e.estado === "EN_MANTENIMIENTO").length;
   const fueraServicio = equipos.filter((e) => e.estado === "FUERA_DE_SERVICIO").length;
 
   const abrirNuevoEquipo = () => {
+    solicitudHojaEdicion.current += 1;
     setModalAbierto(true);
     setPaso(1);
     setEquipoForm(equipoInicial);
     setHojaForm(hojaInicial);
     setEquipoCreadoId(null);
     setEditandoId(null);
+    setHojaExistente(false);
+    setCargandoHojaEdicion(false);
     setMensaje("");
     setError("");
   };
 
   const cerrarModal = () => {
+    solicitudHojaEdicion.current += 1;
     setModalAbierto(false);
     setPaso(1);
     setEquipoForm(equipoInicial);
     setHojaForm(hojaInicial);
     setEquipoCreadoId(null);
     setEditandoId(null);
+    setHojaExistente(false);
+    setCargandoHojaEdicion(false);
   };
 
   const handleEquipoChange = (e) => {
@@ -283,6 +322,9 @@ export default function EquiposPage() {
     if (!equipoForm.empresa_id) return "Selecciona una empresa.";
     if (!equipoForm.sede_id) return "Selecciona una sede.";
     if (!equipoForm.nombre.trim()) return "El nombre del equipo es obligatorio.";
+    if (inventarioDuplicado) {
+      return "Equipo ya existe: el número de inventario está registrado.";
+    }
     return null;
   };
 
@@ -341,14 +383,19 @@ export default function EquiposPage() {
       setError("");
       setMensaje("");
 
-      const payload = {
-        equipo_id: idEquipo,
+      const datosHoja = {
         ...limpiarPayload(hojaForm),
         costo: hojaForm.costo === "" ? null : Number(hojaForm.costo),
       };
+      const payload = hojaExistente
+        ? datosHoja
+        : { equipo_id: idEquipo, ...datosHoja };
+      const url = hojaExistente
+        ? API_URL + "/equipo-hoja-vida/equipo/" + idEquipo
+        : API_URL + "/equipo-hoja-vida/";
 
-      const response = await fetch(`${API_URL}/equipo-hoja-vida/`, {
-        method: "POST",
+      const response = await fetch(url, {
+        method: hojaExistente ? "PUT" : "POST",
         headers: authHeaders(),
         body: JSON.stringify(payload),
       });
@@ -356,17 +403,14 @@ export default function EquiposPage() {
       if (!response.ok) {
         const data = await response.json().catch(() => null);
 
-        if (response.status === 400 && String(data?.detail || "").includes("ya tiene hoja")) {
-          setMensaje("El equipo ya tenía hoja de vida técnica registrada.");
-          cerrarModal();
-          await cargarEquipos();
-          return;
-        }
-
         throw new Error(data?.detail || "No fue posible guardar la hoja de vida.");
       }
 
-      setMensaje("Equipo y hoja de vida creados correctamente.");
+      setMensaje(
+        hojaExistente
+          ? "Equipo y hoja de vida actualizados correctamente."
+          : "Equipo y hoja de vida creados correctamente."
+      );
       cerrarModal();
       await cargarEquipos();
     } catch (err) {
@@ -377,13 +421,18 @@ export default function EquiposPage() {
     }
   };
 
-  const editarEquipo = (equipo) => {
+  const editarEquipo = async (equipo) => {
+    const solicitudActual = solicitudHojaEdicion.current + 1;
+    solicitudHojaEdicion.current = solicitudActual;
     setEditandoId(equipo.id);
     setEquipoCreadoId(equipo.id);
     setPaso(1);
     setModalAbierto(true);
     setMensaje("");
     setError("");
+    setHojaForm(hojaInicial);
+    setHojaExistente(false);
+    setCargandoHojaEdicion(true);
 
     setEquipoForm({
       empresa_id: equipo.empresa_id || "",
@@ -401,6 +450,38 @@ export default function EquiposPage() {
       criticidad: equipo.criticidad || "MEDIA",
       activo: equipo.activo ?? true,
     });
+
+    try {
+      const response = await fetch(
+        API_URL + "/equipo-hoja-vida/equipo/" + equipo.id,
+        { headers: authHeaders() }
+      );
+
+      if (solicitudActual !== solicitudHojaEdicion.current) return;
+
+      if (response.status === 404) {
+        setHojaForm(hojaInicial);
+        setHojaExistente(false);
+        return;
+      }
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.detail || "No fue posible cargar la hoja de vida para editar.");
+      }
+
+      const hoja = await response.json();
+      setHojaForm(cargarHojaEnFormulario(hoja));
+      setHojaExistente(true);
+    } catch (err) {
+      if (solicitudActual !== solicitudHojaEdicion.current) return;
+      console.error(err);
+      setError(err.message || "Error cargando la hoja de vida para editar.");
+    } finally {
+      if (solicitudActual === solicitudHojaEdicion.current) {
+        setCargandoHojaEdicion(false);
+      }
+    }
   };
 
   const eliminarEquipo = async (equipo) => {
@@ -500,6 +581,45 @@ export default function EquiposPage() {
     }
   };
 
+  const exportarInventario = async () => {
+    try {
+      setExportando(true);
+      setError("");
+      setMensaje("");
+
+      const response = await fetch(
+        `${API_URL}/equipos/exportar`,
+        { headers: authHeaders(false) },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.detail || "No fue posible exportar el inventario.");
+      }
+
+      const disposition = response.headers.get("content-disposition") || "";
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = filenameMatch?.[1] || "inventario_equipos_sga.xlsx";
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+
+      setMensaje("Inventario exportado correctamente.");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error exportando inventario.");
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const nombreEmpresa = (id) =>
     empresas.find((e) => String(e.id) === String(id))?.nombre || "N/A";
 
@@ -519,10 +639,20 @@ export default function EquiposPage() {
         <div className="enterprise-header">
           <div>
             <h1>Inventario de Equipos</h1>
-            <p>Gestión empresarial de activos, hoja de vida, mantenimiento e importación masiva.</p>
+            <p>Gestión empresarial de activos, hoja de vida, mantenimiento, importación y exportación.</p>
           </div>
 
           <div className="enterprise-header-actions">
+            <button
+              className="btn-secondary-enterprise"
+              onClick={exportarInventario}
+              disabled={exportando}
+              type="button"
+            >
+              <Download size={18} />
+              {exportando ? "Exportando..." : "Exportar Excel"}
+            </button>
+
             <button className="btn-secondary-enterprise" onClick={() => setModalImportar(true)}>
               <UploadCloud size={18} />
               Importar Excel/CSV
@@ -683,7 +813,11 @@ export default function EquiposPage() {
 
               <div className="enterprise-steps">
                 <button className={paso === 1 ? "active" : ""} onClick={() => setPaso(1)}>1. Datos básicos</button>
-                <button className={paso === 2 ? "active" : ""} disabled={!equipoCreadoId && !editandoId} onClick={() => setPaso(2)}>
+                <button
+                  className={paso === 2 ? "active" : ""}
+                  disabled={(!equipoCreadoId && !editandoId) || cargandoHojaEdicion}
+                  onClick={() => setPaso(2)}
+                >
                   2. Hoja de vida
                 </button>
               </div>
@@ -720,7 +854,20 @@ export default function EquiposPage() {
                   </label>
 
                   <label>Inventario
-                    <input name="inventario" value={equipoForm.inventario} onChange={handleEquipoChange} placeholder="Código físico/institucional" />
+                    <input
+                      name="inventario"
+                      value={equipoForm.inventario}
+                      onChange={handleEquipoChange}
+                      placeholder="Código físico/institucional"
+                      className={inventarioDuplicado ? "input-error" : ""}
+                      aria-invalid={inventarioDuplicado}
+                      aria-describedby={inventarioDuplicado ? "inventario-duplicado" : undefined}
+                    />
+                    {inventarioDuplicado && (
+                      <small id="inventario-duplicado" className="field-error" role="alert">
+                        Equipo ya existe: el número de inventario está registrado.
+                      </small>
+                    )}
                   </label>
 
                   <label>Marca
@@ -861,8 +1008,17 @@ export default function EquiposPage() {
                 )}
 
                 {paso === 1 ? (
-                  <button className="btn-primary-enterprise" onClick={guardarPaso1} disabled={saving}>
-                    <ChevronRight size={18} />{saving ? "Guardando..." : "Guardar y continuar"}
+                  <button
+                    className="btn-primary-enterprise"
+                    onClick={guardarPaso1}
+                    disabled={saving || cargandoHojaEdicion || inventarioDuplicado}
+                  >
+                    <ChevronRight size={18} />
+                    {cargandoHojaEdicion
+                      ? "Cargando hoja de vida..."
+                      : saving
+                        ? "Guardando..."
+                        : "Guardar y continuar"}
                   </button>
                 ) : (
                   <button className="btn-primary-enterprise" onClick={guardarHojaVida} disabled={saving}>
