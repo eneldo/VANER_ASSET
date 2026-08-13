@@ -183,6 +183,175 @@ describe("EquiposPage", () => {
     expect(screen.getByRole("button", { name: "Guardar y continuar" })).toBeDisabled();
   });
 
+  it("busca y filtra equipos por sede desde la barra y la cabecera", async () => {
+    const sedes = [
+      { id: "sede-norte", empresa_id: "empresa-1", nombre: "CARI - HIPOTERAPIA" },
+      { id: "sede-sur", empresa_id: "empresa-1", nombre: "Hospital Central" },
+    ];
+    const equipos = [
+      {
+        id: "equipo-norte",
+        empresa_id: "empresa-1",
+        sede_id: "sede-norte",
+        categoria_id: "categoria-1",
+        nombre: "Mini Split Norte",
+        inventario: "15209",
+        estado: "OPERATIVO",
+        criticidad: "BAJA",
+        activo: true,
+      },
+      {
+        id: "equipo-sur",
+        empresa_id: "empresa-1",
+        sede_id: "sede-sur",
+        categoria_id: "categoria-1",
+        nombre: "Mini Split Central",
+        inventario: "12147",
+        estado: "OPERATIVO",
+        criticidad: "BAJA",
+        activo: true,
+      },
+    ];
+
+    vi.stubGlobal("fetch", vi.fn(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/empresas/")) {
+        return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
+      }
+      if (url.endsWith("/sedes/")) return jsonResponse(sedes);
+      if (url.endsWith("/categorias/")) {
+        return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
+      }
+      if (url.endsWith("/equipos/")) return jsonResponse(equipos);
+
+      throw new Error("Solicitud inesperada: " + url);
+    }));
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={["/admin/equipos"]}>
+          <EquiposPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    const buscador = await screen.findByPlaceholderText(
+      "Buscar por equipo, inventario o sede...",
+    );
+    expect(await screen.findByText("Mini Split Norte")).toBeInTheDocument();
+    expect(await screen.findByText("Mini Split Central")).toBeInTheDocument();
+
+    fireEvent.change(buscador, { target: { value: "hipoterapia" } });
+    expect(screen.getByText("Mini Split Norte")).toBeInTheDocument();
+    expect(screen.queryByText("Mini Split Central")).not.toBeInTheDocument();
+
+    fireEvent.change(buscador, { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText("Filtrar por sede"), {
+      target: { value: "sede-sur" },
+    });
+    expect(screen.queryByText("Mini Split Norte")).not.toBeInTheDocument();
+    expect(screen.getByText("Mini Split Central")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Abrir filtro de sedes" }));
+    expect(screen.getByRole("menu", { name: "Sedes disponibles" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "CARI - HIPOTERAPIA" }));
+
+    expect(screen.getByLabelText("Filtrar por sede")).toHaveValue("sede-norte");
+    expect(screen.getByText("Mini Split Norte")).toBeInTheDocument();
+    expect(screen.queryByText("Mini Split Central")).not.toBeInTheDocument();
+  });
+
+  it("permite importar nuevamente y muestra las filas omitidas", async () => {
+    const sedes = [
+      { id: "sede-1", empresa_id: "empresa-1", nombre: "Sede Uno" },
+      { id: "sede-2", empresa_id: "empresa-1", nombre: "Sede Dos" },
+    ];
+    const equiposIniciales = [{
+      id: "equipo-1",
+      empresa_id: "empresa-1",
+      sede_id: "sede-1",
+      categoria_id: "categoria-1",
+      nombre: "Equipo existente",
+      inventario: "INV-001",
+      estado: "OPERATIVO",
+      criticidad: "BAJA",
+      activo: true,
+    }];
+    const equipoNuevo = {
+      ...equiposIniciales[0],
+      id: "equipo-2",
+      sede_id: "sede-2",
+      nombre: "Equipo nuevo",
+      inventario: "INV-002",
+    };
+    let importado = false;
+
+    vi.stubGlobal("fetch", vi.fn(async (input, options = {}) => {
+      const url = String(input);
+      if (url.endsWith("/empresas/")) {
+        return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
+      }
+      if (url.endsWith("/sedes/")) return jsonResponse(sedes);
+      if (url.endsWith("/categorias/")) {
+        return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
+      }
+      if (url.endsWith("/equipos/importar") && options.method === "POST") {
+        importado = true;
+        return jsonResponse({
+          creados: 1,
+          omitidos: 1,
+          errores: [{ fila: 2, error: "Equipo ya existe" }],
+        });
+      }
+      if (url.endsWith("/equipos/")) {
+        return jsonResponse(importado ? [...equiposIniciales, equipoNuevo] : equiposIniciales);
+      }
+
+      throw new Error("Solicitud inesperada: " + url);
+    }));
+
+    const { container } = render(
+      <AuthContext.Provider
+        value={{
+          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={["/admin/equipos"]}>
+          <EquiposPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    await screen.findByText("Equipo existente");
+    fireEvent.change(screen.getByLabelText("Filtrar por sede"), {
+      target: { value: "sede-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Importar Excel/CSV" }));
+
+    const archivo = new File(["inventario"], "segunda-importacion.csv", {
+      type: "text/csv",
+    });
+    const inputArchivo = container.querySelector('input[type="file"]');
+    fireEvent.change(inputArchivo, { target: { files: [archivo] } });
+    expect(screen.getByText("segunda-importacion.csv")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Importar inventario" }));
+
+    expect(await screen.findByText("Importación procesada. Equipos creados: 1. Filas omitidas: 1."))
+      .toBeInTheDocument();
+    expect(screen.getByText("Fila 2: Equipo ya existe")).toBeInTheDocument();
+    expect(screen.getByText("Omitidos:")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filtrar por sede")).toHaveValue("");
+    expect(inputArchivo).toHaveValue("");
+    expect(screen.getByText("Equipo nuevo")).toBeInTheDocument();
+  });
+
   it("exporta el inventario desde la cabecera", async () => {
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:inventario");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});

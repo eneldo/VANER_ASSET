@@ -15,6 +15,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -141,10 +142,16 @@ def crear_excel_inventario(filas):
                 if column_name == "codigo_inventario"
                 else "SIN DATO"
             )
+            value = fila.get(column_name)
+            if column_name == "codigo_inventario":
+                value = (
+                    normalizar_numero_inventario(value)
+                    or normalizar_numero_inventario(fila.get("inventario"))
+                )
             sheet.cell(
                 row=row_index,
                 column=column_index,
-                value=_valor_excel(fila.get(column_name), fallback),
+                value=_valor_excel(value, fallback),
             ).alignment = Alignment(vertical="top")
 
     sheet.freeze_panes = "A2"
@@ -509,31 +516,57 @@ def eliminar_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
 # =========================================================
 
 
+def normalizar_celda_importacion(value):
+    if value is None:
+        return None
+
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+
+    texto = str(value).strip()
+    return texto or None
+
+def requerir_celda_importacion(row, columna, etiqueta):
+    value = normalizar_celda_importacion(row.get(columna))
+    if not value:
+        raise ValueError(f"{etiqueta} es obligatorio")
+    return value
+
+def mensaje_error_importacion(error):
+    if isinstance(error, HTTPException):
+        return str(error.detail)
+    if isinstance(error, IntegrityError):
+        return "El código de inventario o el número de inventario ya está registrado"
+    return str(error) or "Error inesperado procesando la fila"
+
 @router.post("/importar")
 async def importar_equipos(
     archivo: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    """
-    Importa equipos desde archivo Excel o CSV.
-    """
+    """Importa equipos y aísla los errores para que una fila no aborte todo el archivo."""
 
     try:
         contenido = await archivo.read()
+        filename = (archivo.filename or "").lower()
 
-        # Detectar tipo de archivo
-        if archivo.filename.endswith(".csv"):
+        if filename.endswith(".csv"):
             df = pd.read_csv(BytesIO(contenido))
         else:
             df = pd.read_excel(BytesIO(contenido))
-
-    except Exception as e:
+    except Exception as error:
         raise HTTPException(
-            status_code=400,
-            detail=f"Error leyendo archivo: {str(e)}"
-        )
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error leyendo archivo: {error}",
+        ) from error
 
-    # Columnas requeridas
+    df.columns = [str(column).strip().lower() for column in df.columns]
     columnas = [
         "codigo_inventario",
         "nombre",
@@ -545,97 +578,146 @@ async def importar_equipos(
         "serie",
         "ubicacion",
         "estado",
-        "criticidad"
+        "criticidad",
     ]
-
-    faltantes = [c for c in columnas if c not in df.columns]
+    faltantes = [column for column in columnas if column not in df.columns]
 
     if faltantes:
         raise HTTPException(
-            status_code=400,
-            detail=f"Faltan columnas: {faltantes}"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Faltan columnas: {faltantes}",
         )
 
     creados = 0
     errores = []
+    codigos_archivo = set()
     inventarios_archivo = set()
 
-    for i, row in df.iterrows():
+    for index, row in df.iterrows():
         try:
-            # Buscar empresa
-            empresa = db.query(Empresa).filter(
-                Empresa.nombre.ilike(row["empresa"])
-            ).first()
-
-            if not empresa:
-                raise Exception("Empresa no encontrada")
-
-            # Buscar sede
-            sede = db.query(Sede).filter(
-                Sede.nombre.ilike(row["sede"]),
-                Sede.empresa_id == empresa.id
-            ).first()
-
-            if not sede:
-                raise Exception("Sede no encontrada")
-
-            # Buscar categoría (opcional)
-            categoria = None
-            if row["categoria"]:
-                categoria = db.query(Categoria).filter(
-                    Categoria.nombre.ilike(row["categoria"])
-                ).first()
-
-            # Validar estado y criticidad
-            estado = str(row["estado"]).upper()
-            criticidad = str(row["criticidad"]).upper()
-
-            validar_estado_y_criticidad(estado, criticidad)
-
-            numero_inventario = normalizar_numero_inventario(
-                row.get("inventario") if "inventario" in df.columns else None
-            )
-            if numero_inventario:
-                clave_inventario = numero_inventario.lower()
-                if clave_inventario in inventarios_archivo:
-                    raise Exception(
-                        "Equipo ya existe: número de inventario repetido en el archivo"
-                    )
-                numero_inventario = validar_numero_inventario(
-                    db,
-                    numero_inventario,
+            with db.begin_nested():
+                codigo_inventario = requerir_celda_importacion(
+                    row,
+                    "codigo_inventario",
+                    "Código de inventario",
                 )
-                inventarios_archivo.add(clave_inventario)
+                clave_codigo = codigo_inventario.lower()
+                if clave_codigo in codigos_archivo:
+                    raise ValueError(
+                        "Equipo ya existe: código de inventario repetido en el archivo"
+                    )
 
-            # Crear equipo
-            nuevo = Equipo(
-                nombre=row["nombre"],
-                empresa_id=empresa.id,
-                sede_id=sede.id,
-                categoria_id=categoria.id if categoria else None,
-                marca=row["marca"],
-                modelo=row["modelo"],
-                serie=row["serie"],
-                ubicacion=row["ubicacion"],
-                codigo_id=row["codigo_inventario"],
-                inventario=numero_inventario,
-                estado=estado,
-                criticidad=criticidad,
-                activo=True
-            )
+                codigo_existente = db.query(Equipo).filter(
+                    func.lower(func.trim(Equipo.codigo_id)) == clave_codigo
+                ).first()
+                if codigo_existente:
+                    raise ValueError(
+                        "Equipo ya existe: el código de inventario está registrado"
+                    )
 
-            db.add(nuevo)
+                nombre = requerir_celda_importacion(
+                    row,
+                    "nombre",
+                    "Nombre del equipo",
+                )
+                empresa_nombre = requerir_celda_importacion(
+                    row,
+                    "empresa",
+                    "Empresa",
+                )
+                sede_nombre = requerir_celda_importacion(row, "sede", "Sede")
+                categoria_nombre = requerir_celda_importacion(
+                    row,
+                    "categoria",
+                    "Categoría",
+                )
+
+                empresa = db.query(Empresa).filter(
+                    Empresa.nombre.ilike(empresa_nombre)
+                ).first()
+                if not empresa:
+                    raise ValueError("Empresa no encontrada")
+
+                sede = db.query(Sede).filter(
+                    Sede.nombre.ilike(sede_nombre),
+                    Sede.empresa_id == empresa.id,
+                ).first()
+                if not sede:
+                    raise ValueError("Sede no encontrada para la empresa indicada")
+
+                categoria = db.query(Categoria).filter(
+                    Categoria.nombre.ilike(categoria_nombre),
+                    Categoria.activo.is_(True),
+                ).first()
+                if not categoria or categoria.code not in CATEGORIA_CODES:
+                    raise ValueError("Categoría no encontrada o no permitida")
+
+                estado = requerir_celda_importacion(
+                    row,
+                    "estado",
+                    "Estado",
+                ).upper()
+                criticidad = requerir_celda_importacion(
+                    row,
+                    "criticidad",
+                    "Criticidad",
+                ).upper()
+                validar_estado_y_criticidad(estado, criticidad)
+
+                numero_inventario = normalizar_celda_importacion(
+                    row.get("inventario") if "inventario" in df.columns else None
+                )
+                if numero_inventario and numero_inventario.upper() in {
+                    "SIN DATO",
+                    "N/A",
+                    "NA",
+                }:
+                    numero_inventario = None
+
+                if numero_inventario:
+                    clave_inventario = numero_inventario.lower()
+                    if clave_inventario in inventarios_archivo:
+                        raise ValueError(
+                            "Equipo ya existe: número de inventario repetido en el archivo"
+                        )
+                    numero_inventario = validar_numero_inventario(
+                        db,
+                        numero_inventario,
+                    )
+
+                nuevo = Equipo(
+                    nombre=nombre,
+                    empresa_id=empresa.id,
+                    sede_id=sede.id,
+                    categoria_id=categoria.id,
+                    marca=normalizar_celda_importacion(row.get("marca")),
+                    modelo=normalizar_celda_importacion(row.get("modelo")),
+                    serie=normalizar_celda_importacion(row.get("serie")),
+                    ubicacion=normalizar_celda_importacion(row.get("ubicacion")),
+                    codigo_id=codigo_inventario,
+                    inventario=numero_inventario,
+                    estado=estado,
+                    criticidad=criticidad,
+                    activo=True,
+                )
+                db.add(nuevo)
+                db.flush()
+
             creados += 1
+            codigos_archivo.add(clave_codigo)
+            if numero_inventario:
+                inventarios_archivo.add(numero_inventario.lower())
 
-        except Exception as e:
+        except Exception as error:
             errores.append({
-                "fila": int(i + 2),
-                "error": str(e)
+                "fila": int(index + 2),
+                "error": mensaje_error_importacion(error),
             })
 
     db.commit()
 
     return {
         "creados": creados,
-        "errores": errores
+        "omitidos": len(errores),
+        "errores": errores,
     }

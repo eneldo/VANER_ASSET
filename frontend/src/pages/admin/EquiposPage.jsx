@@ -17,6 +17,9 @@ import {
   UploadCloud,
   Download,
   Printer,
+  MapPin,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -150,8 +153,11 @@ export default function EquiposPage() {
   const [saving, setSaving] = useState(false);
 
   const [busqueda, setBusqueda] = useState("");
+  const [sedeFiltro, setSedeFiltro] = useState("");
+  const [menuSedesAbierto, setMenuSedesAbierto] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const equiposPorPagina = 10;
+  const menuSedesRef = useRef(null);
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [paso, setPaso] = useState(1);
@@ -171,6 +177,7 @@ export default function EquiposPage() {
   const [archivoImportar, setArchivoImportar] = useState(null);
   const [resultadoImportacion, setResultadoImportacion] = useState(null);
   const [exportando, setExportando] = useState(false);
+  const archivoImportarRef = useRef(null);
 
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -221,6 +228,26 @@ export default function EquiposPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!menuSedesAbierto) return undefined;
+
+    const cerrarMenu = (event) => {
+      if (!menuSedesRef.current?.contains(event.target)) {
+        setMenuSedesAbierto(false);
+      }
+    };
+    const cerrarConEscape = (event) => {
+      if (event.key === "Escape") setMenuSedesAbierto(false);
+    };
+
+    document.addEventListener("mousedown", cerrarMenu);
+    document.addEventListener("keydown", cerrarConEscape);
+    return () => {
+      document.removeEventListener("mousedown", cerrarMenu);
+      document.removeEventListener("keydown", cerrarConEscape);
+    };
+  }, [menuSedesAbierto]);
+
   const sedesFiltradas = useMemo(() => {
     if (!equipoForm.empresa_id) return [];
     return sedes.filter(
@@ -228,24 +255,51 @@ export default function EquiposPage() {
     );
   }, [sedes, equipoForm.empresa_id]);
 
+  const sedesOrdenadas = useMemo(
+    () => [...sedes].sort((a, b) => String(a.nombre || "").localeCompare(
+      String(b.nombre || ""),
+      "es",
+      { sensitivity: "base" },
+    )),
+    [sedes],
+  );
+
+  const sedesPorId = useMemo(
+    () => new Map(sedes.map((sede) => [String(sede.id), sede.nombre || ""])),
+    [sedes],
+  );
+
+  const seleccionarSedeFiltro = (sedeId) => {
+    setSedeFiltro(sedeId);
+    setPaginaActual(1);
+    setMenuSedesAbierto(false);
+  };
+
   const equiposFiltrados = useMemo(() => {
-    const term = busqueda.toLowerCase();
+    const term = busqueda.trim().toLocaleLowerCase("es");
 
     return equipos.filter((equipo) => {
-      const texto = `
-        ${equipo.nombre || ""}
-        ${equipo.marca || ""}
-        ${equipo.modelo || ""}
-        ${equipo.serie || ""}
-        ${equipo.codigo_id || ""}
-        ${equipo.inventario || ""}
-        ${equipo.ubicacion || ""}
-      `.toLowerCase();
+      const sedeNombre = sedesPorId.get(String(equipo.sede_id)) || "";
+      const texto = [
+        equipo.nombre,
+        equipo.marca,
+        equipo.modelo,
+        equipo.serie,
+        equipo.codigo_id,
+        equipo.inventario,
+        equipo.ubicacion,
+        sedeNombre,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("es");
 
-      return texto.includes(term);
+      const coincideBusqueda = !term || texto.includes(term);
+      const coincideSede = !sedeFiltro || String(equipo.sede_id) === sedeFiltro;
+
+      return coincideBusqueda && coincideSede;
     });
-  }, [equipos, busqueda]);
-
+  }, [equipos, busqueda, sedeFiltro, sedesPorId]);
   const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / equiposPorPagina));
 
   const equiposPaginados = equiposFiltrados.slice(
@@ -567,11 +621,28 @@ export default function EquiposPage() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.detail || "No fue posible importar el inventario.");
+        const detail = data?.detail;
+        const mensajeDetalle = Array.isArray(detail)
+          ? detail.map((item) => item?.msg || String(item)).join(". ")
+          : typeof detail === "object" && detail
+            ? JSON.stringify(detail)
+            : detail;
+        throw new Error(mensajeDetalle || "No fue posible importar el inventario.");
       }
 
+      const omitidos = data.omitidos ?? data.errores?.length ?? 0;
       setResultadoImportacion(data);
-      setMensaje(`Importación finalizada. Equipos creados: ${data.creados || 0}.`);
+      setMensaje(
+        "Importación procesada. Equipos creados: "
+        + (data.creados || 0)
+        + ". Filas omitidas: "
+        + omitidos
+        + ".",
+      );
+      setBusqueda("");
+      seleccionarSedeFiltro("");
+      setArchivoImportar(null);
+      if (archivoImportarRef.current) archivoImportarRef.current.value = "";
       await cargarEquipos();
     } catch (err) {
       console.error(err);
@@ -580,7 +651,6 @@ export default function EquiposPage() {
       setSaving(false);
     }
   };
-
   const exportarInventario = async () => {
     try {
       setExportando(true);
@@ -695,7 +765,7 @@ export default function EquiposPage() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Buscar equipo..."
+              placeholder="Buscar por equipo, inventario o sede..."
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value);
@@ -703,6 +773,24 @@ export default function EquiposPage() {
               }}
             />
           </div>
+
+          <label className="sede-filter-enterprise">
+            <span>Filtrar por sede</span>
+            <div className="sede-filter-control">
+              <MapPin size={18} />
+              <select
+                aria-label="Filtrar por sede"
+                value={sedeFiltro}
+                onChange={(e) => seleccionarSedeFiltro(e.target.value)}
+              >
+                <option value="">Todas las sedes</option>
+                {sedesOrdenadas.map((sede) => (
+                  <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                ))}
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </div>
+          </label>
         </div>
 
         <div className="enterprise-table-wrapper">
@@ -712,7 +800,47 @@ export default function EquiposPage() {
                 <th>Código</th>
                 <th>Equipo</th>
                 <th>Empresa</th>
-                <th>Sede</th>
+                <th className="sede-filter-header" ref={menuSedesRef}>
+                  <button
+                    type="button"
+                    className={sedeFiltro ? "sede-filter-trigger active" : "sede-filter-trigger"}
+                    aria-label="Abrir filtro de sedes"
+                    aria-expanded={menuSedesAbierto}
+                    onClick={() => setMenuSedesAbierto((abierto) => !abierto)}
+                  >
+                    <span>Sede</span>
+                    <ChevronDown size={15} aria-hidden="true" />
+                  </button>
+
+                  {menuSedesAbierto && (
+                    <div className="sede-filter-menu" role="menu" aria-label="Sedes disponibles">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={!sedeFiltro ? "selected" : ""}
+                        onClick={() => seleccionarSedeFiltro("")}
+                      >
+                        <span>Todas las sedes</span>
+                        {!sedeFiltro && <Check size={16} />}
+                      </button>
+                      {sedesOrdenadas.map((sede) => {
+                        const seleccionada = String(sede.id) === sedeFiltro;
+                        return (
+                          <button
+                            key={sede.id}
+                            type="button"
+                            role="menuitem"
+                            className={seleccionada ? "selected" : ""}
+                            onClick={() => seleccionarSedeFiltro(String(sede.id))}
+                          >
+                            <span>{sede.nombre}</span>
+                            {seleccionada && <Check size={16} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </th>
                 <th>Marca</th>
                 <th>Modelo</th>
                 <th>Serie</th>
@@ -726,7 +854,15 @@ export default function EquiposPage() {
               {loading ? (
                 <tr><td colSpan="10"><div className="loading-enterprise">Cargando equipos...</div></td></tr>
               ) : equiposPaginados.length === 0 ? (
-                <tr><td colSpan="10"><div className="empty-enterprise">No existen equipos registrados.</div></td></tr>
+                <tr>
+                  <td colSpan="10">
+                    <div className="empty-enterprise">
+                      {equipos.length > 0
+                        ? "No hay equipos que coincidan con la búsqueda o la sede seleccionada."
+                        : "No existen equipos registrados."}
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 equiposPaginados.map((equipo) => (
                   <tr key={equipo.id}>
@@ -1049,9 +1185,13 @@ export default function EquiposPage() {
                 <UploadCloud size={42} />
                 <strong>Selecciona un archivo .xlsx, .xls o .csv</strong>
                 <input
+                  ref={archivoImportarRef}
                   type="file"
                   accept=".xlsx,.xls,.csv"
-                  onChange={(e) => setArchivoImportar(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    setArchivoImportar(e.target.files?.[0] || null);
+                    setResultadoImportacion(null);
+                  }}
                 />
                 {archivoImportar && <span>{archivoImportar.name}</span>}
               </div>
@@ -1060,6 +1200,10 @@ export default function EquiposPage() {
                 <div className="import-result">
                   <h3>Resultado</h3>
                   <p><strong>Creados:</strong> {resultadoImportacion.creados || 0}</p>
+                  <p>
+                    <strong>Omitidos:</strong>{" "}
+                    {resultadoImportacion.omitidos ?? resultadoImportacion.errores?.length ?? 0}
+                  </p>
 
                   {resultadoImportacion.errores?.length > 0 && (
                     <div>

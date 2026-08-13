@@ -149,6 +149,7 @@
 .enterprise-toolbar {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -169,6 +170,39 @@
   outline: none;
   width: 100%;
   color: #001b5a;
+}
+
+.sede-filter-enterprise {
+  width: min(100%, 320px);
+  display: grid;
+  gap: 7px;
+  color: #001b5a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sede-filter-control {
+  min-height: 44px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  color: #2563eb;
+}
+
+.sede-filter-control select {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  appearance: none;
+  background: transparent;
+  color: #001b5a;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .enterprise-table-wrapper {
@@ -208,6 +242,73 @@
   font-size: 13px;
   text-transform: uppercase;
   color: #001b5a;
+}
+
+.enterprise-table th.sede-filter-header {
+  position: relative;
+  padding: 8px;
+  overflow: visible;
+}
+
+.sede-filter-trigger {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  color: #001b5a;
+  font: inherit;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sede-filter-trigger.active {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-radius: 6px;
+}
+
+.sede-filter-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% - 2px);
+  left: 8px;
+  width: min(300px, 80vw);
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.sede-filter-menu button {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  color: #001b5a;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  text-transform: none;
+}
+
+.sede-filter-menu button:hover,
+.sede-filter-menu button.selected {
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .enterprise-table td {
@@ -744,6 +845,10 @@
   }
 
   .search-enterprise {
+    width: 100%;
+  }
+
+  .sede-filter-enterprise {
     width: 100%;
   }
 
