@@ -183,6 +183,61 @@ describe("EquiposPage", () => {
     expect(screen.getByRole("button", { name: "Guardar y continuar" })).toBeDisabled();
   });
 
+  it("detecta desde el formulario un inventario creado por importación", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input) => {
+      const url = String(input);
+
+      if (url.endsWith("/empresas/")) {
+        return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
+      }
+      if (url.endsWith("/sedes/")) {
+        return jsonResponse([{ id: "sede-1", empresa_id: "empresa-1", nombre: "Sede" }]);
+      }
+      if (url.endsWith("/categorias/")) {
+        return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
+      }
+      if (url.endsWith("/equipos/")) {
+        return jsonResponse([{
+          id: "equipo-importado",
+          empresa_id: "empresa-1",
+          sede_id: "sede-1",
+          categoria_id: "categoria-1",
+          nombre: "Equipo importado",
+          codigo_id: "17774",
+          inventario: null,
+          estado: "OPERATIVO",
+          criticidad: "MEDIA",
+          activo: true,
+        }]);
+      }
+
+      throw new Error(`Solicitud inesperada: ${url}`);
+    }));
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={["/admin/equipos"]}>
+          <EquiposPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Nuevo Equipo" }));
+    fireEvent.change(screen.getByLabelText("Inventario"), {
+      target: { name: "inventario", value: "17774" },
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Equipo ya existe: el número de inventario está registrado.",
+    );
+    expect(screen.getByRole("button", { name: "Guardar y continuar" })).toBeDisabled();
+  });
+
   it("busca y filtra equipos por sede desde la barra y la cabecera", async () => {
     const sedes = [
       { id: "sede-norte", empresa_id: "empresa-1", nombre: "CARI - HIPOTERAPIA" },

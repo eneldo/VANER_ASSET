@@ -14,7 +14,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -75,7 +75,13 @@ def validar_numero_inventario(
     if not numero:
         return None
 
-    filtros = [func.lower(func.trim(Equipo.inventario)) == numero.lower()]
+    clave = numero.lower()
+    filtros = [
+        or_(
+            func.lower(func.trim(Equipo.inventario)) == clave,
+            func.lower(func.trim(Equipo.codigo_id)) == clave,
+        )
+    ]
     if excluir_equipo_id:
         filtros.append(Equipo.id != excluir_equipo_id)
 

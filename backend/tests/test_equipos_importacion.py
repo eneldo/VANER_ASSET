@@ -2,7 +2,7 @@ import unittest
 from io import BytesIO
 from uuid import uuid4
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -12,7 +12,11 @@ from app.models.categoria import Categoria
 from app.models.empresa import Empresa
 from app.models.equipo import Equipo
 from app.models.sede import Sede
-from app.routers.equipos import importar_equipos, normalizar_celda_importacion
+from app.routers.equipos import (
+    importar_equipos,
+    normalizar_celda_importacion,
+    validar_numero_inventario,
+)
 
 
 class EquiposImportacionTests(unittest.IsolatedAsyncioTestCase):
@@ -107,6 +111,26 @@ class EquiposImportacionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(normalizar_celda_importacion(12147.0), "12147")
         self.assertIsNone(normalizar_celda_importacion(float("nan")))
         self.assertEqual(normalizar_celda_importacion("  EQ-001  "), "EQ-001")
+
+    def test_formulario_manual_detecta_inventario_importado_como_codigo(self):
+        self.db.add(Equipo(
+            nombre="Equipo importado",
+            empresa_id=self.empresa.id,
+            sede_id=self.sede.id,
+            categoria_id=self.categoria.id,
+            codigo_id="17774",
+            inventario=None,
+            estado="OPERATIVO",
+            criticidad="BAJA",
+            activo=True,
+        ))
+        self.db.commit()
+
+        with self.assertRaises(HTTPException) as context:
+            validar_numero_inventario(self.db, " 17774 ")
+
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertIn("Equipo ya existe", context.exception.detail)
 
 
 if __name__ == "__main__":

@@ -311,14 +311,11 @@ export default function EquiposPage() {
     const numero = equipoForm.inventario.trim().toLowerCase();
     if (!numero) return false;
 
-    const inventarioOriginal = String(
-      equipos.find((equipo) => String(equipo.id) === String(editandoId || ""))?.inventario || ""
-    ).trim().toLowerCase();
-    if (editandoId && numero === inventarioOriginal) return false;
-
     return equipos.some((equipo) => (
       String(equipo.id) !== String(editandoId || "")
-      && String(equipo.inventario || "").trim().toLowerCase() === numero
+      && [equipo.inventario, equipo.codigo_id].some(
+        (valor) => String(valor || "").trim().toLowerCase() === numero,
+      )
     ));
   }, [equipos, equipoForm.inventario, editandoId]);
 
