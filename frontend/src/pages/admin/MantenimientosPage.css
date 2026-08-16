@@ -110,6 +110,59 @@
   margin-top: 14px;
 }
 
+.mant-equipment-preview {
+  grid-column: span 2;
+  min-height: 70px;
+  border: 1px solid #bae6fd;
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, #f0f9ff, #eff6ff);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-sizing: border-box;
+}
+
+.mant-equipment-preview.is-empty {
+  color: #64748b;
+  border-style: dashed;
+  background: #f8fafc;
+}
+
+.mant-equipment-preview-title {
+  min-width: 155px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mant-equipment-preview-title span {
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mant-equipment-preview-title strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.mant-equipment-preview-data {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.mant-equipment-cell {
+  min-width: 260px;
+  line-height: 1.45;
+}
+
 .mant-field {
   display: flex;
   flex-direction: column;
@@ -143,6 +196,24 @@
 .mant-field textarea {
   min-height: 88px;
   resize: vertical;
+}
+
+.mant-field-help {
+  margin-top: -2px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mant-field-help.is-error {
+  color: #b91c1c;
+}
+
+.mant-field input:disabled,
+.mant-field select:disabled {
+  cursor: not-allowed;
+  background: #f1f5f9;
+  color: #94a3b8;
 }
 
 .mant-textarea-large {
@@ -487,6 +558,17 @@
   }
 
   .mant-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .mant-equipment-preview {
+    grid-column: span 1;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mant-equipment-preview-data {
+    width: 100%;
     grid-template-columns: 1fr;
   }
 

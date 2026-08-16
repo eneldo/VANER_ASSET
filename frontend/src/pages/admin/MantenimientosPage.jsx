@@ -27,6 +27,14 @@ import {
 
 import AdminLayout from "./AdminLayout";
 import API from "../../api/axios";
+import {
+  construirEtiquetaEquipo,
+  encontrarUbicacionDisponible,
+  filtrarEquiposPorUbicacion,
+  listarUbicacionesEquipos,
+  obtenerEtiquetaUbicacionEquipo,
+  obtenerValorUbicacionEquipo,
+} from "./mantenimientosEquipoUtils";
 import "./MantenimientosPage.css";
 
 const ESTADOS = {
@@ -42,6 +50,7 @@ const formInicial = {
   id: null,
   empresa_id: "",
   sede_id: "",
+  ubicacion_equipo: "",
   equipo_id: "",
   tecnico_id: "",
   tipo: "PREVENTIVO",
@@ -108,10 +117,30 @@ export default function MantenimientosPage() {
     return sedes.filter((s) => String(s.empresa_id) === String(form.empresa_id));
   }, [sedes, form.empresa_id]);
 
-  const equiposFiltrados = useMemo(() => {
-    if (!form.sede_id) return [];
-    return equipos.filter((e) => String(e.sede_id) === String(form.sede_id));
-  }, [equipos, form.sede_id]);
+  const ubicacionesEquipos = useMemo(
+    () => listarUbicacionesEquipos(equipos, form.sede_id),
+    [equipos, form.sede_id]
+  );
+
+  const ubicacionSeleccionada = useMemo(
+    () => encontrarUbicacionDisponible(ubicacionesEquipos, form.ubicacion_equipo),
+    [ubicacionesEquipos, form.ubicacion_equipo]
+  );
+
+  const equiposFiltrados = useMemo(
+    () =>
+      filtrarEquiposPorUbicacion(
+        equipos,
+        form.sede_id,
+        ubicacionSeleccionada?.value || ""
+      ),
+    [equipos, form.sede_id, ubicacionSeleccionada]
+  );
+
+  const equipoSeleccionado = useMemo(
+    () => equipos.find((equipo) => String(equipo.id) === String(form.equipo_id)) || null,
+    [equipos, form.equipo_id]
+  );
 
   const getEmpresa = useCallback((id) => {
     const empresa = empresas.find((e) => String(e.id) === String(id));
@@ -123,9 +152,13 @@ export default function MantenimientosPage() {
     return sede?.nombre || "—";
   }, [sedes]);
 
-  const getEquipo = useCallback((id) => {
-    const equipo = equipos.find((e) => String(e.id) === String(id));
-    return equipo?.nombre || equipo?.codigo_id || equipo?.codigo || "—";
+  const getEquipoData = useCallback((id) => {
+    return equipos.find((equipo) => String(equipo.id) === String(id)) || null;
+  }, [equipos]);
+
+  const getEquipo = useCallback((id, fallback = "") => {
+    const equipo = equipos.find((item) => String(item.id) === String(id));
+    return equipo ? construirEtiquetaEquipo(equipo) : fallback || "—";
   }, [equipos]);
 
   const getTecnicoNombre = (tecnico) => {
@@ -171,6 +204,9 @@ export default function MantenimientosPage() {
   const guardarMantenimiento = async () => {
     if (!form.empresa_id) return alert("Seleccione empresa.");
     if (!form.sede_id) return alert("Seleccione sede.");
+    if (!ubicacionSeleccionada) {
+      return alert("Escriba o seleccione una ubicación disponible de la lista.");
+    }
     if (!form.equipo_id) return alert("Seleccione equipo.");
     if (!form.tecnico_id) return alert("Seleccione técnico responsable.");
 
@@ -228,6 +264,9 @@ export default function MantenimientosPage() {
       id: m.id,
       empresa_id: m.empresa_id || equipo?.empresa_id || "",
       sede_id: m.sede_id || equipo?.sede_id || "",
+      ubicacion_equipo: equipo
+        ? obtenerEtiquetaUbicacionEquipo(obtenerValorUbicacionEquipo(equipo))
+        : "",
       equipo_id: m.equipo_id || "",
       tecnico_id: m.tecnico_id || "",
       tipo: m.tipo || "PREVENTIVO",
@@ -278,7 +317,7 @@ export default function MantenimientosPage() {
         ${m.id}
         ${m.empresa_nombre || getEmpresa(m.empresa_id)}
         ${m.sede_nombre || getSede(m.sede_id)}
-        ${m.equipo_nombre || getEquipo(m.equipo_id)}
+        ${getEquipo(m.equipo_id, m.equipo_nombre)}
         ${m.tecnico_nombre || getTecnico(m.tecnico_id)}
         ${m.tipo || ""}
         ${m.estado || ""}
@@ -298,6 +337,8 @@ export default function MantenimientosPage() {
     (pagina - 1) * porPagina,
     pagina * porPagina
   );
+
+  const equipoDetalle = detalle ? getEquipoData(detalle.equipo_id) : null;
 
   return (
     <AdminLayout>
@@ -346,6 +387,7 @@ export default function MantenimientosPage() {
                       ...form,
                       empresa_id: e.target.value,
                       sede_id: "",
+                      ubicacion_equipo: "",
                       equipo_id: "",
                     })
                   }
@@ -363,7 +405,12 @@ export default function MantenimientosPage() {
                 <select
                   value={form.sede_id}
                   onChange={(e) =>
-                    setForm({ ...form, sede_id: e.target.value, equipo_id: "" })
+                    setForm({
+                      ...form,
+                      sede_id: e.target.value,
+                      ubicacion_equipo: "",
+                      equipo_id: "",
+                    })
                   }
                   disabled={!form.empresa_id}
                 >
@@ -378,22 +425,83 @@ export default function MantenimientosPage() {
                 </select>
               </Field>
 
-              <Field label="Equipo">
+              <Field label="Ubicación del equipo">
+                <input
+                  type="search"
+                  list="mant-ubicaciones-equipo"
+                  value={form.ubicacion_equipo}
+                  placeholder={
+                    form.sede_id
+                      ? "Escriba o seleccione una ubicación *"
+                      : "Primero seleccione sede"
+                  }
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      ubicacion_equipo: e.target.value,
+                      equipo_id: "",
+                    })
+                  }
+                  disabled={!form.sede_id}
+                  autoComplete="off"
+                />
+                <datalist id="mant-ubicaciones-equipo">
+                  {ubicacionesEquipos.map((ubicacion) => (
+                    <option key={ubicacion.value} value={ubicacion.label} />
+                  ))}
+                </datalist>
+                <small
+                  className={`mant-field-help ${
+                    form.ubicacion_equipo && !ubicacionSeleccionada ? "is-error" : ""
+                  }`}
+                >
+                  {!form.sede_id
+                    ? "Seleccione primero una sede."
+                    : ubicacionesEquipos.length === 0
+                      ? "Esta sede no tiene ubicaciones de equipos registradas."
+                      : form.ubicacion_equipo && !ubicacionSeleccionada
+                        ? "Seleccione una ubicación disponible de la lista."
+                        : "Escriba para buscar o abra la lista para seleccionar."}
+                </small>
+              </Field>
+
+              <Field label="Equipo específico">
                 <select
                   value={form.equipo_id}
                   onChange={(e) => setForm({ ...form, equipo_id: e.target.value })}
-                  disabled={!form.sede_id}
+                  disabled={!ubicacionSeleccionada}
                 >
                   <option value="">
-                    {form.sede_id ? "Seleccione equipo *" : "Primero seleccione sede"}
+                    {ubicacionSeleccionada
+                      ? "Seleccione equipo *"
+                      : "Primero seleccione ubicación"}
                   </option>
                   {equiposFiltrados.map((eq) => (
                     <option key={eq.id} value={eq.id}>
-                      {eq.nombre || eq.codigo_id || eq.codigo || `Equipo ${eq.id}`}
+                      {construirEtiquetaEquipo(eq)}
                     </option>
                   ))}
                 </select>
               </Field>
+
+              <div className={`mant-equipment-preview ${equipoSeleccionado ? "" : "is-empty"}`}>
+                {equipoSeleccionado ? (
+                  <>
+                    <div className="mant-equipment-preview-title">
+                      <span>Equipo seleccionado</span>
+                      <strong>{equipoSeleccionado.nombre || "Equipo sin nombre"}</strong>
+                    </div>
+                    <div className="mant-equipment-preview-data">
+                      <span><b>Ubicación:</b> {equipoSeleccionado.ubicacion || "Sin registrar"}</span>
+                      <span><b>Inventario:</b> {equipoSeleccionado.inventario || "Sin inventario"}</span>
+                      <span><b>Código:</b> {equipoSeleccionado.codigo_id || equipoSeleccionado.codigo || "Sin código"}</span>
+                      <span><b>Serie:</b> {equipoSeleccionado.serie || "Sin serie"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <span>Seleccione una ubicación y un equipo para confirmar el activo exacto.</span>
+                )}
+              </div>
 
               <Field label="Técnico responsable">
                 <select
@@ -562,7 +670,7 @@ export default function MantenimientosPage() {
             <div className="mant-search-box">
               <Search size={16} />
               <input
-                placeholder="Buscar por empresa, sede, equipo, técnico, tipo o resultado"
+                placeholder="Buscar por empresa, sede, ubicación, inventario, equipo o técnico"
                 value={busqueda}
                 onChange={(e) => {
                   setBusqueda(e.target.value);
@@ -596,7 +704,9 @@ export default function MantenimientosPage() {
                       <tr key={m.id}>
                         <td>{m.empresa_nombre || getEmpresa(m.empresa_id)}</td>
                         <td>{m.sede_nombre || getSede(m.sede_id)}</td>
-                        <td>{m.equipo_nombre || getEquipo(m.equipo_id)}</td>
+                        <td className="mant-equipment-cell">
+                          {getEquipo(m.equipo_id, m.equipo_nombre)}
+                        </td>
                         <td>{m.tecnico_nombre || getTecnico(m.tecnico_id)}</td>
                         <td>
                           <span className="mant-type-badge">{m.tipo}</span>
@@ -680,7 +790,17 @@ export default function MantenimientosPage() {
               <div className="mant-detail-grid">
                 <Detail label="Empresa" value={detalle.empresa_nombre || getEmpresa(detalle.empresa_id)} />
                 <Detail label="Sede" value={detalle.sede_nombre || getSede(detalle.sede_id)} />
-                <Detail label="Equipo" value={detalle.equipo_nombre || getEquipo(detalle.equipo_id)} />
+                <Detail label="Equipo" value={equipoDetalle?.nombre || detalle.equipo_nombre} />
+                <Detail label="Ubicación del equipo" value={equipoDetalle?.ubicacion} />
+                <Detail
+                  label="Inventario"
+                  value={equipoDetalle?.inventario || "Sin inventario registrado"}
+                />
+                <Detail
+                  label="Código interno"
+                  value={equipoDetalle?.codigo_id || equipoDetalle?.codigo}
+                />
+                <Detail label="Serie" value={equipoDetalle?.serie} />
                 <Detail label="Técnico" value={detalle.tecnico_nombre || getTecnico(detalle.tecnico_id)} />
                 <Detail label="Tipo" value={detalle.tipo} />
                 <Detail label="Estado" value={detalle.estado} />

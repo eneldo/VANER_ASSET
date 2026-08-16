@@ -143,7 +143,11 @@ export default function DashboardTecnico() {
         ${m.tipo || ""}
         ${m.estado || ""}
         ${m.equipo?.codigo_id || ""}
+        ${m.equipo?.inventario || ""}
         ${m.equipo?.serie || ""}
+        ${m.equipo?.ubicacion || ""}
+        ${m.equipo?.marca || ""}
+        ${m.equipo?.modelo || ""}
       `.toLowerCase();
 
       const textoOk = texto.includes(q);
@@ -703,7 +707,11 @@ function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, on
         <div className="tec-work-meta">
           <InfoMini icon={<CalendarDays size={14} />} label="Programado" value={formatDate(mantenimiento.fecha_programada)} />
           <InfoMini icon={<MapPin size={14} />} label="Ubicación" value={e.ubicacion || "—"} />
-          <InfoMini icon={<ClipboardList size={14} />} label="Código / Serie" value={`${e.codigo_id || e.inventario || "—"} / ${e.serie || "—"}`} />
+          <InfoMini
+            icon={<ClipboardList size={14} />}
+            label="Inventario / Código / Serie"
+            value={`${e.inventario || "—"} / ${e.codigo_id || "—"} / ${e.serie || "—"}`}
+          />
           <InfoMini icon={<Activity size={14} />} label="Estado equipo" value={e.estado || "—"} />
         </div>
 
@@ -853,6 +861,7 @@ function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
 function DetalleModal({ detalle, onClose }) {
   const mantenimiento = detalle.mantenimiento || {};
   const equipo = detalle.equipo_basico || {};
+  const encabezado = detalle.encabezado || {};
   const evidencias = detalle.evidencias || [];
 
   return (
@@ -865,10 +874,18 @@ function DetalleModal({ detalle, onClose }) {
 
         <div className="tec-detail-grid">
           <Info title="Equipo" value={equipo.nombre} />
+          <Info title="Inventario" value={equipo.inventario} />
+          <Info title="Código interno" value={equipo.codigo_id} />
+          <Info title="Categoría" value={equipo.categoria} />
           <Info title="Marca" value={equipo.marca} />
           <Info title="Modelo" value={equipo.modelo} />
           <Info title="Serie" value={equipo.serie} />
           <Info title="Ubicación" value={equipo.ubicacion} />
+          <Info title="Empresa" value={encabezado.empresa_nombre} />
+          <Info title="Sede" value={encabezado.sede_nombre} />
+          <Info title="Criticidad" value={equipo.criticidad} />
+          <Info title="Estado del equipo" value={equipo.estado} />
+          <Info title="Registro INVIMA" value={equipo.invima} />
           <Info title="Tipo" value={mantenimiento.tipo} />
           <Info title="Estado" value={mantenimiento.estado} />
           <Info title="Resultado final" value={mantenimiento.resultado_final} />

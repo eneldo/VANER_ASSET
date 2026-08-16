@@ -306,8 +306,10 @@ export default function ModalEjecucionTecnica({
             <section className="tec-exec-card">
               <h2>Hoja de vida del equipo</h2>
 
-              <InfoItem icon={<Barcode size={16} />} label="Código inventario" value={equipo.codigo_id || equipo.inventario} />
+              <InfoItem icon={<Barcode size={16} />} label="Inventario" value={equipo.inventario} />
+              <InfoItem icon={<Barcode size={16} />} label="Código interno" value={equipo.codigo_id} />
               <InfoItem icon={<Cpu size={16} />} label="Equipo" value={equipo.nombre} />
+              <InfoItem icon={<Settings size={16} />} label="Categoría" value={equipo.categoria} />
               <InfoItem icon={<Settings size={16} />} label="Marca" value={equipo.marca} />
               <InfoItem icon={<Settings size={16} />} label="Modelo" value={equipo.modelo} />
               <InfoItem icon={<Barcode size={16} />} label="Serie" value={equipo.serie} />

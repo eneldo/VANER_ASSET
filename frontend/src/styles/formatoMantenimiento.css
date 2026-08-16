@@ -173,6 +173,14 @@ textarea {
   margin-top: 4px;
 }
 
+.equipo-asignado input[readonly],
+.grid-form input[readonly] {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: default;
+}
+
 textarea {
   min-height: 55px;
   resize: vertical;

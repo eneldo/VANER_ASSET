@@ -424,7 +424,7 @@ def detalle_mantenimiento_tecnico(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
-    _, _, mantenimiento = validar_mantenimiento_del_tecnico(
+    _, tecnico, mantenimiento = validar_mantenimiento_del_tecnico(
         usuario_actual.id, mantenimiento_id, db
     )
 
@@ -457,6 +457,12 @@ def detalle_mantenimiento_tecnico(
             "empresa_nombre": safe_get(empresa, "nombre"),
             "empresa_logo_url": safe_get(empresa, "logo_url"),
             "sede_nombre": safe_get(sede, "nombre"),
+        },
+        'tecnico': {
+            'id': str(tecnico.id),
+            'nombre_completo': safe_get(safe_get(tecnico, 'usuario'), 'nombre_completo'),
+            'especialidad': safe_get(tecnico, 'especialidad'),
+            'cargo': safe_get(tecnico, 'cargo'),
         },
         "mantenimiento": {
             "id": str(mantenimiento.id),

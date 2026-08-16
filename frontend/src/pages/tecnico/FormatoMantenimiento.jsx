@@ -13,6 +13,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/formatoMantenimiento.css";
 import SignaturePad from "../../components/SignaturePad";
 import { isNetworkError, queueOfflineRequest } from "../../utils/offlineQueue";
+import {
+  construirPrefillFormato,
+  extraerEquipoAsignado,
+} from './formatoMantenimientoUtils';
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -460,6 +464,7 @@ export default function FormatoMantenimiento() {
   const [formatoId, setFormatoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [, setMantenimiento] = useState(null);
+  const [equipoAsignado, setEquipoAsignado] = useState(null);
   const [templateKey, setTemplateKey] = useState("INDUSTRIAL_GENERAL");
   const [form, setForm] = useState(formInicial(mantenimientoId));
 
@@ -485,51 +490,14 @@ export default function FormatoMantenimiento() {
 
       const data = await res.json();
       setMantenimiento(data);
+      setEquipoAsignado(extraerEquipoAsignado(data));
 
       const detectado = detectarTemplate(data);
       console.log("PLANTILLA SELECCIONADA:", detectado);
 
       setTemplateKey(detectado);
 
-      setForm((prev) => ({
-        ...prev,
-        mantenimiento_id: String(mantenimientoId),
-        numero_ot: data.numero_ot || data.ot || prev.numero_ot || "",
-        numero_inventario:
-          data.codigo_inventario ||
-          data.codigo ||
-          data.serie ||
-          data.equipo_codigo ||
-          data.codigo_serie ||
-          prev.numero_inventario ||
-          "",
-        ubicacion:
-          data.ubicacion ||
-          data.area ||
-          data.zona ||
-          data.sede_nombre ||
-          prev.ubicacion ||
-          "",
-        tecnico_nombre:
-          data.tecnico ||
-          data.tecnico_nombre ||
-          data.nombre_tecnico ||
-          prev.tecnico_nombre ||
-          "",
-        mantenimiento_tipo:
-          data.tipo ||
-          data.tipo_mantenimiento ||
-          prev.mantenimiento_tipo ||
-          "Preventivo",
-        tipo_equipo:
-          data.equipo ||
-          data.equipo_nombre ||
-          data.nombre_equipo ||
-          data.categoria ||
-          data.categoria_nombre ||
-          prev.tipo_equipo ||
-          "",
-      }));
+      setForm((prev) => construirPrefillFormato(data, mantenimientoId, prev));
     } catch (error) {
       console.error("No se pudo cargar el detalle del mantenimiento:", error);
     }
@@ -758,21 +726,74 @@ export default function FormatoMantenimiento() {
           </label>
         </div>
 
-        <div className="grid-form dos">
+        <h3>Equipo asignado</h3>
+
+        <div className="grid-form tres equipo-asignado">
           <label>
-            N° Inventario / Serie
-            <input
-              value={form.numero_inventario || ""}
-              onChange={(e) => actualizarCampo("numero_inventario", e.target.value)}
-            />
+            Equipo
+            <input value={equipoAsignado?.nombre || ""} readOnly />
+          </label>
+
+          <label>
+            Categoría
+            <input value={equipoAsignado?.categoria || ""} readOnly />
+          </label>
+
+          <label>
+            N° Inventario
+            <input value={equipoAsignado?.inventario || ""} readOnly />
+          </label>
+        </div>
+
+        <div className="grid-form tres equipo-asignado">
+          <label>
+            Código interno
+            <input value={equipoAsignado?.codigo_id || ""} readOnly />
+          </label>
+
+          <label>
+            Serie
+            <input value={equipoAsignado?.serie || ""} readOnly />
           </label>
 
           <label>
             Ubicación
+            <input value={form.ubicacion || ""} readOnly />
+          </label>
+        </div>
+
+        <div className="grid-form tres equipo-asignado">
+          <label>
+            Marca
+            <input value={equipoAsignado?.marca || ""} readOnly />
+          </label>
+
+          <label>
+            Modelo
+            <input value={equipoAsignado?.modelo || ""} readOnly />
+          </label>
+
+          <label>
+            Criticidad / Estado
             <input
-              value={form.ubicacion || ""}
-              onChange={(e) => actualizarCampo("ubicacion", e.target.value)}
+              value={[equipoAsignado?.criticidad, equipoAsignado?.estado].filter(Boolean).join(' / ')}
+              readOnly
             />
+          </label>
+        </div>
+
+        <div className="grid-form dos equipo-asignado">
+          <label>
+            Empresa / Sede
+            <input
+              value={[equipoAsignado?.empresa_nombre, equipoAsignado?.sede_nombre].filter(Boolean).join(' / ')}
+              readOnly
+            />
+          </label>
+
+          <label>
+            Registro INVIMA
+            <input value={equipoAsignado?.invima || ""} readOnly />
           </label>
         </div>
 
@@ -781,7 +802,7 @@ export default function FormatoMantenimiento() {
             Técnico
             <input
               value={form.tecnico_nombre || ""}
-              onChange={(e) => actualizarCampo("tecnico_nombre", e.target.value)}
+              readOnly
             />
           </label>
 
