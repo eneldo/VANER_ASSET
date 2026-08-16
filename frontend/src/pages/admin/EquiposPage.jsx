@@ -537,7 +537,7 @@ export default function EquiposPage() {
 
   const eliminarEquipo = async (equipo) => {
     const confirmar = window.confirm(
-      `¿Eliminar el equipo "${equipo.nombre}"?\n\nEsta acción puede afectar mantenimientos e historial.`
+      `¿Eliminar el equipo "${equipo.nombre}"?\n\nSolo se eliminará si no tiene mantenimientos asociados.`
     );
 
     if (!confirmar) return;

@@ -13,13 +13,14 @@ import {
   Plus,
   RefreshCcw,
   Search,
+  Trash2,
   XCircle,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
 import "../../styles/categorias-tecnicos-saas-pro.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const ESTADO_OPTIONS = [
   { value: true, label: "Activa" },
@@ -38,9 +39,18 @@ function normalizarCategoria(item) {
     id: item?.id,
     code: item?.code || "",
     nombre: item?.nombre || item?.name || "Sin nombre",
-    descripcion: item?.descripcion || item?.description || "Sin descripción",
+    descripcion: item?.descripcion || item?.description || '',
     activo: item?.activo ?? item?.estado ?? true,
   };
+}
+
+async function obtenerErrorRespuesta(response, fallback) {
+  try {
+    const data = await response.json();
+    return data?.detail || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export default function CategoriasPage() {
@@ -51,6 +61,7 @@ export default function CategoriasPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [mensaje, setMensaje] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
@@ -115,7 +126,7 @@ export default function CategoriasPage() {
     const total = categorias.length;
     const activas = categorias.filter((c) => Boolean(c.activo)).length;
     const inactivas = total - activas;
-    const conDescripcion = categorias.filter((c) => c.descripcion && c.descripcion !== "Sin descripción").length;
+    const conDescripcion = categorias.filter((c) => c.descripcion).length;
 
     return { total, activas, inactivas, conDescripcion };
   }, [categorias]);
@@ -131,45 +142,54 @@ export default function CategoriasPage() {
   const limpiarFormulario = () => {
     setForm(initialForm);
     setEditId(null);
+    setError('');
   };
 
   const guardarCategoria = async (event) => {
     event.preventDefault();
-    setError("");
+    setError('');
+    setMensaje('');
 
-    if (!editId) {
-      setError("Selecciona una categoría para editar su descripción.");
+    if (!form.nombre.trim()) {
+      setError('El nombre de la categoría es obligatorio.');
       return;
     }
 
     setSaving(true);
 
     try {
-      const method = "PUT";
-      const url = `${API_URL}/categorias/${editId}`;
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId
+        ? `${API_URL}/categorias/${editId}`
+        : `${API_URL}/categorias/`;
 
       const response = await fetch(url, {
         method,
         headers: authHeaders,
         body: JSON.stringify({
+          code: form.code.trim() || null,
+          nombre: form.nombre.trim(),
           descripcion: form.descripcion.trim(),
+          activo: form.activo,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("No fue posible actualizar la descripción.");
+        throw new Error(await obtenerErrorRespuesta(response, 'No fue posible guardar la categoría.'));
       }
 
+      setMensaje(editId ? 'Categoría actualizada correctamente.' : 'Categoría creada correctamente.');
       limpiarFormulario();
       await cargarCategorias();
     } catch (err) {
-      setError(err.message || "Error guardando categoría.");
+      setError(err.message || 'Error guardando categoría.');
     } finally {
       setSaving(false);
     }
   };
 
   const editarCategoria = (categoria) => {
+    setMensaje('');
     setEditId(categoria.id);
     setForm({
       code: categoria.code || "",
@@ -180,6 +200,30 @@ export default function CategoriasPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const eliminarCategoria = async (categoria) => {
+    const confirmar = window.confirm(
+      `¿Eliminar la categoría ${categoria.nombre}? Solo será posible si no tiene equipos asociados.`,
+    );
+    if (!confirmar) return;
+
+    setError('');
+    setMensaje('');
+    try {
+      const response = await fetch(`${API_URL}/categorias/${categoria.id}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      });
+      if (!response.ok) {
+        throw new Error(await obtenerErrorRespuesta(response, 'No fue posible eliminar la categoría.'));
+      }
+      if (editId === categoria.id) limpiarFormulario();
+      setMensaje('Categoría eliminada correctamente.');
+      await cargarCategorias();
+    } catch (err) {
+      setError(err.message || 'Error eliminando categoría.');
+    }
+  };
+
   return (
     <AdminLayout>
       <section className="ct-page">
@@ -187,7 +231,7 @@ export default function CategoriasPage() {
           <div>
             <h1>Categorías de equipos</h1>
             <p>
-              
+              Crea, actualiza, activa o elimina las categorías usadas para clasificar los equipos.
             </p>
           </div>
 
@@ -224,13 +268,14 @@ export default function CategoriasPage() {
         </div>
 
         {error && <div className="ct-alert">{error}</div>}
+        {mensaje && <div className="ct-alert success">{mensaje}</div>}
 
         <div className="ct-grid">
           <article className="ct-card ct-form-card">
             <div className="ct-card-head">
               <div>
-                <h2>{editId ? "Editar descripción" : "Catálogo cerrado"}</h2>
-                <p>Los nombres y códigos son inmutables; selecciona una fila para ajustar su descripción.</p>
+                <h2>{editId ? 'Editar categoría' : 'Nueva categoría'}</h2>
+                <p>Define el nombre, código, descripción y estado de la categoría.</p>
               </div>
             </div>
 
@@ -240,15 +285,25 @@ export default function CategoriasPage() {
                 <input
                   name="nombre"
                   value={form.nombre}
-                  disabled
-                  placeholder="Selecciona una categoría"
+                  onChange={handleChange}
+                  placeholder="Ej. Equipos biomédicos"
+                  required
                 />
               </label>
 
               <label>
                 Código funcional
-                <input value={form.code} disabled placeholder="Código canónico" />
-                <select hidden name="activo" value={String(form.activo)} onChange={handleChange}>
+                <input
+                  name="code"
+                  value={form.code}
+                  onChange={handleChange}
+                  placeholder="Se genera automáticamente si se deja vacío"
+                />
+              </label>
+
+              <label>
+                Estado
+                <select name="activo" value={String(form.activo)} onChange={handleChange}>
                   {ESTADO_OPTIONS.map((option) => (
                     <option key={String(option.value)} value={String(option.value)}>
                       {option.label}
@@ -270,7 +325,7 @@ export default function CategoriasPage() {
               <div className="ct-form-actions">
                 <button className="ct-btn-primary" disabled={saving} type="submit">
                   <Plus size={18} />
-                  {saving ? "Guardando..." : "Actualizar descripción"}
+                  {saving ? 'Guardando...' : editId ? 'Actualizar categoría' : 'Crear categoría'}
                 </button>
 
                 {editId && (
@@ -326,7 +381,7 @@ export default function CategoriasPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="ct-description">{categoria.descripcion}</td>
+                        <td className="ct-description">{categoria.descripcion || 'Sin descripción'}</td>
                         <td>
                           <span className={categoria.activo ? "ct-badge success" : "ct-badge danger"}>
                             {categoria.activo ? "Activa" : "Inactiva"}
@@ -336,6 +391,13 @@ export default function CategoriasPage() {
                           <div className="ct-actions">
                             <button title="Editar" onClick={() => editarCategoria(categoria)}>
                               <Edit3 size={16} />
+                            </button>
+                            <button
+                              className="danger"
+                              title="Eliminar"
+                              onClick={() => eliminarCategoria(categoria)}
+                            >
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>

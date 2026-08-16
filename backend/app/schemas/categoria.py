@@ -1,39 +1,30 @@
-# =========================================================
-# SCHEMAS CATEGORIA
-# Validan entrada y salida de categorías
-# =========================================================
-
-from pydantic import BaseModel
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class CategoriaBase(BaseModel):
-    code: str
-    # Nombre de la categoría
-    nombre: str
-
-    # Descripción opcional
+    nombre: str = Field(min_length=1, max_length=100)
     descripcion: Optional[str] = None
-
-    # Estado lógico
     activo: bool = True
 
 
 class CategoriaCreate(CategoriaBase):
-    # Schema para crear categoría
-    pass
+    code: Optional[str] = Field(default=None, max_length=50)
 
 
 class CategoriaUpdate(BaseModel):
-    # Solo la descripción es configurable; código/nombre/estado son canónicos.
+    code: Optional[str] = Field(default=None, max_length=50)
+    nombre: Optional[str] = Field(default=None, min_length=1, max_length=100)
     descripcion: Optional[str] = None
+    activo: Optional[bool] = None
 
 
 class CategoriaOut(CategoriaBase):
-    # Respuesta completa de categoría
     id: UUID
+    code: str
     created_at: datetime
     updated_at: Optional[datetime] = None
 

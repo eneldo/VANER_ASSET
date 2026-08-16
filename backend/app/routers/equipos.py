@@ -20,9 +20,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.equipo import Equipo
+from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.empresa import Empresa
+from app.models.mantenimiento import Mantenimiento
 from app.models.sede import Sede
-from app.models.categoria import Categoria, CATEGORIA_CODES
+from app.models.categoria import Categoria
 from app.schemas.equipo import EquipoCreate, EquipoUpdate, EquipoOut
 from app.core.auth_dependencies import require_roles
 
@@ -228,7 +230,7 @@ def validar_relaciones_equipo(data, db: Session):
             Categoria.id == data.categoria_id
         ).first()
 
-        if not categoria or not categoria.activo or categoria.code not in CATEGORIA_CODES:
+        if not categoria or not categoria.activo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La categoría asociada no existe"
@@ -481,7 +483,7 @@ def actualizar_equipo(
             Categoria.id == datos["categoria_id"]
         ).first()
 
-        if not categoria or not categoria.activo or categoria.code not in CATEGORIA_CODES:
+        if not categoria or not categoria.activo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La categoría asociada no existe"
@@ -500,8 +502,7 @@ def actualizar_equipo(
 @router.delete("/{equipo_id}")
 def eliminar_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
     """
-    Elimina un equipo.
-    Nota: más adelante podemos cambiar a eliminación lógica activo=False.
+    Elimina un equipo que todavía no tiene historial de mantenimiento.
     """
 
     equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
@@ -512,8 +513,33 @@ def eliminar_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
             detail="Equipo no encontrado"
         )
 
-    db.delete(equipo)
-    db.commit()
+    mantenimiento = db.query(Mantenimiento.id).filter(
+        Mantenimiento.equipo_id == equipo_id
+    ).first()
+    if mantenimiento:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "No se puede eliminar el equipo porque tiene mantenimientos "
+                "asociados. Puede marcarlo como inactivo o en estado de baja."
+            ),
+        )
+
+    try:
+        db.query(EquipoHojaVida).filter(
+            EquipoHojaVida.equipo_id == equipo_id
+        ).delete(synchronize_session=False)
+        db.delete(equipo)
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "No se puede eliminar el equipo porque tiene información "
+                "operativa asociada."
+            ),
+        ) from error
 
     return {"message": "Equipo eliminado correctamente"}
 
@@ -655,7 +681,7 @@ async def importar_equipos(
                     Categoria.nombre.ilike(categoria_nombre),
                     Categoria.activo.is_(True),
                 ).first()
-                if not categoria or categoria.code not in CATEGORIA_CODES:
+                if not categoria:
                     raise ValueError("Categoría no encontrada o no permitida")
 
                 estado = requerir_celda_importacion(

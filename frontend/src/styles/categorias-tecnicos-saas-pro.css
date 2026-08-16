@@ -137,6 +137,12 @@
   font-weight: 850;
 }
 
+.ct-alert.success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
 .ct-grid {
   display: grid;
   grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);

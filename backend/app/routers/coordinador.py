@@ -24,7 +24,7 @@ from app.routers.auth import obtener_usuario_actual
 from app.models.usuario import Usuario
 from app.models.empresa import Empresa
 from app.models.sede import Sede
-from app.models.categoria import Categoria, CATEGORIA_CODES
+from app.models.categoria import Categoria
 from app.models.equipo import Equipo
 from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.tecnico import Tecnico
@@ -286,7 +286,7 @@ def _query_empresas_por_usuario(db: Session, usuario: Usuario):
 
 
 def _query_categorias(db: Session):
-    return db.query(Categoria).filter(Categoria.activo.is_(True), Categoria.code.in_(CATEGORIA_CODES))
+    return db.query(Categoria).filter(Categoria.activo.is_(True))
 
 
 def _validar_categoria_canonica(db: Session, categoria_id):
@@ -295,7 +295,6 @@ def _validar_categoria_canonica(db: Session, categoria_id):
     categoria = db.query(Categoria).filter(
         Categoria.id == categoria_id,
         Categoria.activo.is_(True),
-        Categoria.code.in_(CATEGORIA_CODES),
     ).first()
     if not categoria:
         raise HTTPException(status_code=422, detail="Categoría de activo no permitida")
