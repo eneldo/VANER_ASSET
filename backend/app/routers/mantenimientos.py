@@ -100,13 +100,13 @@ def normalizar_fecha_programada(fecha):
 
     try:
         if isinstance(fecha, datetime):
-            return fecha.date()
+            return fecha
 
         if isinstance(fecha, str):
-            return datetime.fromisoformat(fecha.replace("Z", "")).date()
+            return datetime.fromisoformat(fecha.replace("Z", ""))
 
-        if hasattr(fecha, "date"):
-            return fecha.date()
+        if hasattr(fecha, "year") and hasattr(fecha, "month") and hasattr(fecha, "day"):
+            return datetime.combine(fecha, datetime.min.time())
 
         return fecha
 
@@ -233,6 +233,8 @@ def mantenimiento_dict(m: Mantenimiento, db: Session):
         "tipo": m.tipo,
         "descripcion": m.descripcion,
         "fecha_programada": m.fecha_programada,
+        "fecha_inicio_programada": m.fecha_inicio_programada,
+        "fecha_fin_programada": m.fecha_fin_programada,
         "estado": m.estado,
         "tecnico_id": str_id(m.tecnico_id),
         "fecha_asignacion": m.fecha_asignacion,
@@ -240,6 +242,12 @@ def mantenimiento_dict(m: Mantenimiento, db: Session):
         "fecha_pausa": m.fecha_pausa,
         "fecha_finalizacion": m.fecha_finalizacion,
         "observaciones": m.observaciones,
+        "estado_inicial": m.estado_inicial,
+        "estado_inicial_equipo": m.estado_inicial_equipo,
+        "acciones_realizadas": m.acciones_realizadas,
+        "resultado_final": m.resultado_final,
+        "latitud": m.latitud,
+        "longitud": m.longitud,
         "observacion_estado": m.observacion_estado,
         "motivo_anulacion": m.motivo_anulacion,
         "costo": m.costo,
@@ -358,7 +366,14 @@ def crear_mantenimiento(
             or "Mantenimiento registrado desde bitácora profesional."
         ),
         fecha_programada=fecha_programada,
+        fecha_inicio_programada=payload.fecha_inicio_programada,
+        fecha_fin_programada=payload.fecha_fin_programada,
         observaciones=payload.observaciones,
+        estado_inicial_equipo=payload.estado_inicial_equipo,
+        acciones_realizadas=payload.acciones_realizadas,
+        resultado_final=payload.resultado_final,
+        latitud=payload.latitud,
+        longitud=payload.longitud,
         costo=payload.costo,
         estado="PROGRAMADO",
     )

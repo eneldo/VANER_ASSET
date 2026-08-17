@@ -14,11 +14,12 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
-from app.database import get_db
+from app.database import get_db, establecer_contexto_sistema
 from app.routers.auth import obtener_usuario_actual
 
 from app.models.usuario import Usuario
@@ -32,7 +33,13 @@ from app.models.mantenimiento import Mantenimiento
 from app.models.hist_mantenimiento import HistMantenimiento
 from app.models.evidencia import Evidencia
 from app.routers.evidencias import crear_url_firmada
+from app.routers.equipos import (
+    crear_excel_inventario,
+    validar_estado_y_criticidad,
+    validar_numero_inventario,
+)
 from app.services.mantenimiento_estado_service import aplicar_reapertura
+from app.services.coordinador_empresas import ids_empresas_autorizadas
 
 
 router = APIRouter(prefix="/coordinador", tags=["Coordinador PRO"])
@@ -84,11 +91,16 @@ class MantenimientoCreate(BaseModel):
     empresa_id: Optional[UUID] = None
     sede_id: Optional[UUID] = None
     fecha_programada: Optional[datetime] = None
+    fecha_inicio_programada: Optional[datetime] = None
+    fecha_fin_programada: Optional[datetime] = None
     descripcion: Optional[str] = None
     observaciones: Optional[str] = None
     estado_inicial: Optional[str] = None
+    estado_inicial_equipo: Optional[str] = None
     acciones_realizadas: Optional[str] = None
     resultado_final: Optional[str] = None
+    latitud: Optional[str] = None
+    longitud: Optional[str] = None
     costo: Optional[float] = None
 
 
@@ -100,11 +112,16 @@ class MantenimientoUpdate(BaseModel):
     empresa_id: Optional[UUID] = None
     sede_id: Optional[UUID] = None
     fecha_programada: Optional[datetime] = None
+    fecha_inicio_programada: Optional[datetime] = None
+    fecha_fin_programada: Optional[datetime] = None
     descripcion: Optional[str] = None
     observaciones: Optional[str] = None
     estado_inicial: Optional[str] = None
+    estado_inicial_equipo: Optional[str] = None
     acciones_realizadas: Optional[str] = None
     resultado_final: Optional[str] = None
+    latitud: Optional[str] = None
+    longitud: Optional[str] = None
     costo: Optional[float] = None
 
 
@@ -303,6 +320,20 @@ def _validar_categoria_canonica(db: Session, categoria_id):
     return categoria
 
 
+def _validar_codigo_equipo(db: Session, codigo_id, excluir_equipo_id=None):
+    codigo = str(codigo_id or "").strip()
+    if not codigo:
+        return None
+
+    query = db.query(Equipo).filter(Equipo.codigo_id == codigo)
+    if excluir_equipo_id:
+        query = query.filter(Equipo.id != excluir_equipo_id)
+    if query.first():
+        raise HTTPException(status_code=400, detail="Ya existe un equipo con ese Codigo ID")
+
+    return codigo
+
+
 def _query_tecnicos_por_usuario(db: Session, usuario: Usuario):
     query = db.query(Tecnico)
     if hasattr(Tecnico, "usuario"):
@@ -454,6 +485,8 @@ def _serializar_mantenimiento(m):
         "sede_nombre": _nombre_objeto(sede) or "Sin sede",
 
         "fecha_programada": _fecha_iso(getattr(m, "fecha_programada", None)),
+        "fecha_inicio_programada": _fecha_iso(getattr(m, "fecha_inicio_programada", None)),
+        "fecha_fin_programada": _fecha_iso(getattr(m, "fecha_fin_programada", None)),
         "fecha_inicio": _fecha_iso(getattr(m, "fecha_inicio", None)),
         "fecha_fin": _fecha_iso(getattr(m, "fecha_fin", None)),
         "fecha_asignacion": _fecha_iso(getattr(m, "fecha_asignacion", None)),
@@ -462,8 +495,11 @@ def _serializar_mantenimiento(m):
         "descripcion": getattr(m, "descripcion", None),
         "observaciones": getattr(m, "observaciones", None),
         "estado_inicial": getattr(m, "estado_inicial", None) or getattr(m, "estado_inicial_equipo", None),
+        "estado_inicial_equipo": getattr(m, "estado_inicial_equipo", None) or getattr(m, "estado_inicial", None),
         "acciones_realizadas": getattr(m, "acciones_realizadas", None),
         "resultado_final": getattr(m, "resultado_final", None),
+        "latitud": getattr(m, "latitud", None),
+        "longitud": getattr(m, "longitud", None),
         "observacion_estado": getattr(m, "observacion_estado", None),
         "motivo_anulacion": getattr(m, "motivo_anulacion", None),
         "costo": float(m.costo) if getattr(m, "costo", None) else 0,
@@ -527,6 +563,31 @@ def _serializar_evidencia(e, db: Session):
 # ===========================================================
 # DASHBOARD
 # ===========================================================
+
+@router.get("/empresas-autorizadas")
+def empresas_autorizadas_coordinador(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+    if _es_admin(usuario_actual):
+        establecer_contexto_sistema(db)
+        empresas = db.query(Empresa).order_by(Empresa.nombre).all()
+    else:
+        ids = ids_empresas_autorizadas(db, usuario_actual)
+        establecer_contexto_sistema(db)
+        empresas = db.query(Empresa).filter(Empresa.id.in_(ids)).order_by(Empresa.nombre).all()
+
+    return [
+        {
+            "id": str(empresa.id),
+            "nombre": empresa.nombre,
+            "es_principal": str(empresa.id) == str(
+                getattr(usuario_actual, "empresa_id_principal", usuario_actual.empresa_id)
+            ),
+        }
+        for empresa in empresas
+    ]
 
 @router.get("/dashboard")
 def dashboard_coordinador(
@@ -619,6 +680,7 @@ def crear_equipo_coordinador(
     _validar_rol(usuario_actual)
     _validar_sede_pertenece_empresa(db, data.sede_id, usuario_actual)
     _validar_categoria_canonica(db, data.categoria_id)
+    validar_estado_y_criticidad(data.estado, data.criticidad)
 
     empresa_id = data.empresa_id if _es_admin(usuario_actual) else _empresa_usuario(usuario_actual)
     if not empresa_id:
@@ -626,6 +688,8 @@ def crear_equipo_coordinador(
 
     payload = data.model_dump(exclude_unset=True)
     payload["empresa_id"] = empresa_id
+    payload["codigo_id"] = _validar_codigo_equipo(db, payload.get("codigo_id"))
+    payload["inventario"] = validar_numero_inventario(db, payload.get("inventario"))
 
     nuevo = Equipo(**payload)
     db.add(nuevo)
@@ -652,6 +716,23 @@ def actualizar_equipo_coordinador(
         _validar_sede_pertenece_empresa(db, payload["sede_id"], usuario_actual)
     if "categoria_id" in payload:
         _validar_categoria_canonica(db, payload["categoria_id"])
+    if "estado" in payload or "criticidad" in payload:
+        validar_estado_y_criticidad(
+            payload.get("estado", equipo.estado),
+            payload.get("criticidad", equipo.criticidad),
+        )
+    if "inventario" in payload:
+        payload["inventario"] = validar_numero_inventario(
+            db,
+            payload["inventario"],
+            excluir_equipo_id=equipo_id,
+        )
+    if "codigo_id" in payload:
+        payload["codigo_id"] = _validar_codigo_equipo(
+            db,
+            payload["codigo_id"],
+            excluir_equipo_id=equipo_id,
+        )
 
     for campo, valor in payload.items():
         if hasattr(equipo, campo):
@@ -660,6 +741,84 @@ def actualizar_equipo_coordinador(
     db.commit()
     db.refresh(equipo)
     return _serializar_equipo(equipo, db)
+
+
+@router.get("/equipos/exportar")
+def exportar_inventario_coordinador(
+    busqueda: Optional[str] = Query(default=None),
+    sede_id: Optional[UUID] = Query(default=None),
+    categoria_id: Optional[UUID] = Query(default=None),
+    estado: Optional[str] = Query(default=None),
+    criticidad: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+):
+    _validar_rol(usuario_actual)
+
+    query = (
+        db.query(
+            Equipo,
+            Empresa.nombre.label("empresa_nombre"),
+            Sede.nombre.label("sede_nombre"),
+            Categoria.nombre.label("categoria_nombre"),
+        )
+        .outerjoin(Empresa, Empresa.id == Equipo.empresa_id)
+        .outerjoin(Sede, Sede.id == Equipo.sede_id)
+        .outerjoin(Categoria, Categoria.id == Equipo.categoria_id)
+    )
+
+    if not _es_admin(usuario_actual):
+        _validar_coordinador_con_empresa(usuario_actual)
+        query = query.filter(Equipo.empresa_id == _empresa_usuario(usuario_actual))
+
+    if sede_id:
+        query = query.filter(Equipo.sede_id == sede_id)
+    if categoria_id:
+        query = query.filter(Equipo.categoria_id == categoria_id)
+    if estado:
+        query = query.filter(Equipo.estado == estado)
+    if criticidad:
+        query = query.filter(Equipo.criticidad == criticidad)
+    if busqueda:
+        patron = f"%{busqueda.strip().lower()}%"
+        query = query.filter(or_(
+            func.lower(Equipo.nombre).like(patron),
+            func.lower(Equipo.marca).like(patron),
+            func.lower(Equipo.modelo).like(patron),
+            func.lower(Equipo.serie).like(patron),
+            func.lower(Equipo.ubicacion).like(patron),
+            func.lower(Equipo.codigo_id).like(patron),
+            func.lower(Equipo.inventario).like(patron),
+        ))
+
+    registros = query.order_by(Empresa.nombre, Sede.nombre, Equipo.nombre).all()
+    filas = [
+        {
+            "codigo_inventario": equipo.codigo_id,
+            "nombre": equipo.nombre,
+            "empresa": empresa_nombre,
+            "sede": sede_nombre,
+            "categoria": categoria_nombre,
+            "marca": equipo.marca,
+            "modelo": equipo.modelo,
+            "serie": equipo.serie,
+            "ubicacion": equipo.ubicacion,
+            "estado": equipo.estado,
+            "criticidad": equipo.criticidad,
+            "invima": equipo.invima,
+            "inventario": equipo.inventario,
+            "activo": "SI" if equipo.activo else "NO",
+            "fecha_creacion": equipo.created_at,
+        }
+        for equipo, empresa_nombre, sede_nombre, categoria_nombre in registros
+    ]
+
+    filename = f"inventario_equipos_coordinador_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(
+        crear_excel_inventario(filas),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ===========================================================
@@ -762,11 +921,24 @@ def crear_mantenimiento(
 
     payload = data.model_dump(exclude_unset=True)
     payload["empresa_id"] = data.empresa_id if _es_admin(usuario_actual) and data.empresa_id else equipo.empresa_id
-    payload["sede_id"] = data.sede_id or getattr(equipo, "sede_id", None)
+    payload["sede_id"] = (
+        data.sede_id
+        if _es_admin(usuario_actual) and data.sede_id
+        else getattr(equipo, "sede_id", None)
+    )
     payload["estado"] = payload.get("estado") or "PROGRAMADO"
 
     nuevo = Mantenimiento(**payload)
     db.add(nuevo)
+    db.flush()
+    db.add(HistMantenimiento(
+        mantenimiento_id=nuevo.id,
+        estado_anterior=None,
+        estado_nuevo=nuevo.estado,
+        tecnico_id=nuevo.tecnico_id,
+        observacion="Mantenimiento creado desde el portal coordinador.",
+        creado_por=usuario_actual.nombre_completo or _rol(usuario_actual),
+    ))
     db.commit()
     db.refresh(nuevo)
 
@@ -809,6 +981,7 @@ def actualizar_mantenimiento(
 
     if not _es_admin(usuario_actual):
         payload.pop("empresa_id", None)
+        payload.pop("sede_id", None)
 
     for campo, valor in payload.items():
         if hasattr(mantenimiento, campo):

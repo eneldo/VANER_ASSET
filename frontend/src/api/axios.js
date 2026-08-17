@@ -78,6 +78,20 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const empresaActiva = localStorage.getItem("coordinator_active_company_id");
+      if (
+        String(user?.rol || "").toUpperCase() === "COORDINADOR"
+        && empresaActiva
+        && !String(config.url || "").includes("/coordinador/empresas-autorizadas")
+      ) {
+        config.headers["X-Empresa-Activa"] = empresaActiva;
+      }
+    } catch {
+      localStorage.removeItem("coordinator_active_company_id");
+    }
+
     config.headers["X-Client-App"] = "SGA-SaaS-Frontend";
 
     return config;

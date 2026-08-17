@@ -42,6 +42,7 @@ export function clearSession() {
   localStorage.removeItem("refresh_token");
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(SESSION_CREATED_AT_KEY);
+  localStorage.removeItem("coordinator_active_company_id");
 }
 
 export function isSessionActive() {

@@ -4,7 +4,7 @@
 # =========================================================
 
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
@@ -29,6 +29,7 @@ class TokenResponse(BaseModel):
     nombre_completo: str
     rol: str
     empresa_id: Optional[str] = None
+    empresa_ids: list[str] = Field(default_factory=list)
 
 
 class RefreshResponse(BaseModel):
@@ -40,6 +41,7 @@ class RefreshResponse(BaseModel):
     nombre_completo: str
     rol: str
     empresa_id: Optional[str] = None
+    empresa_ids: list[str] = Field(default_factory=list)
 
 
 class MeResponse(BaseModel):
@@ -49,4 +51,5 @@ class MeResponse(BaseModel):
     email: str
     rol: str
     empresa_id: Optional[str] = None
+    empresa_ids: list[str] = Field(default_factory=list)
     activo: bool

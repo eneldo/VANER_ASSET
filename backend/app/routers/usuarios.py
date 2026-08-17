@@ -107,6 +107,33 @@ def limpiar_empresa_si_admin(rol: str, empresa_id):
     return empresa_id
 
 
+def resolver_empresas_usuario(rol: str, empresa_id, empresa_ids, db: Session):
+    if rol != "COORDINADOR":
+        validar_empresa_si_aplica(rol, empresa_id, db)
+        return limpiar_empresa_si_admin(rol, empresa_id), []
+
+    ids = []
+    for value in [empresa_id, *(empresa_ids or [])]:
+        if value and value not in ids:
+            ids.append(value)
+
+    if not ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El coordinador debe tener al menos una empresa autorizada",
+        )
+
+    empresas = db.query(Empresa).filter(Empresa.id.in_(ids)).all()
+    if len(empresas) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Una o mas empresas autorizadas no existen",
+        )
+
+    empresas_por_id = {empresa.id: empresa for empresa in empresas}
+    return ids[0], [empresas_por_id[value] for value in ids]
+
+
 # =========================================================
 # CREAR ADMIN INICIAL
 # =========================================================
@@ -172,7 +199,12 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
     """
 
     validar_rol(data.rol)
-    validar_empresa_si_aplica(data.rol, data.empresa_id, db)
+    empresa_id_final, empresas_autorizadas = resolver_empresas_usuario(
+        data.rol,
+        data.empresa_id,
+        data.empresa_ids,
+        db,
+    )
 
     existente = (
         db.query(Usuario)
@@ -191,8 +223,6 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
             detail="El username o email ya está registrado",
         )
 
-    empresa_id_final = limpiar_empresa_si_admin(data.rol, data.empresa_id)
-
     nuevo_usuario = Usuario(
         nombre_completo=data.nombre_completo,
         username=data.username,
@@ -202,6 +232,7 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
         empresa_id=empresa_id_final,
         activo=True,
     )
+    nuevo_usuario.empresas_autorizadas = empresas_autorizadas
 
     db.add(nuevo_usuario)
     db.commit()
@@ -269,16 +300,18 @@ def actualizar_usuario(
         )
 
     datos = data.model_dump(exclude_unset=True)
+    empresa_ids = datos.pop("empresa_ids", None)
 
     if "rol" in datos:
         validar_rol(datos["rol"])
 
     rol_final = datos.get("rol", usuario.rol)
-    empresa_final = datos.get("empresa_id", usuario.empresa_id)
-
-    empresa_final = limpiar_empresa_si_admin(rol_final, empresa_final)
-
-    validar_empresa_si_aplica(rol_final, empresa_final, db)
+    empresa_final, empresas_autorizadas = resolver_empresas_usuario(
+        rol_final,
+        datos.get("empresa_id", usuario.empresa_id),
+        empresa_ids if empresa_ids is not None else usuario.empresa_ids,
+        db,
+    )
 
     if "username" in datos:
         duplicado = (
@@ -317,6 +350,7 @@ def actualizar_usuario(
 
     usuario.rol = rol_final
     usuario.empresa_id = empresa_final
+    usuario.empresas_autorizadas = empresas_autorizadas
 
     db.commit()
     db.refresh(usuario)

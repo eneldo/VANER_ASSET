@@ -58,6 +58,7 @@ export default function UsuariosPage() {
     password: "",
     rol: "TECNICO",
     empresa_id: "",
+    empresa_ids: [],
     activo: true,
   });
 
@@ -71,18 +72,46 @@ export default function UsuariosPage() {
     try {
       setCargando(true);
 
-      const [resUsuarios, resEmpresas, resPermisos] = await Promise.all([
+      const [resUsuarios, resEmpresas, resPermisos] = await Promise.allSettled([
         API.get("/usuarios/"),
         API.get("/empresas/"),
         API.get("/permisos/catalogo"),
       ]);
 
-      setUsuarios(Array.isArray(resUsuarios.data) ? resUsuarios.data : []);
-      setEmpresas(Array.isArray(resEmpresas.data) ? resEmpresas.data : []);
-      setPermisos(Array.isArray(resPermisos.data) ? resPermisos.data : []);
+      const errores = [];
+
+      if (resUsuarios.status === "fulfilled") {
+        setUsuarios(Array.isArray(resUsuarios.value.data) ? resUsuarios.value.data : []);
+      } else {
+        setUsuarios([]);
+        errores.push("usuarios");
+        console.error("Error cargando usuarios:", resUsuarios.reason);
+      }
+
+      if (resEmpresas.status === "fulfilled") {
+        setEmpresas(Array.isArray(resEmpresas.value.data) ? resEmpresas.value.data : []);
+      } else {
+        setEmpresas([]);
+        errores.push("empresas");
+        console.error("Error cargando empresas:", resEmpresas.reason);
+      }
+
+      if (resPermisos.status === "fulfilled") {
+        setPermisos(Array.isArray(resPermisos.value.data) ? resPermisos.value.data : []);
+      } else {
+        setPermisos([]);
+        errores.push("permisos");
+        console.error("Error cargando permisos:", resPermisos.reason);
+      }
+
+      setMensaje(
+        errores.length > 0
+          ? `No se pudieron cargar: ${errores.join(", ")}. Puede continuar con los datos disponibles.`
+          : ""
+      );
     } catch (error) {
-      console.error("Error cargando usuarios:", error);
-      setMensaje("Error cargando usuarios o permisos.");
+      console.error("Error inesperado cargando el módulo de usuarios:", error);
+      setMensaje("Error inesperado cargando el módulo de usuarios.");
     } finally {
       setCargando(false);
     }
@@ -135,6 +164,7 @@ export default function UsuariosPage() {
         ...prev,
         rol: value,
         empresa_id: value === "ADMIN" ? "" : prev.empresa_id,
+        empresa_ids: value === "COORDINADOR" ? prev.empresa_ids : [],
       }));
 
       return;
@@ -154,6 +184,7 @@ export default function UsuariosPage() {
       password: "",
       rol: "TECNICO",
       empresa_id: "",
+      empresa_ids: [],
       activo: true,
     });
 
@@ -166,12 +197,17 @@ export default function UsuariosPage() {
       return false;
     }
 
-    if (!editandoId && !form.password) {
-      setMensaje("La contraseña es obligatoria al crear usuario.");
+    if (!editandoId && (!form.password || form.password.length < 12)) {
+      setMensaje("La contraseña debe tener mínimo 12 caracteres.");
       return false;
     }
 
-    if (requiereEmpresa(form.rol) && !form.empresa_id) {
+    if (form.rol === "COORDINADOR" && form.empresa_ids.length === 0) {
+      setMensaje("El coordinador debe tener al menos una empresa autorizada.");
+      return false;
+    }
+
+    if (form.rol !== "COORDINADOR" && requiereEmpresa(form.rol) && !form.empresa_id) {
       setMensaje(`Los usuarios con rol ${form.rol} deben tener una empresa asociada.`);
       return false;
     }
@@ -194,7 +230,12 @@ export default function UsuariosPage() {
         username: form.username.trim(),
         email: form.email.trim(),
         rol: form.rol,
-        empresa_id: form.rol === "ADMIN" ? null : form.empresa_id || null,
+        empresa_id: form.rol === "ADMIN"
+          ? null
+          : form.rol === "COORDINADOR"
+            ? form.empresa_ids[0] || null
+            : form.empresa_id || null,
+        empresa_ids: form.rol === "COORDINADOR" ? form.empresa_ids : [],
         activo: form.activo,
       };
 
@@ -232,6 +273,7 @@ export default function UsuariosPage() {
       password: "",
       rol: usuario.rol || "TECNICO",
       empresa_id: usuario.empresa_id || "",
+      empresa_ids: usuario.empresa_ids || (usuario.empresa_id ? [usuario.empresa_id] : []),
       activo: Boolean(usuario.activo),
     });
 
@@ -240,6 +282,15 @@ export default function UsuariosPage() {
 
   const verDetalle = (usuario) => {
     setDetalle(usuario);
+  };
+
+  const toggleEmpresaCoordinador = (empresaId) => {
+    setForm((prev) => ({
+      ...prev,
+      empresa_ids: prev.empresa_ids.includes(empresaId)
+        ? prev.empresa_ids.filter((id) => id !== empresaId)
+        : [...prev.empresa_ids, empresaId],
+    }));
   };
 
   const cambiarEstado = async (usuarioId) => {
@@ -271,8 +322,8 @@ export default function UsuariosPage() {
   const guardarPassword = async () => {
     if (!usuarioPassword) return;
 
-    if (!nuevaPassword || nuevaPassword.length < 6) {
-      setMensaje("La contraseña debe tener mínimo 6 caracteres.");
+    if (!nuevaPassword || nuevaPassword.length < 12) {
+      setMensaje("La contraseña debe tener mínimo 12 caracteres.");
       return;
     }
 
@@ -468,7 +519,8 @@ export default function UsuariosPage() {
                   type="password"
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="123456"
+                  placeholder="Mínimo 12 caracteres"
+                  minLength={12}
                   disabled={guardando}
                 />
               </div>
@@ -489,7 +541,29 @@ export default function UsuariosPage() {
               </select>
             </div>
 
-            {requiereEmpresa(form.rol) && (
+            {form.rol === "COORDINADOR" && (
+              <div className="form-group full">
+                <label>Empresas autorizadas *</label>
+                <div className="usuario-company-grid">
+                  {empresas.map((empresa) => (
+                    <label className="usuario-company-option" key={empresa.id}>
+                      <input
+                        type="checkbox"
+                        checked={form.empresa_ids.includes(empresa.id)}
+                        onChange={() => toggleEmpresaCoordinador(empresa.id)}
+                        disabled={guardando}
+                      />
+                      <span>{empresa.nombre}</span>
+                    </label>
+                  ))}
+                </div>
+                <small style={{ color: "#64748b", marginTop: 6 }}>
+                  La primera seleccion sera la empresa principal. El coordinador podra cambiar entre las autorizadas.
+                </small>
+              </div>
+            )}
+
+            {requiereEmpresa(form.rol) && form.rol !== "COORDINADOR" && (
               <div className="form-group full">
                 <label>Empresa asociada *</label>
                 <select
@@ -606,9 +680,11 @@ export default function UsuariosPage() {
                     </td>
 
                     <td>
-                      {usuario.empresa_id
-                        ? nombreEmpresa(usuario.empresa_id)
-                        : "N/A"}
+                      {usuario.rol === "COORDINADOR" && usuario.empresa_ids?.length
+                        ? usuario.empresa_ids.map(nombreEmpresa).join(", ")
+                        : usuario.empresa_id
+                          ? nombreEmpresa(usuario.empresa_id)
+                          : "N/A"}
                     </td>
 
                     <td>
@@ -810,7 +886,9 @@ export default function UsuariosPage() {
             </p>
             <p>
               <strong>Empresa:</strong>{" "}
-              {detalle.empresa_id ? nombreEmpresa(detalle.empresa_id) : "N/A"}
+              {detalle.rol === "COORDINADOR" && detalle.empresa_ids?.length
+                ? detalle.empresa_ids.map(nombreEmpresa).join(", ")
+                : detalle.empresa_id ? nombreEmpresa(detalle.empresa_id) : "N/A"}
             </p>
             <p>
               <strong>Estado:</strong> {detalle.activo ? "Activo" : "Inactivo"}
@@ -844,7 +922,8 @@ export default function UsuariosPage() {
                 type="password"
                 value={nuevaPassword}
                 onChange={(e) => setNuevaPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 12 caracteres"
+                minLength={12}
               />
             </div>
 
@@ -855,6 +934,7 @@ export default function UsuariosPage() {
                 value={confirmarPassword}
                 onChange={(e) => setConfirmarPassword(e.target.value)}
                 placeholder="Repite la contraseña"
+                minLength={12}
               />
             </div>
 

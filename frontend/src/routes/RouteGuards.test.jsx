@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthContext } from "../context/auth-context";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
+import RoleHomeRedirect from "./RoleHomeRedirect";
 
 function renderRoutes(context, guard) {
   return render(
@@ -42,5 +43,20 @@ describe("guardas de rutas", () => {
   it("permite únicamente el rol autorizado", () => {
     renderRoutes(base, <RoleRoute roles={["EMPRESA"]}><div>PORTAL CLIENTE</div></RoleRoute>);
     expect(screen.getByText("PORTAL CLIENTE")).toBeInTheDocument();
+  });
+
+  it("redirige rutas invalidas autenticadas al dashboard del rol", () => {
+    render(
+      <AuthContext.Provider value={{ ...base, user: { rol: "COORDINADOR" } }}>
+        <MemoryRouter initialEntries={["/ruta-invalida"]}>
+          <Routes>
+            <Route path="/coordinador/dashboard" element={<div>DASHBOARD COORDINADOR</div>} />
+            <Route path="*" element={<RoleHomeRedirect />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    expect(screen.getByText("DASHBOARD COORDINADOR")).toBeInTheDocument();
   });
 });

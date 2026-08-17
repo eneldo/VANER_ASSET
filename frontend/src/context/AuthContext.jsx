@@ -39,6 +39,7 @@ export function AuthProvider({ children }) {
       email: data.email || username,
       rol: String(data.rol || "").toUpperCase(),
       empresa_id: data.empresa_id || null,
+      empresa_ids: data.empresa_ids || (data.empresa_id ? [data.empresa_id] : []),
       permisos: data.permisos || [],
     };
 

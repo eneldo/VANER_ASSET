@@ -10,7 +10,7 @@
 // - Edición conserva empresa/sede/equipo.
 // ============================================================
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Wrench,
@@ -68,7 +68,14 @@ const formInicial = {
   costo: "",
 };
 
-export default function MantenimientosPage() {
+export default function MantenimientosPage({
+  mode = "admin",
+  embedded = false,
+  coordinatorCompanies = [],
+  activeCompanyId = "",
+  onCompanyChange,
+}) {
+  const esCoordinador = mode === "coordinador";
   const [mantenimientos, setMantenimientos] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [sedes, setSedes] = useState([]);
@@ -81,29 +88,54 @@ export default function MantenimientosPage() {
   const [porPagina] = useState(6);
   const [loading, setLoading] = useState(false);
   const [detalle, setDetalle] = useState(null);
+  const cargarTodoAlMontar = useEffectEvent(() => cargarTodo());
 
   useEffect(() => {
-    cargarTodo();
+    cargarTodoAlMontar();
   }, []);
 
   async function cargarTodo() {
     try {
       setLoading(true);
 
-      const [resMant, resEmp, resSedes, resEquipos, resTec] =
-        await Promise.all([
-          API.get("/mantenimientos/"),
-          API.get("/empresas/"),
-          API.get("/sedes/"),
-          API.get("/equipos/"),
-          API.get("/tecnicos/"),
+      if (esCoordinador) {
+        const [resMant, resCatalogos] = await Promise.all([
+          API.get("/coordinador/mantenimientos"),
+          API.get("/coordinador/catalogos"),
         ]);
+        const catalogos = resCatalogos.data || {};
+        const empresasCoordinador = coordinatorCompanies.length
+          ? coordinatorCompanies
+          : catalogos.empresas || [];
 
-      setMantenimientos(resMant.data || []);
-      setEmpresas(resEmp.data || []);
-      setSedes(resSedes.data || []);
-      setEquipos(resEquipos.data || []);
-      setTecnicos(resTec.data || []);
+        setMantenimientos(resMant.data || []);
+        setEmpresas(empresasCoordinador);
+        setSedes(catalogos.sedes || []);
+        setEquipos(catalogos.equipos || []);
+        setTecnicos(catalogos.tecnicos || []);
+        const empresaPredeterminada = activeCompanyId
+          || (empresasCoordinador.length === 1 ? empresasCoordinador[0].id : "");
+        setForm((actual) => (
+          actual.id || actual.empresa_id || !empresaPredeterminada
+            ? actual
+            : { ...actual, empresa_id: empresaPredeterminada }
+        ));
+      } else {
+        const [resMant, resEmp, resSedes, resEquipos, resTec] =
+          await Promise.all([
+            API.get("/mantenimientos/"),
+            API.get("/empresas/"),
+            API.get("/sedes/"),
+            API.get("/equipos/"),
+            API.get("/tecnicos/"),
+          ]);
+
+        setMantenimientos(resMant.data || []);
+        setEmpresas(resEmp.data || []);
+        setSedes(resSedes.data || []);
+        setEquipos(resEquipos.data || []);
+        setTecnicos(resTec.data || []);
+      }
     } catch (error) {
       console.error("Error cargando módulo mantenimientos:", error);
       alert("Error cargando datos del módulo de mantenimientos.");
@@ -126,11 +158,17 @@ export default function MantenimientosPage() {
 
     try {
       setLoading(true);
-      await API.patch("/mantenimientos/" + mantenimiento.id + "/cambiar-estado", {
-        estado_nuevo: "EN_PROCESO",
-        observacion: motivo,
-        creado_por: "Administrador",
-      });
+      if (esCoordinador) {
+        await API.put(`/coordinador/mantenimientos/${mantenimiento.id}/estado`, null, {
+          params: { estado: "EN_PROCESO", observacion: motivo },
+        });
+      } else {
+        await API.patch("/mantenimientos/" + mantenimiento.id + "/cambiar-estado", {
+          estado_nuevo: "EN_PROCESO",
+          observacion: motivo,
+          creado_por: "Administrador",
+        });
+      }
       setDetalle(null);
       await cargarTodo();
       alert("Mantenimiento reabierto correctamente.");
@@ -231,6 +269,16 @@ export default function MantenimientosPage() {
     setForm(formInicial);
   };
 
+  const asignarTecnicoMantenimiento = (mantenimientoId, data) => {
+    if (esCoordinador) {
+      return API.put(`/coordinador/mantenimientos/${mantenimientoId}/asignar`, null, {
+        params: { tecnico_id: data.tecnico_id },
+      });
+    }
+
+    return API.patch(`/mantenimientos/${mantenimientoId}/asignar-tecnico`, data);
+  };
+
   const guardarMantenimiento = async () => {
     if (!form.empresa_id) return alert("Seleccione empresa.");
     if (!form.sede_id) return alert("Seleccione sede.");
@@ -248,16 +296,28 @@ export default function MantenimientosPage() {
         form.acciones_realizadas ||
         "Mantenimiento registrado desde bitácora profesional.",
       fecha_programada: form.fecha_programada || null,
+      fecha_inicio_programada: form.fecha_inicio_programada || null,
+      fecha_fin_programada: form.fecha_fin_programada || null,
       observaciones: form.observaciones,
+      estado_inicial_equipo: form.estado_inicial_equipo || null,
+      acciones_realizadas: form.acciones_realizadas || null,
+      resultado_final: form.resultado_final || null,
+      latitud: form.latitud || null,
+      longitud: form.longitud || null,
       costo: form.costo ? Number(form.costo) : null,
     };
 
     try {
       if (form.id) {
-        await API.put(`/mantenimientos/${form.id}`, payload);
+        await API.put(
+          esCoordinador
+            ? `/coordinador/mantenimientos/${form.id}`
+            : `/mantenimientos/${form.id}`,
+          payload,
+        );
 
         if (form.tecnico_id) {
-          await API.patch(`/mantenimientos/${form.id}/asignar-tecnico`, {
+          await asignarTecnicoMantenimiento(form.id, {
             tecnico_id: form.tecnico_id,
             observacion: "Técnico actualizado desde bitácora profesional.",
             creado_por: "Administrador SGA",
@@ -266,10 +326,13 @@ export default function MantenimientosPage() {
 
         alert("Mantenimiento actualizado correctamente.");
       } else {
-        const creado = await API.post("/mantenimientos/", payload);
+        const creado = await API.post(
+          esCoordinador ? "/coordinador/mantenimientos" : "/mantenimientos/",
+          payload,
+        );
 
         if (form.tecnico_id && creado?.data?.id) {
-          await API.patch(`/mantenimientos/${creado.data.id}/asignar-tecnico`, {
+          await asignarTecnicoMantenimiento(creado.data.id, {
             tecnico_id: form.tecnico_id,
             observacion: "Técnico asignado desde bitácora profesional.",
             creado_por: "Administrador SGA",
@@ -325,7 +388,11 @@ export default function MantenimientosPage() {
     if (!ok) return;
 
     try {
-      await API.delete(`/mantenimientos/${m.id}`);
+      await API.delete(
+        esCoordinador
+          ? `/coordinador/mantenimientos/${m.id}`
+          : `/mantenimientos/${m.id}`,
+      );
       alert("Mantenimiento eliminado correctamente.");
 
       const nuevaCantidad = mantenimientosFiltrados.length - 1;
@@ -370,8 +437,7 @@ export default function MantenimientosPage() {
 
   const equipoDetalle = detalle ? getEquipoData(detalle.equipo_id) : null;
 
-  return (
-    <AdminLayout>
+  const contenido = (
       <div className="mant-page">
         <div className="mant-header">
           <div className="mant-header-icon">
@@ -387,7 +453,11 @@ export default function MantenimientosPage() {
 
           <button
             className="mant-dashboard-btn"
-            onClick={() => (window.location.href = "/admin/dashboard")}
+            onClick={() => (
+              window.location.href = esCoordinador
+                ? "/coordinador/dashboard"
+                : "/admin/dashboard"
+            )}
           >
             <ArrowLeft size={16} />
             Dashboard
@@ -412,15 +482,20 @@ export default function MantenimientosPage() {
               <Field label="Empresa">
                 <select
                   value={form.empresa_id}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const empresaId = e.target.value;
+                    if (esCoordinador && onCompanyChange) {
+                      onCompanyChange(empresaId);
+                      return;
+                    }
                     setForm({
                       ...form,
-                      empresa_id: e.target.value,
+                      empresa_id: empresaId,
                       sede_id: "",
                       ubicacion_equipo: "",
                       equipo_id: "",
-                    })
-                  }
+                    });
+                  }}
                 >
                   <option value="">Seleccione empresa *</option>
                   {empresas.map((e) => (
@@ -603,32 +678,42 @@ export default function MantenimientosPage() {
                 />
               </Field>
 
-              <Field label="Latitud">
-                <input
-                  placeholder="Latitud"
-                  value={form.latitud}
-                  onChange={(e) => setForm({ ...form, latitud: e.target.value })}
-                />
-              </Field>
+              {!esCoordinador && (
+                <>
+                  <Field label="Latitud">
+                    <input
+                      placeholder="Latitud"
+                      value={form.latitud}
+                      onChange={(e) => setForm({ ...form, latitud: e.target.value })}
+                    />
+                  </Field>
 
-              <Field label="Longitud">
-                <input
-                  placeholder="Longitud"
-                  value={form.longitud}
-                  onChange={(e) => setForm({ ...form, longitud: e.target.value })}
-                />
-              </Field>
-
-              <Field label="Costo">
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={form.costo}
-                  onChange={(e) => setForm({ ...form, costo: e.target.value })}
-                />
-              </Field>
+                  <Field label="Longitud">
+                    <input
+                      placeholder="Longitud"
+                      value={form.longitud}
+                      onChange={(e) => setForm({ ...form, longitud: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
             </div>
 
+            {esCoordinador && (
+              <details className="mant-optional-panel">
+                <summary>Datos administrativos opcionales</summary>
+                <Field label="Costo estimado">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.costo}
+                    onChange={(e) => setForm({ ...form, costo: e.target.value })}
+                  />
+                </Field>
+              </details>
+            )}
+
+            {!esCoordinador && (
             <div className="mant-grid-3 mant-textarea-row">
               <Field label="Estado inicial del equipo / cómo se encontró">
                 <textarea
@@ -657,6 +742,20 @@ export default function MantenimientosPage() {
                 />
               </Field>
             </div>
+            )}
+
+            {!esCoordinador && (
+              <div className="mant-grid-3 mant-textarea-row">
+                <Field label="Costo">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.costo}
+                    onChange={(e) => setForm({ ...form, costo: e.target.value })}
+                  />
+                </Field>
+              </div>
+            )}
 
             <div className="mant-textarea-row">
               <Field label="Observaciones">
@@ -851,8 +950,9 @@ export default function MantenimientosPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
   );
+
+  return embedded ? contenido : <AdminLayout>{contenido}</AdminLayout>;
 }
 
 function Field({ label, children }) {

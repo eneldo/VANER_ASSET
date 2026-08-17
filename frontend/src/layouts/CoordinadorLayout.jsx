@@ -28,16 +28,11 @@ import {
 } from "lucide-react";
 
 import API from "../api/axios";
+import { CoordinatorCompanyContext } from "../context/CoordinatorCompanyContext";
 import { clearSession } from "../utils/authStorage";
 import "../styles/coordinador.css";
 
 export default function CoordinadorLayout() {
-  const [open, setOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [permisos, setPermisos] = useState([]);
-  const [cargandoPermisos, setCargandoPermisos] = useState(true);
-  const navigate = useNavigate();
-
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user"));
@@ -45,6 +40,19 @@ export default function CoordinadorLayout() {
       return null;
     }
   }, []);
+  const esAdmin = String(user?.rol || "").toUpperCase() === "ADMIN";
+  const esCoordinador = String(user?.rol || "").toUpperCase() === "COORDINADOR";
+
+  const [open, setOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [permisos, setPermisos] = useState([]);
+  const [cargandoPermisos, setCargandoPermisos] = useState(!esCoordinador);
+  const [empresasAutorizadas, setEmpresasAutorizadas] = useState([]);
+  const [empresaActivaId, setEmpresaActivaId] = useState(
+    localStorage.getItem("coordinator_active_company_id") || user?.empresa_id || "",
+  );
+  const [cargandoEmpresas, setCargandoEmpresas] = useState(esCoordinador);
+  const navigate = useNavigate();
 
   const cargarPermisos = async () => {
     try {
@@ -60,12 +68,46 @@ export default function CoordinadorLayout() {
   };
 
   useEffect(() => {
+    if (esCoordinador) return undefined;
+
     const timer = window.setTimeout(() => cargarPermisos(), 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [esCoordinador]);
 
-  const esAdmin = String(user?.rol || "").toUpperCase() === "ADMIN";
-  const esCoordinador = String(user?.rol || "").toUpperCase() === "COORDINADOR";
+  useEffect(() => {
+    if (!esCoordinador) return undefined;
+
+    let activo = true;
+    API.get("/coordinador/empresas-autorizadas")
+      .then((response) => {
+        if (!activo) return;
+        const empresas = response.data || [];
+        const almacenada = localStorage.getItem("coordinator_active_company_id");
+        const seleccion = empresas.some((empresa) => String(empresa.id) === String(almacenada))
+          ? almacenada
+          : empresas.find((empresa) => empresa.es_principal)?.id || empresas[0]?.id || "";
+
+        setEmpresasAutorizadas(empresas);
+        setEmpresaActivaId(seleccion);
+        if (seleccion) localStorage.setItem("coordinator_active_company_id", seleccion);
+      })
+      .catch((error) => {
+        console.error("No se pudieron cargar las empresas autorizadas:", error);
+        setEmpresasAutorizadas([]);
+      })
+      .finally(() => {
+        if (activo) setCargandoEmpresas(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [esCoordinador]);
+
+  const cambiarEmpresaActiva = (empresaId) => {
+    setEmpresaActivaId(empresaId);
+    localStorage.setItem("coordinator_active_company_id", empresaId);
+  };
 
   const tienePermiso = (...codigos) => {
     // Regla PRO: ADMIN todo. COORDINADOR tiene menú operativo base aunque aún no se hayan sembrado permisos.
@@ -210,10 +252,28 @@ export default function CoordinadorLayout() {
             <h1>Módulo Coordinador PRO</h1>
             <p>Inventario, hojas de vida, mantenimientos, evidencias y reportes operativos.</p>
           </div>
+          {esCoordinador && (
+            <label className="coord-company-switcher">
+              <span>Empresa activa</span>
+              <select
+                value={empresaActivaId}
+                onChange={(event) => cambiarEmpresaActiva(event.target.value)}
+                disabled={cargandoEmpresas || empresasAutorizadas.length <= 1}
+              >
+                {empresasAutorizadas.map((empresa) => (
+                  <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
+                ))}
+              </select>
+            </label>
+          )}
         </header>
 
         <section className="coord-content">
-          <Outlet />
+          <CoordinatorCompanyContext.Provider
+            value={{ empresaActivaId, empresasAutorizadas, cambiarEmpresaActiva }}
+          >
+            <Outlet key={empresaActivaId || "sin-empresa"} />
+          </CoordinatorCompanyContext.Provider>
         </section>
       </main>
     </div>

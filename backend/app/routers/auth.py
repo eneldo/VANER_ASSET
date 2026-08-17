@@ -12,16 +12,17 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy import or_, text, func
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import get_db, establecer_contexto_tenant
+from app.database import get_db
 from app.models.refresh_token import RefreshToken
 from app.models.usuario import Usuario
+from app.services.coordinador_empresas import aplicar_empresa_activa, ids_empresas_autorizadas
 from app.schemas.auth import LoginRequest, LogoutRequest, RefreshRequest, RefreshResponse, TokenResponse
 from app.security import (
     create_access_token,
@@ -110,6 +111,7 @@ def _guardar_refresh_token(
 
 def obtener_usuario_actual(
     token: str = Depends(oauth2_scheme),
+    empresa_activa: str | None = Header(default=None, alias="X-Empresa-Activa"),
     db: Session = Depends(get_db),
 ):
     credenciales_error = HTTPException(
@@ -142,7 +144,7 @@ def obtener_usuario_actual(
     if not usuario or not usuario.activo:
         raise credenciales_error
 
-    establecer_contexto_tenant(db, usuario)
+    aplicar_empresa_activa(db, usuario, empresa_activa)
     return usuario
 
 
@@ -440,6 +442,7 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
     )
 
     empresa_id = str(usuario.empresa_id) if usuario.empresa_id else None
+    empresa_ids = [str(value) for value in ids_empresas_autorizadas(db, usuario)]
 
     return TokenResponse(
         access_token=access_token,
@@ -450,6 +453,7 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
         nombre_completo=usuario.nombre_completo,
         rol=usuario.rol,
         empresa_id=empresa_id,
+        empresa_ids=empresa_ids,
     )
 
 
@@ -534,11 +538,15 @@ def refresh_token(
         "nombre_completo": usuario.nombre_completo,
         "rol": usuario.rol,
         "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
+        "empresa_ids": [str(value) for value in ids_empresas_autorizadas(db, usuario)],
     }
 
 
 @router.get("/me")
-def auth_me(usuario: Usuario = Depends(obtener_usuario_actual)):
+def auth_me(
+    usuario: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
     return {
         "usuario_id": str(usuario.id),
         "nombre_completo": usuario.nombre_completo,
@@ -546,6 +554,7 @@ def auth_me(usuario: Usuario = Depends(obtener_usuario_actual)):
         "email": usuario.email,
         "rol": usuario.rol,
         "empresa_id": str(usuario.empresa_id) if usuario.empresa_id else None,
+        "empresa_ids": [str(value) for value in ids_empresas_autorizadas(db, usuario)],
         "activo": usuario.activo,
     }
 

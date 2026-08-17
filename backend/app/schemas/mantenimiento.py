@@ -43,9 +43,16 @@ class MantenimientoBase(BaseModel):
     # Fecha programada.
     # Se deja como datetime porque tu BD está devolviendo fecha + hora.
     fecha_programada: Optional[datetime] = None
+    fecha_inicio_programada: Optional[datetime] = None
+    fecha_fin_programada: Optional[datetime] = None
 
     # Observaciones generales iniciales.
     observaciones: Optional[str] = None
+    estado_inicial_equipo: Optional[str] = None
+    acciones_realizadas: Optional[str] = None
+    resultado_final: Optional[str] = None
+    latitud: Optional[str] = None
+    longitud: Optional[str] = None
 
     # Costo estimado o real del mantenimiento.
     costo: Optional[Decimal] = None
@@ -71,7 +78,14 @@ class MantenimientoUpdate(BaseModel):
     tipo: Optional[str] = None
     descripcion: Optional[str] = None
     fecha_programada: Optional[datetime] = None
+    fecha_inicio_programada: Optional[datetime] = None
+    fecha_fin_programada: Optional[datetime] = None
     observaciones: Optional[str] = None
+    estado_inicial_equipo: Optional[str] = None
+    acciones_realizadas: Optional[str] = None
+    resultado_final: Optional[str] = None
+    latitud: Optional[str] = None
+    longitud: Optional[str] = None
     costo: Optional[Decimal] = None
 
 

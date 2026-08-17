@@ -60,6 +60,17 @@ def establecer_contexto_tenant(session: Session, usuario) -> None:
     tenant_id = str(getattr(usuario, "empresa_id", "") or "")
     es_admin = rol == "ADMIN"
 
+    establecer_contexto_empresa(session, tenant_id, es_admin=es_admin)
+
+
+def establecer_contexto_empresa(
+    session: Session,
+    empresa_id,
+    *,
+    es_admin: bool = False,
+) -> None:
+    tenant_id = str(empresa_id or "")
+
     if _es_postgresql(session):
         session.execute(
             text(

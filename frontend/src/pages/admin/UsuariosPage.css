@@ -161,6 +161,31 @@
   border-radius: 16px;
 }
 
+.usuario-company-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  max-height: 210px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #dbe5ef;
+  border-radius: 15px;
+  background: #f8fbff;
+}
+
+.usuario-company-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  font-weight: 800;
+  color: #334155;
+}
+
 .permisos-empty {
   margin-top: 20px;
 }

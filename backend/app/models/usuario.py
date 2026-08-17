@@ -5,10 +5,30 @@
 # =========================================================
 
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+
+
+usuario_empresas = Table(
+    "usuario_empresas",
+    Base.metadata,
+    Column(
+        "usuario_id",
+        UUID(as_uuid=True),
+        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "empresa_id",
+        UUID(as_uuid=True),
+        ForeignKey("empresas.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+)
 
 
 class Usuario(Base):
@@ -31,6 +51,19 @@ class Usuario(Base):
 
     # Empresa asociada, aplica principalmente para rol EMPRESA
     empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=True)
+
+    empresas_autorizadas = relationship(
+        "Empresa",
+        secondary=usuario_empresas,
+        lazy="select",
+    )
+
+    @property
+    def empresa_ids(self):
+        ids = [empresa.id for empresa in self.empresas_autorizadas]
+        if self.empresa_id and self.empresa_id not in ids:
+            ids.insert(0, self.empresa_id)
+        return ids
 
     # Estado del usuario
     activo = Column(Boolean, default=True)

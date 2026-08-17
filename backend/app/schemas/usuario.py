@@ -25,6 +25,7 @@ class UsuarioCreate(BaseModel):
     password: str = Field(..., min_length=12, max_length=128)
     rol: str
     empresa_id: Optional[UUID] = None
+    empresa_ids: list[UUID] = Field(default_factory=list)
 
 
 class UsuarioUpdate(BaseModel):
@@ -34,6 +35,7 @@ class UsuarioUpdate(BaseModel):
     email: Optional[EmailStr] = None
     rol: Optional[str] = None
     empresa_id: Optional[UUID] = None
+    empresa_ids: Optional[list[UUID]] = None
     activo: Optional[bool] = None
 
 
@@ -47,9 +49,10 @@ class UsuarioOut(BaseModel):
     id: UUID
     nombre_completo: str
     username: str
-    email: EmailStr
+    email: str
     rol: str
     empresa_id: Optional[UUID] = None
+    empresa_ids: list[UUID] = Field(default_factory=list)
     activo: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
