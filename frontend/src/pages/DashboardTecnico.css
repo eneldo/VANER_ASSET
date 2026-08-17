@@ -964,6 +964,54 @@
   font-weight: 750;
 }
 
+.tec-reopen-panel {
+  margin: 0 0 24px;
+  padding: 18px;
+  border: 1px solid #f59e0b;
+  border-radius: 20px;
+  background: #fffbeb;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.4fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.tec-reopen-panel strong { color: #92400e; }
+.tec-reopen-panel p { margin: 5px 0 0; color: #78350f; }
+.tec-reopen-panel textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #fbbf24;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.tec-reopen-panel-readonly {
+  grid-template-columns: 1fr;
+}
+
+.tec-readonly-notice {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 750;
+}
+
+.tec-shell button:disabled,
+.tec-shell input:disabled,
+.tec-shell select:disabled,
+.tec-shell textarea:disabled,
+.tec-exec-modal button:disabled,
+.tec-exec-modal input:disabled,
+.tec-exec-modal select:disabled,
+.tec-exec-modal textarea:disabled,
+.tec-exec-modal textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
 .tec-exec-grid {
   display: grid;
   grid-template-columns: 360px 1fr;
@@ -1161,6 +1209,10 @@
   }
 
   .tec-exec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tec-reopen-panel {
     grid-template-columns: 1fr;
   }
 

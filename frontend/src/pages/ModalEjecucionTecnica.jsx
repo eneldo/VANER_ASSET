@@ -46,6 +46,7 @@ export default function ModalEjecucionTecnica({
   const evidenciasIniciales = useMemo(() => detalle?.evidencias || [], [detalle?.evidencias]);
 
   const mantenimientoId = mantenimiento.id;
+  const esFinalizado = String(mantenimiento.estado || "").toUpperCase() === "FINALIZADO";
 
   const [estadoInicial, setEstadoInicial] = useState("");
   const [accionesRealizadas, setAccionesRealizadas] = useState("");
@@ -114,6 +115,10 @@ export default function ModalEjecucionTecnica({
   };
 
   const guardarAvance = async (nuevoEstado = "") => {
+    if (esFinalizado) {
+      alert("Un coordinador o administrador debe reabrir el mantenimiento antes de modificarlo.");
+      return;
+    }
     if (repuestos.some((item) => !String(item.descripcion || "").trim() || Number(item.cantidad) <= 0)) {
       alert("Completa la descripción y una cantidad positiva en cada repuesto.");
       return;
@@ -169,6 +174,10 @@ export default function ModalEjecucionTecnica({
   };
 
   const subirEvidencia = async () => {
+    if (esFinalizado) {
+      alert("Un coordinador o administrador debe reabrir el mantenimiento antes de cargar evidencias.");
+      return;
+    }
     if (!archivo) {
       alert("Selecciona una imagen o PDF.");
       return;
@@ -238,6 +247,11 @@ export default function ModalEjecucionTecnica({
 
 
   const eliminarEvidencia = async (evidenciaId) => {
+    if (esFinalizado) {
+      alert("Un coordinador o administrador debe reabrir el mantenimiento antes de eliminar evidencias.");
+      return;
+    }
+
     const confirmar = window.confirm(
       "¿Deseas eliminar esta evidencia? Esta acción no se puede deshacer."
     );
@@ -289,6 +303,15 @@ export default function ModalEjecucionTecnica({
           </p>
         </div>
 
+        {esFinalizado && (
+          <section className="tec-reopen-panel tec-reopen-panel-readonly">
+            <div>
+              <strong>Mantenimiento finalizado en modo lectura</strong>
+              <p>Las acciones y evidencias se conservan. Solicita al coordinador o administrador que reabra la orden para poder corregirla.</p>
+            </div>
+          </section>
+        )}
+
         <div className="tec-exec-grid">
           <aside className="tec-exec-left">
             <section className="tec-exec-card">
@@ -317,10 +340,10 @@ export default function ModalEjecucionTecnica({
               <button
                 className="tec-exec-primary full"
                 onClick={() => guardarAvance("EN_PROCESO")}
-                disabled={guardando}
+                disabled={guardando || esFinalizado}
               >
                 <Play size={16} />
-                Iniciar mantenimiento
+                {esFinalizado ? "Finalizado" : "Iniciar mantenimiento"}
               </button>
             </section>
           </aside>
@@ -331,6 +354,7 @@ export default function ModalEjecucionTecnica({
               <textarea
                 value={estadoInicial}
                 onChange={(e) => setEstadoInicial(e.target.value)}
+                readOnly={esFinalizado}
                 placeholder="Ej: Equipo enciende, presenta ruido anormal, filtros sucios..."
               />
 
@@ -338,6 +362,7 @@ export default function ModalEjecucionTecnica({
               <textarea
                 value={accionesRealizadas}
                 onChange={(e) => setAccionesRealizadas(e.target.value)}
+                readOnly={esFinalizado}
                 placeholder="Ej: Limpieza general, revisión eléctrica, ajuste de conexiones..."
               />
 
@@ -345,6 +370,7 @@ export default function ModalEjecucionTecnica({
               <textarea
                 value={resultadoFinal}
                 onChange={(e) => setResultadoFinal(e.target.value)}
+                readOnly={esFinalizado}
                 placeholder="Ej: Equipo queda operativo, pendiente cambio de repuesto..."
               />
 
@@ -352,34 +378,35 @@ export default function ModalEjecucionTecnica({
               <textarea
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
+                readOnly={esFinalizado}
                 placeholder="Observaciones adicionales del técnico..."
               />
             </section>
 
             <section className="tec-exec-form-card">
-              <div className="tec-operational-head"><h2>Repuestos utilizados</h2><button type="button" onClick={() => setRepuestos((prev) => [...prev, { descripcion: "", referencia: "", cantidad: 1, unidad: "UNIDAD", costo_unitario: "" }])}>+ Agregar</button></div>
+              <div className="tec-operational-head"><h2>Repuestos utilizados</h2><button type="button" disabled={esFinalizado} onClick={() => setRepuestos((prev) => [...prev, { descripcion: "", referencia: "", cantidad: 1, unidad: "UNIDAD", costo_unitario: "" }])}>+ Agregar</button></div>
               {repuestos.length === 0 && <p>No se utilizaron repuestos.</p>}
               {repuestos.map((item, index) => (
                 <div className="tec-operational-row repuesto" key={item.id || index}>
-                  <input aria-label="Descripción del repuesto" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
-                  <input aria-label="Referencia" placeholder="Referencia" value={item.referencia || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "referencia", e.target.value))} />
-                  <input aria-label="Cantidad" type="number" min="0.001" step="0.001" value={item.cantidad ?? 1} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "cantidad", e.target.value))} />
-                  <select aria-label="Unidad" value={item.unidad || "UNIDAD"} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "unidad", e.target.value))}><option>UNIDAD</option><option>METRO</option><option>LITRO</option><option>KILOGRAMO</option><option>JUEGO</option></select>
-                  <button type="button" className="tec-row-remove" onClick={() => setRepuestos((prev) => prev.filter((_, i) => i !== index))}>×</button>
+                  <input disabled={esFinalizado} aria-label="Descripción del repuesto" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
+                  <input disabled={esFinalizado} aria-label="Referencia" placeholder="Referencia" value={item.referencia || ""} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "referencia", e.target.value))} />
+                  <input disabled={esFinalizado} aria-label="Cantidad" type="number" min="0.001" step="0.001" value={item.cantidad ?? 1} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "cantidad", e.target.value))} />
+                  <select disabled={esFinalizado} aria-label="Unidad" value={item.unidad || "UNIDAD"} onChange={(e) => setRepuestos((prev) => actualizarLista(prev, index, "unidad", e.target.value))}><option>UNIDAD</option><option>METRO</option><option>LITRO</option><option>KILOGRAMO</option><option>JUEGO</option></select>
+                  <button disabled={esFinalizado} type="button" className="tec-row-remove" onClick={() => setRepuestos((prev) => prev.filter((_, i) => i !== index))}>×</button>
                 </div>
               ))}
             </section>
 
             <section className="tec-exec-form-card">
-              <div className="tec-operational-head"><h2>Incidencias encontradas</h2><button type="button" onClick={() => setIncidencias((prev) => [...prev, { tipo: "TECNICA", severidad: "MEDIA", descripcion: "", resuelta: false }])}>+ Agregar</button></div>
+              <div className="tec-operational-head"><h2>Incidencias encontradas</h2><button type="button" disabled={esFinalizado} onClick={() => setIncidencias((prev) => [...prev, { tipo: "TECNICA", severidad: "MEDIA", descripcion: "", resuelta: false }])}>+ Agregar</button></div>
               {incidencias.length === 0 && <p>No se registraron incidencias.</p>}
               {incidencias.map((item, index) => (
                 <div className="tec-operational-row incidencia" key={item.id || index}>
-                  <select aria-label="Tipo de incidencia" value={item.tipo || "TECNICA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "tipo", e.target.value))}><option>TECNICA</option><option>SEGURIDAD</option><option>REPUESTO</option><option>OPERATIVA</option></select>
-                  <select aria-label="Severidad" value={item.severidad || "MEDIA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "severidad", e.target.value))}><option>BAJA</option><option>MEDIA</option><option>ALTA</option><option>CRITICA</option></select>
-                  <input aria-label="Descripción de incidencia" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
-                  <label className="tec-resolved-check"><input type="checkbox" checked={Boolean(item.resuelta)} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "resuelta", e.target.checked))} /> Resuelta</label>
-                  <button type="button" className="tec-row-remove" onClick={() => setIncidencias((prev) => prev.filter((_, i) => i !== index))}>×</button>
+                  <select disabled={esFinalizado} aria-label="Tipo de incidencia" value={item.tipo || "TECNICA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "tipo", e.target.value))}><option>TECNICA</option><option>SEGURIDAD</option><option>REPUESTO</option><option>OPERATIVA</option></select>
+                  <select disabled={esFinalizado} aria-label="Severidad" value={item.severidad || "MEDIA"} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "severidad", e.target.value))}><option>BAJA</option><option>MEDIA</option><option>ALTA</option><option>CRITICA</option></select>
+                  <input disabled={esFinalizado} aria-label="Descripción de incidencia" placeholder="Descripción *" value={item.descripcion || ""} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "descripcion", e.target.value))} />
+                  <label className="tec-resolved-check"><input disabled={esFinalizado} type="checkbox" checked={Boolean(item.resuelta)} onChange={(e) => setIncidencias((prev) => actualizarLista(prev, index, "resuelta", e.target.checked))} /> Resuelta</label>
+                  <button disabled={esFinalizado} type="button" className="tec-row-remove" onClick={() => setIncidencias((prev) => prev.filter((_, i) => i !== index))}>×</button>
                 </div>
               ))}
             </section>
@@ -402,6 +429,7 @@ export default function ModalEjecucionTecnica({
                 <select
                   value={tipoEvidencia}
                   onChange={(e) => setTipoEvidencia(e.target.value)}
+                  disabled={esFinalizado}
                 >
                   <option value="ANTES">Antes</option>
                   <option value="DURANTE" disabled={!tiposCargados.has("ANTES")}>Durante</option>
@@ -413,9 +441,10 @@ export default function ModalEjecucionTecnica({
                   type="file"
                   accept=".jpg,.jpeg,.png,.pdf"
                   onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                  disabled={esFinalizado}
                 />
 
-                <button onClick={subirEvidencia} disabled={subiendo}>
+                <button onClick={subirEvidencia} disabled={subiendo || esFinalizado}>
                   <UploadCloud size={16} />
                   {subiendo ? "Subiendo..." : "Subir"}
                 </button>
@@ -425,6 +454,7 @@ export default function ModalEjecucionTecnica({
                 className="tec-exec-desc"
                 value={descripcionEvidencia}
                 onChange={(e) => setDescripcionEvidencia(e.target.value)}
+                disabled={esFinalizado}
                 placeholder="Descripción de la evidencia..."
               />
 
@@ -475,7 +505,7 @@ export default function ModalEjecucionTecnica({
                             type="button"
                             className="tec-exec-danger"
                             onClick={() => eliminarEvidencia(ev.id)}
-                            disabled={eliminandoId === ev.id || ev.pendiente_sincronizacion}
+                            disabled={esFinalizado || eliminandoId === ev.id || ev.pendiente_sincronizacion}
                           >
                             <Trash2 size={15} />
                             {eliminandoId === ev.id ? "Eliminando..." : "Eliminar"}
@@ -499,7 +529,7 @@ export default function ModalEjecucionTecnica({
           <button
             className="tec-exec-light"
             onClick={() => guardarAvance("")}
-            disabled={guardando}
+            disabled={guardando || esFinalizado}
           >
             <Save size={16} />
             {guardando ? "Guardando..." : "Guardar avance"}
@@ -516,7 +546,7 @@ export default function ModalEjecucionTecnica({
           <button
             className="tec-exec-danger"
             onClick={() => guardarAvance("PAUSADO")}
-            disabled={guardando}
+            disabled={guardando || esFinalizado}
           >
             <Pause size={16} />
             Pausar
@@ -525,7 +555,7 @@ export default function ModalEjecucionTecnica({
           <button
             className="tec-exec-primary"
             onClick={() => guardarAvance("FINALIZADO")}
-            disabled={guardando || !puedeFinalizar}
+            disabled={guardando || esFinalizado || !puedeFinalizar}
             title={puedeFinalizar ? "Finalizar orden" : "Completa las tres evidencias fotográficas"}
           >
             <CheckCircle size={16} />

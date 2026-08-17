@@ -112,6 +112,36 @@ export default function MantenimientosPage() {
     }
   };
 
+  async function reabrirMantenimiento(mantenimiento) {
+    const motivoIngresado = window.prompt(
+      "Indica el motivo de la reapertura. El mantenimiento volverá a EN PROCESO:",
+    );
+    if (motivoIngresado === null) return;
+
+    const motivo = motivoIngresado.trim();
+    if (motivo.length < 10) {
+      alert("El motivo debe tener al menos 10 caracteres.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await API.patch("/mantenimientos/" + mantenimiento.id + "/cambiar-estado", {
+        estado_nuevo: "EN_PROCESO",
+        observacion: motivo,
+        creado_por: "Administrador",
+      });
+      setDetalle(null);
+      await cargarTodo();
+      alert("Mantenimiento reabierto correctamente.");
+    } catch (error) {
+      console.error("Error reabriendo mantenimiento:", error);
+      alert(error?.response?.data?.detail || "No se pudo reabrir el mantenimiento.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const sedesFiltradas = useMemo(() => {
     if (!form.empresa_id) return [];
     return sedes.filter((s) => String(s.empresa_id) === String(form.empresa_id));
@@ -734,6 +764,16 @@ export default function MantenimientosPage() {
                             >
                               <Edit size={14} /> Editar
                             </button>
+
+                            {String(m.estado || "").toUpperCase() === "FINALIZADO" && (
+                              <button
+                                className="mant-edit-btn"
+                                onClick={() => reabrirMantenimiento(m)}
+                                disabled={loading}
+                              >
+                                <RefreshCw size={14} /> Reabrir
+                              </button>
+                            )}
 
                             <button
                               className="mant-delete-btn"

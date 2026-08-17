@@ -34,6 +34,7 @@ from app.models.evidencia import Evidencia
 from app.models.ot_repuesto import OtRepuesto
 from app.models.ot_incidencia import OtIncidencia
 from app.services.evidencia_service import get_evidence_upload_config, save_secure_file
+from app.services.mantenimiento_estado_service import validar_mantenimiento_editable
 from app.routers.auth import obtener_usuario_actual
 from app.routers.evidencias import crear_url_firmada
 
@@ -548,6 +549,7 @@ def guardar_avance_tecnico(
     _, _, mantenimiento = validar_mantenimiento_del_tecnico(
         usuario_id, mantenimiento_id, db
     )
+    validar_mantenimiento_editable(mantenimiento)
     repuestos = normalizar_repuestos(repuestos_json)
     incidencias = normalizar_incidencias(incidencias_json)
 
@@ -612,6 +614,7 @@ async def subir_evidencia_tecnico(
     _, _, mantenimiento = validar_mantenimiento_del_tecnico(
         usuario_id, mantenimiento_id, db
     )
+    validar_mantenimiento_editable(mantenimiento)
 
     tipo = tipo.strip().upper()
     tipos_validos = ["ANTES", "DURANTE", "DESPUES", "SOPORTE"]

@@ -191,17 +191,41 @@ export default function CoordinadorMantenimientos() {
   };
 
   const cambiarEstadoRapido = async (m, estado) => {
+    const estadoActual = String(m.estado || "").toUpperCase();
+    const estadoNuevo = String(estado || "").toUpperCase();
+    if (estadoActual === estadoNuevo) return;
+
+    let observacion = null;
+    if (estadoActual === "FINALIZADO") {
+      if (estadoNuevo !== "EN_PROCESO") {
+        mostrarMensaje("error", "Un mantenimiento finalizado solo puede reabrirse a EN PROCESO.");
+        return;
+      }
+
+      const motivoIngresado = window.prompt(
+        "Indica el motivo de la reapertura. El mantenimiento volverá a EN PROCESO:",
+      );
+      if (motivoIngresado === null) return;
+      observacion = motivoIngresado.trim();
+      if (observacion.length < 10) {
+        mostrarMensaje("error", "El motivo debe tener al menos 10 caracteres.");
+        return;
+      }
+    }
+
     try {
-      await API.put(`/coordinador/mantenimientos/${m.id}`, {
-        equipo_id: m.equipo_id,
-        tecnico_id: m.tecnico_id || null,
-        tipo: m.tipo,
-        estado,
-        fecha_programada: m.fecha_programada || null,
-        descripcion: m.descripcion || null,
-        observaciones: m.observaciones || null,
+      await API.put("/coordinador/mantenimientos/" + m.id + "/estado", null, {
+        params: {
+          estado: estadoNuevo,
+          observacion,
+        },
       });
-      mostrarMensaje("success", `Estado actualizado a ${estado}.`);
+      mostrarMensaje(
+        "success",
+        estadoActual === "FINALIZADO"
+          ? "Mantenimiento reabierto correctamente."
+          : "Estado actualizado a " + estadoNuevo + ".",
+      );
       await cargarDatos();
     } catch (error) {
       console.error("Error cambiando estado:", error);
@@ -317,7 +341,15 @@ export default function CoordinadorMantenimientos() {
                         value={m.estado || "PROGRAMADO"}
                         onChange={(e) => cambiarEstadoRapido(m, e.target.value)}
                       >
-                        {ESTADOS.map((estado) => <option key={estado} value={estado}>{estado}</option>)}
+                        {ESTADOS.map((estado) => (
+                          <option
+                            key={estado}
+                            value={estado}
+                            disabled={m.estado === "FINALIZADO" && !["FINALIZADO", "EN_PROCESO"].includes(estado)}
+                          >
+                            {m.estado === "FINALIZADO" && estado === "EN_PROCESO" ? "REABRIR A EN_PROCESO" : estado}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td>{fmtFecha(m.fecha_programada)}</td>

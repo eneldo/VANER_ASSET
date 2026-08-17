@@ -80,6 +80,11 @@ def autorizar_mantenimiento(usuario: Usuario, mantenimiento: Mantenimiento, db: 
     if rol == "TECNICO":
         tecnico = db.query(Tecnico).filter(Tecnico.usuario_id == usuario.id).first()
         if tecnico and str(tecnico.id) == str(mantenimiento.tecnico_id):
+            if escritura and str(getattr(mantenimiento, "estado", "") or "").upper() == "FINALIZADO":
+                raise HTTPException(
+                    status_code=409,
+                    detail="Debes reabrir el mantenimiento antes de modificar sus evidencias",
+                )
             return mantenimiento
     raise HTTPException(status_code=403, detail="Sin acceso a esta evidencia")
 

@@ -278,6 +278,11 @@ export default function DashboardTecnico() {
   };
 
   const eliminarEvidenciaTecnico = async (evidenciaId) => {
+    if (String(modalEvidencia?.estado || "").toUpperCase() === "FINALIZADO") {
+      alert("Solicita al coordinador o administrador que reabra el mantenimiento antes de eliminar evidencias.");
+      return;
+    }
+
     const confirmar = window.confirm(
       "¿Deseas eliminar esta evidencia? Esta acción no se puede deshacer."
     );
@@ -300,6 +305,11 @@ export default function DashboardTecnico() {
   };
 
   const subirEvidenciaRapida = async () => {
+    if (String(modalEvidencia?.estado || "").toUpperCase() === "FINALIZADO") {
+      alert("Solicita al coordinador o administrador que reabra el mantenimiento antes de cargar evidencias.");
+      return;
+    }
+
     if (!archivo || !modalEvidencia) {
       alert("Selecciona un archivo.");
       return;
@@ -332,6 +342,8 @@ export default function DashboardTecnico() {
   if (!data) {
     return <div className="tec-loading">Cargando dashboard técnico...</div>;
   }
+
+  const evidenciaSoloLectura = String(modalEvidencia?.estado || "").toUpperCase() === "FINALIZADO";
 
   return (
     <div className="tec-shell">
@@ -525,15 +537,20 @@ export default function DashboardTecnico() {
         <div className="tec-modal-backdrop">
           <div className="tec-modal">
             <div className="tec-modal-header">
-              <h2>Subir evidencia</h2>
+              <h2>{evidenciaSoloLectura ? "Evidencias del mantenimiento" : "Subir evidencia"}</h2>
               <button onClick={() => setModalEvidencia(null)}>
                 <X size={18} />
               </button>
             </div>
 
             <div className="tec-form">
+              {evidenciaSoloLectura && (
+                <div className="tec-readonly-notice">
+                  Este mantenimiento está finalizado. Puedes consultar las evidencias, pero un coordinador o administrador debe reabrirlo para reemplazarlas.
+                </div>
+              )}
               <label>Tipo</label>
-              <select value={tipoEvidencia} onChange={(e) => setTipoEvidencia(e.target.value)}>
+              <select disabled={evidenciaSoloLectura} value={tipoEvidencia} onChange={(e) => setTipoEvidencia(e.target.value)}>
                 <option value="ANTES">Antes</option>
                 <option value="DURANTE">Durante</option>
                 <option value="DESPUES">Después</option>
@@ -545,15 +562,17 @@ export default function DashboardTecnico() {
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
                 onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                disabled={evidenciaSoloLectura}
               />
 
               <label>Descripción</label>
               <textarea
                 value={descripcionEvidencia}
                 onChange={(e) => setDescripcionEvidencia(e.target.value)}
+                disabled={evidenciaSoloLectura}
               />
 
-              <button className="tec-btn-primary" onClick={subirEvidenciaRapida}>
+              <button className="tec-btn-primary" onClick={subirEvidenciaRapida} disabled={evidenciaSoloLectura}>
                 <UploadCloud size={17} />
                 Subir evidencia
               </button>
@@ -610,6 +629,7 @@ export default function DashboardTecnico() {
                                 type="button"
                                 className="tec-exec-danger"
                                 onClick={() => eliminarEvidenciaTecnico(ev.id)}
+                                disabled={evidenciaSoloLectura}
                               >
                                 Eliminar
                               </button>
@@ -701,7 +721,11 @@ function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onBitacora, o
 
           <button className="tec-work-primary" onClick={onIniciar}>
             <Play size={16} />
-            {estado === "EN_PROCESO" ? "Continuar ejecución" : "Iniciar"}
+            {estado === "FINALIZADO"
+              ? "Ver finalizado"
+              : estado === "EN_PROCESO"
+                ? "Continuar ejecución"
+                : "Iniciar"}
           </button>
         </div>
 

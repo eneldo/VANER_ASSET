@@ -21,6 +21,7 @@ from app.models.usuario import Usuario
 from app.models.equipo import Equipo
 from app.models.empresa import Empresa
 from app.models.sede import Sede
+from app.services.mantenimiento_estado_service import aplicar_reapertura
 
 try:
     from app.models.evidencia import Evidencia
@@ -57,7 +58,7 @@ TRANSICIONES_VALIDAS = {
     "ASIGNADO": ["EN_PROCESO", "ANULADO"],
     "EN_PROCESO": ["PAUSADO", "FINALIZADO", "ANULADO"],
     "PAUSADO": ["EN_PROCESO", "ANULADO"],
-    "FINALIZADO": [],
+    "FINALIZADO": ["EN_PROCESO"],
     "ANULADO": [],
 }
 
@@ -696,9 +697,19 @@ def cambiar_estado(
             detail="Para anular debe registrar el motivo de anulación."
         )
 
+    if estado_actual == "FINALIZADO" and estado_nuevo == "EN_PROCESO":
+        if not payload.observacion or len(payload.observacion.strip()) < 10:
+            raise HTTPException(
+                status_code=422,
+                detail="Indica el motivo de la reapertura con al menos 10 caracteres.",
+            )
+        aplicar_reapertura(mantenimiento)
+
     ahora = datetime.now()
 
-    if estado_nuevo == "EN_PROCESO" and not mantenimiento.fecha_inicio:
+    if estado_actual == "FINALIZADO" and estado_nuevo == "EN_PROCESO":
+        pass
+    elif estado_nuevo == "EN_PROCESO" and not mantenimiento.fecha_inicio:
         mantenimiento.fecha_inicio = ahora
 
     elif estado_nuevo == "PAUSADO":

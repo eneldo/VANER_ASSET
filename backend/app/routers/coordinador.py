@@ -29,8 +29,10 @@ from app.models.equipo import Equipo
 from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.tecnico import Tecnico
 from app.models.mantenimiento import Mantenimiento
+from app.models.hist_mantenimiento import HistMantenimiento
 from app.models.evidencia import Evidencia
 from app.routers.evidencias import crear_url_firmada
+from app.services.mantenimiento_estado_service import aplicar_reapertura
 
 
 router = APIRouter(prefix="/coordinador", tags=["Coordinador PRO"])
@@ -789,6 +791,14 @@ def actualizar_mantenimiento(
 
     payload = data.model_dump(exclude_unset=True)
 
+    estado_actual = str(mantenimiento.estado or "").upper()
+    estado_solicitado = str(payload.get("estado") or mantenimiento.estado or "").upper()
+    if estado_actual == "FINALIZADO" and estado_solicitado != "FINALIZADO":
+        raise HTTPException(
+            status_code=409,
+            detail="Usa la opción Reabrir e indica el motivo de la corrección.",
+        )
+
     if payload.get("equipo_id"):
         equipo = _validar_equipo_pertenece_empresa(db, payload["equipo_id"], usuario_actual)
         payload["empresa_id"] = getattr(equipo, "empresa_id", None)
@@ -827,6 +837,12 @@ def asignar_tecnico(
     if not mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
 
+    if str(mantenimiento.estado or "").upper() == "FINALIZADO":
+        raise HTTPException(
+            status_code=409,
+            detail="Reabre el mantenimiento antes de cambiar el técnico asignado.",
+        )
+
     mantenimiento.tecnico_id = tecnico_id
     mantenimiento.estado = "ASIGNADO"
     if hasattr(mantenimiento, "fecha_asignacion"):
@@ -854,13 +870,44 @@ def cambiar_estado(
     if not mantenimiento:
         raise HTTPException(status_code=404, detail="Mantenimiento no encontrado")
 
-    mantenimiento.estado = estado
+    estado_actual = str(mantenimiento.estado or "").upper()
+    estado_nuevo = str(estado or "").upper()
+
+    if estado_actual == "FINALIZADO":
+        if estado_nuevo != "EN_PROCESO":
+            raise HTTPException(
+                status_code=409,
+                detail="Un mantenimiento finalizado solo puede reabrirse a EN_PROCESO.",
+            )
+
+        motivo = str(observacion or "").strip()
+        if len(motivo) < 10:
+            raise HTTPException(
+                status_code=422,
+                detail="Indica el motivo de la reapertura con al menos 10 caracteres.",
+            )
+
+        estado_anterior = aplicar_reapertura(mantenimiento)
+        mantenimiento.observacion_estado = f"Reabierto para corrección: {motivo}"
+        db.add(HistMantenimiento(
+            mantenimiento_id=mantenimiento.id,
+            estado_anterior=estado_anterior,
+            estado_nuevo="EN_PROCESO",
+            tecnico_id=mantenimiento.tecnico_id,
+            observacion=motivo,
+            creado_por=usuario_actual.nombre_completo or _rol(usuario_actual),
+        ))
+        db.commit()
+        db.refresh(mantenimiento)
+        return _serializar_mantenimiento(mantenimiento)
+
+    mantenimiento.estado = estado_nuevo
     if observacion and hasattr(mantenimiento, "observacion_estado"):
         mantenimiento.observacion_estado = observacion
 
-    if estado == "EN_PROCESO" and hasattr(mantenimiento, "fecha_inicio"):
+    if estado_nuevo == "EN_PROCESO" and hasattr(mantenimiento, "fecha_inicio"):
         mantenimiento.fecha_inicio = mantenimiento.fecha_inicio or datetime.utcnow()
-    if estado == "FINALIZADO":
+    if estado_nuevo == "FINALIZADO":
         if hasattr(mantenimiento, "fecha_fin"):
             mantenimiento.fecha_fin = datetime.utcnow()
         if hasattr(mantenimiento, "fecha_finalizacion"):
