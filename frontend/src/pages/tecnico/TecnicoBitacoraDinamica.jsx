@@ -146,7 +146,7 @@ export default function TecnicoBitacoraDinamica() {
         <div className="bd-error-card">
           <h2>No se pudo cargar</h2>
           <p>{error}</p>
-          <button onClick={() => navigate(-1)}>Volver</button>
+          <button onClick={() => navigate("/tecnico/dashboard")}>Volver al portal técnico</button>
         </div>
       </div>
     );
@@ -157,8 +157,8 @@ export default function TecnicoBitacoraDinamica() {
   return (
     <div className="bd-page">
       <header className="bd-hero">
-        <button className="bd-back" onClick={() => navigate(-1)}>
-          <ArrowLeft size={18} /> Volver
+        <button className="bd-back" onClick={() => navigate("/tecnico/dashboard")}>
+          <ArrowLeft size={18} /> Volver al portal técnico
         </button>
 
         <div className="bd-hero-main">

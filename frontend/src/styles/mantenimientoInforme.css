@@ -1,0 +1,101 @@
+.maintenance-report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  padding: 24px;
+  overflow: auto;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.maintenance-report-document {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  background: #eef2f7;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.38);
+}
+
+.maintenance-report-toolbar {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #0f172a;
+  color: white;
+}
+
+.maintenance-report-toolbar div:first-child { display: grid; gap: 4px; }
+.maintenance-report-toolbar span { color: #cbd5e1; font-size: 12px; }
+.maintenance-report-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.maintenance-report-actions button {
+  border: 0;
+  border-radius: 11px;
+  padding: 9px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+}
+.maintenance-report-actions .close { background: #dc2626; color: white; }
+
+.maintenance-report-sheet { margin: 20px; padding: 28px; background: white; border-radius: 16px; color: #172033; }
+.maintenance-report-heading { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding-bottom: 18px; border-bottom: 3px solid #1d4ed8; }
+.maintenance-report-brand { width: 58px; height: 58px; border-radius: 15px; display: grid; place-items: center; background: #1d4ed8; color: white; font-size: 20px; font-weight: 950; }
+.maintenance-report-heading p, .maintenance-report-heading h1 { margin: 0; }
+.maintenance-report-heading p { color: #64748b; font-size: 13px; font-weight: 750; }
+.maintenance-report-heading h1 { margin: 4px 0; font-size: 25px; }
+.maintenance-report-heading span { color: #64748b; font-size: 12px; }
+.maintenance-report-status { padding: 8px 12px; border-radius: 999px; background: #e0e7ff; color: #3730a3 !important; font-weight: 900; }
+.maintenance-report-status.status-finalizado { background: #dcfce7; color: #166534 !important; }
+
+.maintenance-report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.maintenance-report-info { padding: 11px; border: 1px solid #dbe3ef; border-radius: 10px; display: grid; gap: 4px; }
+.maintenance-report-info span { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 850; }
+.maintenance-report-info strong { font-size: 14px; overflow-wrap: anywhere; }
+
+.maintenance-report-section { margin-top: 24px; break-inside: avoid; }
+.maintenance-report-section h2 { margin: 0 0 12px; font-size: 18px; color: #0f3d91; border-bottom: 1px solid #bfdbfe; padding-bottom: 7px; }
+.maintenance-report-execution { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.maintenance-report-text { padding: 12px; min-height: 90px; border: 1px solid #dbe3ef; border-radius: 10px; }
+.maintenance-report-text strong { color: #1e3a8a; }
+.maintenance-report-text p { margin: 7px 0 0; white-space: pre-wrap; line-height: 1.5; }
+
+.maintenance-report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.maintenance-report-table th { background: #0f172a; color: white; padding: 9px; text-align: left; }
+.maintenance-report-table td { border: 1px solid #dbe3ef; padding: 9px; vertical-align: top; }
+.maintenance-report-empty { color: #64748b; font-style: italic; }
+.maintenance-report-evidence-summary { margin-top: -5px; color: #64748b; }
+.maintenance-report-evidence-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.maintenance-report-evidence { margin: 0; border: 1px solid #dbe3ef; border-radius: 12px; overflow: hidden; break-inside: avoid; }
+.maintenance-report-evidence img { width: 100%; height: 230px; object-fit: contain; background: #eef2f7; display: block; }
+.maintenance-report-evidence > a, .maintenance-report-evidence > span { height: 150px; display: grid; place-items: center; background: #eff6ff; color: #1d4ed8; font-weight: 850; }
+.maintenance-report-evidence figcaption { padding: 10px; display: grid; gap: 4px; }
+.maintenance-report-evidence figcaption strong { color: #1d4ed8; }
+.maintenance-report-evidence figcaption span { font-size: 13px; }
+.maintenance-report-evidence figcaption small { color: #64748b; overflow-wrap: anywhere; }
+.maintenance-report-footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #cbd5e1; text-align: center; color: #64748b; font-size: 11px; }
+
+@media (max-width: 800px) {
+  .maintenance-report-overlay { padding: 0; }
+  .maintenance-report-document, .maintenance-report-sheet { border-radius: 0; margin: 0; }
+  .maintenance-report-toolbar, .maintenance-report-heading { grid-template-columns: 1fr; }
+  .maintenance-report-toolbar { align-items: flex-start; }
+  .maintenance-report-grid, .maintenance-report-execution, .maintenance-report-evidence-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  .maintenance-report-overlay, .maintenance-report-overlay * { visibility: visible !important; }
+  .maintenance-report-overlay { position: absolute; inset: 0; padding: 0; overflow: visible; background: white; }
+  .maintenance-report-document { width: 100%; margin: 0; border-radius: 0; box-shadow: none; background: white; }
+  .maintenance-report-sheet { margin: 0; padding: 16px; border-radius: 0; }
+  .maintenance-report-toolbar, .no-print { display: none !important; }
+  .maintenance-report-evidence-grid { grid-template-columns: repeat(3, 1fr); }
+  .maintenance-report-evidence img { height: 190px; }
+  @page { size: letter; margin: 12mm; }
+}

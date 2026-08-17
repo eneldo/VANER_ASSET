@@ -27,6 +27,16 @@ def validar_firma_png(value):
         raise ValueError("La firma no contiene un archivo PNG válido")
     return value
 
+def validar_firma_gerente(value):
+    if value in (None, ""):
+        return None
+    if isinstance(value, str) and value.startswith("data:image/png;base64,"):
+        return validar_firma_png(value)
+    texto = str(value).strip()
+    if texto and len(texto) <= 180:
+        return texto
+    raise ValueError("La firma del gerente debe ser una imagen PNG válida")
+
 
 class FormatoMantenimientoBase(BaseModel):
     mantenimiento_id: str
@@ -55,6 +65,11 @@ class FormatoMantenimientoBase(BaseModel):
     @classmethod
     def validar_firmas(cls, value):
         return validar_firma_png(value)
+
+    @field_validator("firma_coordinador")
+    @classmethod
+    def validar_firma_responsable(cls, value):
+        return validar_firma_gerente(value)
 
 
 class FormatoMantenimientoCreate(FormatoMantenimientoBase):
@@ -87,6 +102,11 @@ class FormatoMantenimientoUpdate(BaseModel):
     @classmethod
     def validar_firmas(cls, value):
         return validar_firma_png(value)
+
+    @field_validator("firma_coordinador")
+    @classmethod
+    def validar_firma_responsable(cls, value):
+        return validar_firma_gerente(value)
 
 
 class FormatoMantenimientoOut(FormatoMantenimientoBase):

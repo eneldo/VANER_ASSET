@@ -113,6 +113,21 @@ def normalizar_fecha_programada(fecha):
         return None
 
 
+def sincronizar_tenant_desde_equipo(mantenimiento: Mantenimiento, equipo: Equipo):
+    empresa_id = getattr(equipo, "empresa_id", None)
+    sede_id = getattr(equipo, "sede_id", None)
+
+    if not empresa_id or not sede_id:
+        raise HTTPException(
+            status_code=409,
+            detail="El equipo debe tener empresa y sede antes de crear el mantenimiento.",
+        )
+
+    mantenimiento.empresa_id = empresa_id
+    mantenimiento.sede_id = sede_id
+    return mantenimiento
+
+
 def registrar_historial(
     db: Session,
     mantenimiento_id,
@@ -346,6 +361,7 @@ def crear_mantenimiento(
         costo=payload.costo,
         estado="PROGRAMADO",
     )
+    sincronizar_tenant_desde_equipo(nuevo, equipo)
 
     try:
         db.add(nuevo)
@@ -415,6 +431,8 @@ def actualizar_mantenimiento(
 
     datos = payload.model_dump(exclude_unset=True)
 
+    equipo = None
+
     if "equipo_id" in datos:
         equipo = (
             db.query(Equipo)
@@ -435,6 +453,18 @@ def actualizar_mantenimiento(
 
     for campo, valor in datos.items():
         setattr(mantenimiento, campo, valor)
+
+    if not equipo:
+        equipo = (
+            db.query(Equipo)
+            .filter(cast(Equipo.id, String) == str(mantenimiento.equipo_id))
+            .first()
+        )
+
+    if not equipo:
+        raise HTTPException(status_code=404, detail="Equipo asociado no encontrado.")
+
+    sincronizar_tenant_desde_equipo(mantenimiento, equipo)
 
     mantenimiento.actualizado_en = datetime.now()
 
@@ -544,6 +574,32 @@ def asignar_tecnico(
             status_code=404,
             detail="Técnico no encontrado."
         )
+
+    equipo = (
+        db.query(Equipo)
+        .filter(cast(Equipo.id, String) == str(mantenimiento.equipo_id))
+        .first()
+    )
+
+    if not equipo:
+        raise HTTPException(status_code=404, detail="Equipo asociado no encontrado.")
+
+    usuario_tecnico = (
+        db.query(Usuario)
+        .filter(cast(Usuario.id, String) == str(tecnico.usuario_id))
+        .first()
+    )
+
+    if not usuario_tecnico or not usuario_tecnico.activo:
+        raise HTTPException(status_code=400, detail="El usuario técnico no está activo.")
+
+    if str(usuario_tecnico.empresa_id) != str(equipo.empresa_id):
+        raise HTTPException(
+            status_code=400,
+            detail="El técnico y el equipo deben pertenecer a la misma empresa.",
+        )
+
+    sincronizar_tenant_desde_equipo(mantenimiento, equipo)
 
     if mantenimiento.estado in ["FINALIZADO", "ANULADO"]:
         raise HTTPException(

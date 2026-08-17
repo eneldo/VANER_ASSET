@@ -29,7 +29,7 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import establecer_contexto_sistema, get_db
 from app.models.evidencia import Evidencia
 from app.models.mantenimiento import Mantenimiento
 from app.models.tecnico import Tecnico
@@ -50,7 +50,7 @@ router = APIRouter(prefix="/evidencias", tags=["Evidencias PRO"])
 # SERIALIZADOR
 # ===========================================================
 
-def crear_url_firmada(evidencia_id, filename=None, ttl_segundos=300):
+def crear_url_firmada(evidencia_id, filename=None, ttl_segundos=3600):
     expires = int(time.time()) + ttl_segundos
     payload = f"{evidencia_id}:{expires}".encode()
     signature = hmac.new(settings.SECRET_KEY.encode(), payload, hashlib.sha256).hexdigest()
@@ -265,6 +265,7 @@ def descargar_archivo(
     db: Session = Depends(get_db),
 ):
     validar_firma_archivo(id, expires, signature)
+    establecer_contexto_sistema(db)
     evidencia = db.query(Evidencia).filter(Evidencia.id == id).first()
     if not evidencia:
         raise HTTPException(status_code=404, detail="Evidencia no encontrada")

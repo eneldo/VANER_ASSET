@@ -23,6 +23,26 @@ class FirmaDigitalTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             FormatoMantenimientoCreate(mantenimiento_id="00000000-0000-0000-0000-000000000001", firma_operario="texto")
 
+    def test_firma_gerente_acepta_png_y_nombre_legacy(self):
+        datos = FormatoMantenimientoCreate(
+            mantenimiento_id="00000000-0000-0000-0000-000000000001",
+            firma_coordinador=firma_png_prueba(),
+        )
+        self.assertEqual(datos.firma_coordinador, firma_png_prueba())
+
+        legacy = FormatoMantenimientoCreate(
+            mantenimiento_id="00000000-0000-0000-0000-000000000001",
+            firma_coordinador="Gerente responsable",
+        )
+        self.assertEqual(legacy.firma_coordinador, "Gerente responsable")
+
+    def test_firma_gerente_rechaza_valor_excesivo(self):
+        with self.assertRaises(ValidationError):
+            FormatoMantenimientoCreate(
+                mantenimiento_id="00000000-0000-0000-0000-000000000001",
+                firma_coordinador="x" * 181,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

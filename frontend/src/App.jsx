@@ -18,6 +18,8 @@ const NoAutorizado = lazy(() => import("./pages/NoAutorizado"));
 // DASHBOARDS REALES
 const DashboardAdmin = lazy(() => import("./pages/DashboardAdmin"));
 const DashboardTecnico = lazy(() => import("./pages/DashboardTecnico"));
+const FormatoMantenimiento = lazy(() => import("./pages/tecnico/FormatoMantenimiento"));
+const FormatoPrint = lazy(() => import("./pages/tecnico/FormatoPrint"));
 const CoordinadorDashboard = lazy(() => import("./pages/coordinador/CoordinadorDashboard"));
 
 // ADMIN
@@ -110,6 +112,8 @@ function App() {
         <Route path="/admin/multiempresa-enterprise" element={<ProtectedRoute><MultiempresaEnterprisePage /></ProtectedRoute>} />
         {/* TÉCNICO */}
         <Route path="/tecnico/dashboard" element={<ProtectedRoute><DashboardTecnico /></ProtectedRoute>} />
+        <Route path="/tecnico/formato-mantenimiento/:mantenimientoId" element={<ProtectedRoute><FormatoMantenimiento /></ProtectedRoute>} />
+        <Route path="/tecnico/formato-mantenimiento/:mantenimientoId/imprimir" element={<ProtectedRoute><FormatoPrint /></ProtectedRoute>} />
 
         {/* CLIENTE */}
         <Route path="/cliente" element={<ProtectedRoute><ClienteLayout /></ProtectedRoute>}>

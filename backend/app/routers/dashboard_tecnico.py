@@ -31,7 +31,6 @@ from app.models.sede import Sede
 from app.models.categoria import Categoria
 from app.models.equipo_hoja_vida import EquipoHojaVida
 from app.models.evidencia import Evidencia
-from app.models.formato_mantenimiento import FormatoMantenimiento
 from app.models.ot_repuesto import OtRepuesto
 from app.models.ot_incidencia import OtIncidencia
 from app.services.evidencia_service import get_evidence_upload_config, save_secure_file
@@ -186,7 +185,7 @@ def aplicar_estado_operativo(mantenimiento, nuevo_estado: str):
             mantenimiento.fecha_fin = datetime.now()
 
 
-def requisitos_finalizacion(evidencias, formato, mantenimiento):
+def requisitos_finalizacion(evidencias, mantenimiento=None):
     """Retorna los requisitos faltantes para cerrar una OT."""
     tipos = {str(getattr(e, "tipo", "") or "").upper() for e in evidencias}
     faltantes = []
@@ -194,29 +193,12 @@ def requisitos_finalizacion(evidencias, formato, mantenimiento):
         if tipo not in tipos:
             faltantes.append(etiqueta)
 
-    for campo, etiqueta in (
-        ("estado_inicial", "descripción del estado inicial"),
-        ("acciones_realizadas", "acciones realizadas"),
-        ("resultado_final", "resultado final"),
-    ):
-        if not str(getattr(mantenimiento, campo, "") or "").strip():
-            faltantes.append(etiqueta)
-
-    firmas = (
-        getattr(formato, "firma_usuario", None),
-        getattr(formato, "firma_operario", None),
-    ) if formato else ()
-    if not any(str(firma or "").startswith("data:image/png;base64,") for firma in firmas):
-        faltantes.append("firma digital del cliente o técnico")
     return faltantes
 
 
 def validar_finalizacion(db: Session, mantenimiento: Mantenimiento):
     evidencias = db.query(Evidencia).filter(Evidencia.mantenimiento_id == mantenimiento.id).all()
-    formato = db.query(FormatoMantenimiento).filter(
-        FormatoMantenimiento.mantenimiento_id == mantenimiento.id
-    ).first()
-    faltantes = requisitos_finalizacion(evidencias, formato, mantenimiento)
+    faltantes = requisitos_finalizacion(evidencias, mantenimiento)
     if faltantes:
         raise HTTPException(
             status_code=409,

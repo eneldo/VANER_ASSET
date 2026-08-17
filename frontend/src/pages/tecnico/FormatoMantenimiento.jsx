@@ -12,13 +12,12 @@ import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/formatoMantenimiento.css";
 import SignaturePad from "../../components/SignaturePad";
+import API from "../../api/axios";
 import { isNetworkError, queueOfflineRequest } from "../../utils/offlineQueue";
 import {
   construirPrefillFormato,
   extraerEquipoAsignado,
 } from './formatoMantenimientoUtils';
-
-const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const TEMPLATES = {
   AIRE_ACONDICIONADO: {
@@ -470,25 +469,10 @@ export default function FormatoMantenimiento() {
 
   const template = useMemo(() => TEMPLATES[templateKey], [templateKey]);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-
-    return {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-    };
-  };
-
   async function cargarDetalleMantenimiento() {
     try {
-      const res = await fetch(
-        `${API_URL}/dashboard-tecnico/mantenimiento/${mantenimientoId}/detalle`,
-        { headers: getHeaders() }
-      );
-
-      if (!res.ok) return;
-
-      const data = await res.json();
+      const res = await API.get(`/dashboard-tecnico/mantenimiento/${mantenimientoId}/detalle`);
+      const data = res.data;
       setMantenimiento(data);
       setEquipoAsignado(extraerEquipoAsignado(data));
 
@@ -505,14 +489,8 @@ export default function FormatoMantenimiento() {
 
   async function cargarFormatoExistente() {
     try {
-      const res = await fetch(
-        `${API_URL}/formatos-mantenimiento/mantenimiento/${mantenimientoId}`,
-        { headers: getHeaders() }
-      );
-
-      if (!res.ok) return;
-
-      const data = await res.json();
+      const res = await API.get(`/formatos-mantenimiento/mantenimiento/${mantenimientoId}`);
+      const data = res.data;
       setFormatoId(data.id);
 
       const plantillaGuardada = data?.trabajos_realizados?._plantilla;
@@ -533,8 +511,10 @@ export default function FormatoMantenimiento() {
             ? data.repuestos_utilizados
             : prev.repuestos_utilizados,
       }));
-    } catch {
-      console.log("No existe formato previo.");
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error("No se pudo cargar el formato:", error);
+      }
     }
   };
 
@@ -602,8 +582,6 @@ export default function FormatoMantenimiento() {
     const endpoint = formatoId
       ? `/formatos-mantenimiento/${formatoId}`
       : "/formatos-mantenimiento/";
-    const url = `${API_URL}${endpoint}`;
-    const method = formatoId ? "PUT" : "POST";
     const payload = {
       ...form,
       mantenimiento_id: String(mantenimientoId),
@@ -616,36 +594,30 @@ export default function FormatoMantenimiento() {
     };
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: getHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        alert(error.detail || "No se pudo guardar el formato.");
-        return;
-      }
-
-      const data = await res.json();
+      const res = formatoId
+        ? await API.put(endpoint, payload)
+        : await API.post(endpoint, payload);
+      const data = res.data;
       setFormatoId(data.id);
       alert("Bitácora guardada correctamente.");
+      return true;
     } catch (error) {
       console.error(error);
       if (isNetworkError(error)) {
         await queueOfflineRequest({ method: formatoId ? "put" : "post", url: endpoint, data: payload });
-        alert("Sin conexión: el formato y la firma quedaron guardados para sincronización automática.");
-        return;
+        alert("Sin conexión: el formato quedó guardado para sincronización automática.");
+        return false;
       }
-      alert("Error guardando la bitácora.");
+      alert(error.response?.data?.detail || "Error guardando la bitácora.");
+      return false;
     } finally {
       setGuardando(false);
     }
   };
 
   const guardarEImprimir = async () => {
-    await guardarFormato();
+    const guardado = await guardarFormato();
+    if (!guardado) return;
 
     setTimeout(() => {
       navigate(`/tecnico/formato-mantenimiento/${mantenimientoId}/imprimir`);
@@ -661,8 +633,8 @@ export default function FormatoMantenimiento() {
         </div>
 
         <div className="formato-actions">
-          <button onClick={() => navigate(-1)} className="btn-secundario">
-            Volver
+          <button onClick={() => navigate("/tecnico/dashboard")} className="btn-secundario">
+            Volver al portal técnico
           </button>
 
           <button onClick={guardarFormato} className="btn-principal" disabled={guardando}>
@@ -942,15 +914,12 @@ export default function FormatoMantenimiento() {
 
         <div className="firmas">
           <SignaturePad label="Firma del cliente / usuario" value={form.firma_usuario || ""} onChange={(value) => actualizarCampo("firma_usuario", value)} />
-          <SignaturePad label="Firma del técnico / operario" value={form.firma_operario || ""} onChange={(value) => actualizarCampo("firma_operario", value)} />
 
-          <label>
-            Firma del Coordinador
-            <input
-              value={form.firma_coordinador || ""}
-              onChange={(e) => actualizarCampo("firma_coordinador", e.target.value)}
-            />
-          </label>
+          <SignaturePad
+            label="Firma del gerente / coordinador"
+            value={form.firma_coordinador || ""}
+            onChange={(value) => actualizarCampo("firma_coordinador", value)}
+          />
         </div>
       </div>
     </div>

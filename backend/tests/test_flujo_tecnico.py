@@ -11,29 +11,27 @@ class FlujoTecnicoTests(unittest.TestCase):
             SimpleNamespace(tipo="DURANTE"),
             SimpleNamespace(tipo="DESPUES"),
         ]
-        formato = SimpleNamespace(firma_usuario="data:image/png;base64,firma", firma_operario=None)
         mantenimiento = SimpleNamespace(
             estado_inicial="Equipo con filtros sucios",
             acciones_realizadas="Limpieza y ajuste",
             resultado_final="Equipo operativo",
         )
-        self.assertEqual(requisitos_finalizacion(evidencias, formato, mantenimiento), [])
 
-    def test_ot_incompleta_reporta_cada_requisito(self):
-        faltantes = requisitos_finalizacion([], None, SimpleNamespace())
+        self.assertEqual(requisitos_finalizacion(evidencias, mantenimiento), [])
+
+    def test_ot_incompleta_reporta_evidencias_faltantes(self):
+        faltantes = requisitos_finalizacion([], SimpleNamespace())
+
         self.assertIn("foto inicial", faltantes)
         self.assertIn("foto del proceso", faltantes)
         self.assertIn("foto final", faltantes)
-        self.assertIn("acciones realizadas", faltantes)
-        self.assertIn("firma digital del cliente o técnico", faltantes)
+        self.assertNotIn("acciones realizadas", faltantes)
+        self.assertNotIn("firma digital del cliente o técnico", faltantes)
 
-    def test_firma_del_tecnico_es_valida(self):
-        evidencias = [SimpleNamespace(tipo=t) for t in ("ANTES", "DURANTE", "DESPUES")]
-        formato = SimpleNamespace(firma_usuario=None, firma_operario="data:image/png;base64,firma")
-        mantenimiento = SimpleNamespace(
-            estado_inicial="inicial", acciones_realizadas="acciones", resultado_final="final"
-        )
-        self.assertEqual(requisitos_finalizacion(evidencias, formato, mantenimiento), [])
+    def test_ot_completa_no_requiere_firma(self):
+        evidencias = [SimpleNamespace(tipo=tipo) for tipo in ("ANTES", "DURANTE", "DESPUES")]
+
+        self.assertEqual(requisitos_finalizacion(evidencias), [])
 
 
 if __name__ == "__main__":

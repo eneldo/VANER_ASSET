@@ -8,8 +8,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../../styles/formatoMantenimiento.css";
-
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+import API from "../../api/axios";
 
 export default function FormatoPrint() {
   const { mantenimientoId } = useParams();
@@ -19,26 +18,16 @@ export default function FormatoPrint() {
 
   async function cargarFormato() {
     try {
-      const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/formatos-mantenimiento/mantenimiento/${mantenimientoId}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-
-      if (!res.ok) {
-        alert("No se encontró formato para imprimir.");
-        navigate(-1);
-        return;
-      }
-
-      const data = await res.json();
-      setForm(data);
+      const res = await API.get(`/formatos-mantenimiento/mantenimiento/${mantenimientoId}`);
+      setForm(res.data);
 
       setTimeout(() => {
         window.print();
       }, 600);
     } catch (error) {
       console.error(error);
-      alert("Error cargando formato.");
+      alert(error.response?.status === 404 ? "No se encontró formato para imprimir." : "Error cargando formato.");
+      navigate(`/tecnico/formato-mantenimiento/${mantenimientoId}`, { replace: true });
     }
   };
 
@@ -62,8 +51,8 @@ export default function FormatoPrint() {
   return (
     <div className="formato-page print-mode">
       <div className="formato-topbar no-print">
-        <button onClick={() => navigate(-1)} className="btn-secundario">
-          Volver
+        <button onClick={() => navigate(`/tecnico/formato-mantenimiento/${mantenimientoId}`)} className="btn-secundario">
+          Volver al formato
         </button>
         <button onClick={() => window.print()} className="btn-imprimir">
           Imprimir nuevamente
@@ -239,12 +228,12 @@ export default function FormatoPrint() {
             <strong>Firma del Usuario</strong>
           </div>
           <div>
-            {esFirmaImagen(form.firma_operario) ? <img src={form.firma_operario} alt="Firma del operario" /> : <span>Sin firma</span>}
-            <strong>Firma del Operario</strong>
+            <span>{form.tecnico_nombre || "Técnico asignado"}</span>
+            <strong>Técnico responsable</strong>
           </div>
           <div>
-            <span>{form.firma_coordinador || ""}</span>
-            <strong>Firma del Coordinador</strong>
+            {esFirmaImagen(form.firma_coordinador) ? <img src={form.firma_coordinador} alt="Firma del gerente" /> : <span>Sin firma</span>}
+            <strong>Firma del Gerente / Coordinador</strong>
           </div>
         </div>
       </div>

@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import API from "../api/axios";
 import { isNetworkError, queueOfflineRequest } from "../utils/offlineQueue";
+import { isImageEvidence, isPdfEvidence } from "../utils/evidenciaUtils";
 
 import {
   X,
@@ -62,7 +63,7 @@ export default function ModalEjecucionTecnica({
   const [eliminandoId, setEliminandoId] = useState(null);
   const [previewEvidencia, setPreviewEvidencia] = useState(null);
   const [evidencias, setEvidencias] = useState(evidenciasIniciales);
-  const [tieneFirma, setTieneFirma] = useState(false);
+  const [imagenesFallidas, setImagenesFallidas] = useState({});
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -93,22 +94,9 @@ export default function ModalEjecucionTecnica({
     return () => window.clearTimeout(timer);
   }, [evidenciasIniciales]);
 
-  useEffect(() => {
-    let activo = true;
-    API.get(`/formatos-mantenimiento/mantenimiento/${mantenimientoId}`)
-      .then((res) => {
-        if (activo) setTieneFirma([res.data?.firma_usuario, res.data?.firma_operario].some((firma) => String(firma || "").startsWith("data:image/png;base64,")));
-      })
-      .catch(() => {
-        if (activo) setTieneFirma(false);
-      });
-    return () => { activo = false; };
-  }, [mantenimientoId]);
-
   const tiposCargados = new Set(evidencias.map((item) => String(item.tipo || "").toUpperCase()));
   const pasosCompletos = ["ANTES", "DURANTE", "DESPUES"].every((tipo) => tiposCargados.has(tipo));
-  const formularioCompleto = Boolean(estadoInicial.trim() && accionesRealizadas.trim() && resultadoFinal.trim());
-  const puedeFinalizar = pasosCompletos && formularioCompleto && tieneFirma;
+  const puedeFinalizar = pasosCompletos;
 
   const cargarEvidencias = async () => {
     if (!mantenimientoId) {
@@ -408,9 +396,6 @@ export default function ModalEjecucionTecnica({
                     {tiposCargados.has(tipo) ? "✓" : "○"} {label}
                   </span>
                 ))}
-                <span role="listitem" className={tieneFirma ? "complete" : "pending"}>
-                  {tieneFirma ? "✓" : "○"} 4. Firma
-                </span>
               </div>
 
               <div className="tec-exec-upload">
@@ -450,17 +435,22 @@ export default function ModalEjecucionTecnica({
 
                 {evidencias.map((ev) => {
                   const url = getFileUrl(ev.archivo_url);
-                  const imagen = isImage(ev.archivo_url);
+                  const imagen = isImageEvidence(ev) && !imagenesFallidas[ev.id];
 
                   return (
                     <article key={ev.id} className="tec-exec-evidencia tec-evidence-card-pro">
                       <div className="tec-evidence-card-preview">
                         {imagen ? (
-                          <img src={url} alt={ev.nombre_original || "Evidencia"} />
+                          <img
+                            src={url}
+                            alt={ev.nombre_original || "Evidencia"}
+                            loading="lazy"
+                            onError={() => setImagenesFallidas((prev) => ({ ...prev, [ev.id]: true }))}
+                          />
                         ) : (
                           <div className="tec-evidence-file-preview">
                             <FileText size={30} />
-                            <span>{isPdf(ev.archivo_url) ? "PDF" : "Archivo"}</span>
+                            <span>{isPdfEvidence(ev) ? "PDF" : "Archivo"}</span>
                           </div>
                         )}
                       </div>
@@ -498,16 +488,6 @@ export default function ModalEjecucionTecnica({
               </div>
             </section>
 
-            <section className="tec-exec-form-card tec-exec-signature-optional">
-              <h2>
-                <ClipboardList size={18} />
-                Firma digital del cliente o técnico
-              </h2>
-
-              <div className="tec-exec-signature-box">
-                <span>{tieneFirma ? "Firma registrada en el formato oficial" : "Firma obligatoria pendiente: complétala en Formato oficial"}</span>
-              </div>
-            </section>
           </main>
         </div>
 
@@ -546,7 +526,7 @@ export default function ModalEjecucionTecnica({
             className="tec-exec-primary"
             onClick={() => guardarAvance("FINALIZADO")}
             disabled={guardando || !puedeFinalizar}
-            title={puedeFinalizar ? "Finalizar orden" : "Completa las tres fotos, los campos obligatorios y la firma"}
+            title={puedeFinalizar ? "Finalizar orden" : "Completa las tres evidencias fotográficas"}
           >
             <CheckCircle size={16} />
             Finalizar
@@ -567,7 +547,7 @@ export default function ModalEjecucionTecnica({
                 </button>
               </div>
 
-              {isPdf(previewEvidencia.archivo_url) ? (
+              {isPdfEvidence(previewEvidencia) ? (
                 <iframe
                   src={previewEvidencia.url}
                   title="Evidencia PDF"
@@ -623,17 +603,6 @@ function getFileUrl(url) {
   ).replace(/\/$/, "");
 
   return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
-}
-
-function isPdf(url = "") {
-  return String(url).toLowerCase().includes(".pdf");
-}
-
-function isImage(url = "") {
-  const lower = String(url).toLowerCase();
-  return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
-    lower.includes(ext)
-  );
 }
 
 function formatApiError(error, fallback) {

@@ -26,14 +26,14 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Eye,
 } from "lucide-react";
 
 import Sidebar from "../../components/Sidebar";
 import api from "../../api/axios";
+import MantenimientoInformeModal from "../../components/MantenimientoInformeModal";
 import { clearSession } from "../../utils/authStorage";
 import "../../styles/reportes.css";
-
-const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export default function ReportesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -41,6 +41,9 @@ export default function ReportesPage() {
   const [empresas, setEmpresas] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [items, setItems] = useState([]);
+  const [seleccionadoId, setSeleccionadoId] = useState("");
+  const [detalleSeleccionado, setDetalleSeleccionado] = useState(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
   const [empresaId, setEmpresaId] = useState("");
   const [sedeId, setSedeId] = useState("");
@@ -113,22 +116,10 @@ export default function ReportesPage() {
     return () => window.clearTimeout(timer);
   }, [items, filasPorPagina]);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
-
-    return {
-      Authorization: token ? `Bearer ${token}` : "",
-    };
-  };
-
   async function cargarEmpresas() {
     try {
-      const res = await fetch(`${API_URL}/reportes/filtros/empresas`, {
-        headers: getHeaders(),
-      });
-
-      const data = await res.json();
-      setEmpresas(Array.isArray(data) ? data : []);
+      const res = await api.get("/reportes/filtros/empresas");
+      setEmpresas(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error cargando empresas:", error);
     }
@@ -136,16 +127,10 @@ export default function ReportesPage() {
 
   async function cargarSedes() {
     try {
-      const url = empresaId
-        ? `${API_URL}/reportes/filtros/sedes?empresa_id=${empresaId}`
-        : `${API_URL}/reportes/filtros/sedes`;
-
-      const res = await fetch(url, {
-        headers: getHeaders(),
+      const res = await api.get("/reportes/filtros/sedes", {
+        params: empresaId ? { empresa_id: empresaId } : {},
       });
-
-      const data = await res.json();
-      setSedes(Array.isArray(data) ? data : []);
+      setSedes(Array.isArray(res.data) ? res.data : []);
       setSedeId("");
     } catch (error) {
       console.error("Error cargando sedes:", error);
@@ -156,16 +141,11 @@ export default function ReportesPage() {
     setLoading(true);
 
     try {
-      const url = `${API_URL}/reportes/mantenimientos${
-        queryParams ? `?${queryParams}` : ""
-      }`;
-
-      const res = await fetch(url, {
-        headers: getHeaders(),
-      });
-
-      const data = await res.json();
-      setItems(data.items || []);
+      const res = await api.get(`/reportes/mantenimientos${queryParams ? `?${queryParams}` : ""}`);
+      setItems(res.data.items || []);
+      setSeleccionadoId((actual) => (
+        (res.data.items || []).some((item) => String(item.id) === String(actual)) ? actual : ""
+      ));
     } catch (error) {
       console.error("Error cargando reporte:", error);
       setItems([]);
@@ -189,20 +169,10 @@ export default function ReportesPage() {
   const descargarArchivo = async (tipo) => {
     try {
       const endpoint = tipo === "excel" ? "mantenimientos/excel" : "mantenimientos/pdf";
-
-      const url = `${API_URL}/reportes/${endpoint}${queryParams ? `?${queryParams}` : ""}`;
-
-      const res = await fetch(url, {
-        headers: getHeaders(),
+      const res = await api.get(`/reportes/${endpoint}${queryParams ? `?${queryParams}` : ""}`, {
+        responseType: "blob",
       });
-
-      if (!res.ok) {
-        alert("No se pudo generar el reporte.");
-        return;
-      }
-
-      const blob = await res.blob();
-      const fileURL = window.URL.createObjectURL(blob);
+      const fileURL = window.URL.createObjectURL(res.data);
 
       const link = document.createElement("a");
       link.href = fileURL;
@@ -217,6 +187,47 @@ export default function ReportesPage() {
     } catch (error) {
       console.error("Error descargando archivo:", error);
       alert("Error generando el archivo.");
+    }
+  };
+
+  const descargarSeleccionado = async (tipo) => {
+    if (!seleccionadoId) {
+      alert("Selecciona un mantenimiento.");
+      return;
+    }
+    try {
+      const res = await api.get(`/reportes/mantenimientos/${seleccionadoId}/${tipo}`, {
+        responseType: "blob",
+      });
+      const fileURL = window.URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = fileURL;
+      link.download = `informe_mantenimiento_${seleccionadoId}.${tipo === "excel" ? "xlsx" : "pdf"}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(fileURL);
+    } catch (error) {
+      console.error("Error descargando informe seleccionado:", error);
+      alert(error.response?.data?.detail || "No se pudo generar el informe seleccionado.");
+    }
+  };
+
+  const abrirInforme = async (mantenimientoId = seleccionadoId) => {
+    if (!mantenimientoId) {
+      alert("Selecciona un mantenimiento para ver el informe.");
+      return;
+    }
+    try {
+      setCargandoDetalle(true);
+      setSeleccionadoId(String(mantenimientoId));
+      const res = await api.get(`/reportes/mantenimientos/${mantenimientoId}`);
+      setDetalleSeleccionado(res.data);
+    } catch (error) {
+      console.error("Error cargando informe:", error);
+      alert(error.response?.data?.detail || "No se pudo cargar el informe del mantenimiento.");
+    } finally {
+      setCargandoDetalle(false);
     }
   };
 
@@ -389,7 +400,12 @@ export default function ReportesPage() {
 
               <button className="btn-pro pdf" onClick={() => descargarArchivo("pdf")}>
                 <Download size={18} />
-                PDF
+                PDF consolidado
+              </button>
+
+              <button className="btn-pro selected" disabled={!seleccionadoId || cargandoDetalle} onClick={() => abrirInforme()}>
+                <Eye size={18} />
+                {cargandoDetalle ? "Cargando..." : "Ver informe seleccionado"}
               </button>
             </div>
           </div>
@@ -406,6 +422,7 @@ export default function ReportesPage() {
               <table className="reportes-pro-table">
                 <thead>
                   <tr>
+                    <th>Seleccionar</th>
                     <th>Empresa</th>
                     <th>Sede</th>
                     <th>Equipo</th>
@@ -414,26 +431,36 @@ export default function ReportesPage() {
                     <th>Estado</th>
                     <th>Programado</th>
                     <th>Costo</th>
+                    <th>Informe</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="8" className="empty-row">
+                      <td colSpan="10" className="empty-row">
                         Cargando reporte...
                       </td>
                     </tr>
                   ) : itemsPaginados.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="empty-row empty-row-pro">
+                      <td colSpan="10" className="empty-row empty-row-pro">
                         <Inbox size={38} />
                         <span>No hay registros con los filtros seleccionados.</span>
                       </td>
                     </tr>
                   ) : (
                     itemsPaginados.map((item) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className={String(seleccionadoId) === String(item.id) ? "selected-report-row" : ""}>
+                        <td>
+                          <input
+                            type="radio"
+                            name="mantenimiento-reporte"
+                            checked={String(seleccionadoId) === String(item.id)}
+                            onChange={() => setSeleccionadoId(String(item.id))}
+                            aria-label={`Seleccionar mantenimiento ${item.equipo}`}
+                          />
+                        </td>
                         <td>{item.empresa}</td>
                         <td>{item.sede}</td>
                         <td>
@@ -449,6 +476,11 @@ export default function ReportesPage() {
                         </td>
                         <td>{item.fecha_programada || "Sin fecha"}</td>
                         <td>${item.costo || "0"}</td>
+                        <td>
+                          <button className="report-row-action" onClick={() => abrirInforme(item.id)}>
+                            <Eye size={15} /> Ver completo
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -496,6 +528,15 @@ export default function ReportesPage() {
           </div>
         </section>
       </main>
+
+      {detalleSeleccionado && (
+        <MantenimientoInformeModal
+          detalle={detalleSeleccionado}
+          onClose={() => setDetalleSeleccionado(null)}
+          onDownloadExcel={() => descargarSeleccionado("excel")}
+          onDownloadPdf={() => descargarSeleccionado("pdf")}
+        />
+      )}
     </div>
   );
 }

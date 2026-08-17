@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { AuthContext } from "../context/auth-context";
+import { isImageEvidence, isPdfEvidence } from "../utils/evidenciaUtils";
 import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
 
 import {
@@ -72,17 +73,6 @@ function handleImageFallback(event, fallbackUrl) {
   }
 
   img.style.display = "none";
-}
-
-function isPdf(url = "") {
-  return String(url).toLowerCase().includes(".pdf");
-}
-
-function isImage(url = "") {
-  const lower = String(url).toLowerCase();
-  return [".jpg", ".jpeg", ".png", ".webp", ".gif"].some((ext) =>
-    lower.includes(ext)
-  );
 }
 
 export default function DashboardTecnico() {
@@ -203,6 +193,17 @@ export default function DashboardTecnico() {
   };
 
   const abrirFormato = (mantenimiento) => {
+    const id = mantenimiento.mantenimiento_id || mantenimiento.id;
+
+    if (!id) {
+      alert("No se encontró el ID del mantenimiento.");
+      return;
+    }
+
+    navigate(`/tecnico/formato-mantenimiento/${id}`);
+  };
+
+  const abrirBitacora = (mantenimiento) => {
     const id = mantenimiento.mantenimiento_id || mantenimiento.id;
 
     if (!id) {
@@ -474,7 +475,7 @@ export default function DashboardTecnico() {
                 mantenimiento={m}
                 onDetalle={() => verDetalle(m)}
                 onEvidencia={() => abrirModalEvidencia(m)}
-                onFormato={() => abrirFormato(m)}
+                onBitacora={() => abrirBitacora(m)}
                 onIniciar={() => abrirEjecucionTecnica(m)}
               />
             ))}
@@ -516,7 +517,7 @@ export default function DashboardTecnico() {
           usuarioId={usuarioId}
           onClose={() => setModalHistorico(false)}
           onDetalle={verDetalle}
-          onFormato={abrirFormato}
+          onBitacora={abrirBitacora}
         />
       )}
 
@@ -576,7 +577,7 @@ export default function DashboardTecnico() {
                       return (
                         <article key={ev.id} className="tec-evidence-item">
                           <div className="tec-evidence-preview">
-                            {isImage(ev.archivo_url) ? (
+                            {isImageEvidence(ev) ? (
                               <img
                                 src={url}
                                 alt={ev.nombre_original || "Evidencia"}
@@ -585,7 +586,7 @@ export default function DashboardTecnico() {
                             ) : (
                               <div className="tec-evidence-file">
                                 <FileText size={32} />
-                                <span>{isPdf(ev.archivo_url) ? "PDF" : "Archivo"}</span>
+                                <span>{isPdfEvidence(ev) ? "PDF" : "Archivo"}</span>
                               </div>
                             )}
                           </div>
@@ -639,7 +640,7 @@ export default function DashboardTecnico() {
               </button>
             </div>
 
-            {isPdf(previewEvidencia.archivo_url) ? (
+            {isPdfEvidence(previewEvidencia) ? (
               <iframe
                 src={previewEvidencia.url}
                 title="Evidencia PDF"
@@ -672,7 +673,7 @@ function MetricCard({ title, value, icon, onClick }) {
   );
 }
 
-function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, onIniciar }) {
+function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onBitacora, onIniciar }) {
   const e = mantenimiento.equipo || {};
   const empresa = mantenimiento.empresa || {};
   const sede = mantenimiento.sede || {};
@@ -726,7 +727,7 @@ function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, on
             Evidencia
           </button>
 
-          <button className="dark" onClick={onFormato}>
+          <button className="dark" onClick={onBitacora}>
             <ClipboardList size={15} />
             Bitácora
           </button>
@@ -736,7 +737,7 @@ function MantenimientoRow({ mantenimiento, onDetalle, onEvidencia, onFormato, on
   );
 }
 
-function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
+function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onBitacora }) {
   const [historico, setHistorico] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -836,7 +837,7 @@ function HistoricoTecnicoModal({ usuarioId, onClose, onDetalle, onFormato }) {
                     <td>
                       <div className="tec-history-actions">
                         <button onClick={() => onDetalle(m)}>Detalle</button>
-                        <button onClick={() => onFormato(m)}>Bitácora</button>
+                        <button onClick={() => onBitacora(m)}>Bitácora</button>
                       </div>
                     </td>
                   </tr>
