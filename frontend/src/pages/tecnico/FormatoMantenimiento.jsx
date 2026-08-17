@@ -15,8 +15,10 @@ import SignaturePad from "../../components/SignaturePad";
 import API from "../../api/axios";
 import { isNetworkError, queueOfflineRequest } from "../../utils/offlineQueue";
 import {
+  construirPayloadFormato,
   construirPrefillFormato,
   extraerEquipoAsignado,
+  obtenerMensajeErrorFormato,
 } from './formatoMantenimientoUtils';
 
 const TEMPLATES = {
@@ -582,16 +584,12 @@ export default function FormatoMantenimiento() {
     const endpoint = formatoId
       ? `/formatos-mantenimiento/${formatoId}`
       : "/formatos-mantenimiento/";
-    const payload = {
-      ...form,
-      mantenimiento_id: String(mantenimientoId),
-      tipo_equipo: form.tipo_equipo || templateKey,
-      trabajos_realizados: {
-        ...form.trabajos_realizados,
-        _plantilla: templateKey,
-        _titulo_plantilla: template.titulo,
-      },
-    };
+    const payload = construirPayloadFormato(
+      form,
+      mantenimientoId,
+      templateKey,
+      template,
+    );
 
     try {
       const res = formatoId
@@ -608,7 +606,7 @@ export default function FormatoMantenimiento() {
         alert("Sin conexión: el formato quedó guardado para sincronización automática.");
         return false;
       }
-      alert(error.response?.data?.detail || "Error guardando la bitácora.");
+      alert(obtenerMensajeErrorFormato(error, "Error guardando la bitácora."));
       return false;
     } finally {
       setGuardando(false);

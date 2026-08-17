@@ -41,3 +41,55 @@ export function construirPrefillFormato(detalle, mantenimientoId, previo = {}) {
       previo.tipo_equipo || equipo.nombre || equipo.categoria || '',
   };
 }
+
+const ETIQUETAS_CAMPOS = {
+  fecha: 'Fecha',
+  mantenimiento_id: 'Mantenimiento',
+  tecnico_id: 'Tecnico',
+  numero_ot: 'Numero de OT',
+  firma_usuario: 'Firma del cliente / usuario',
+  firma_operario: 'Firma del tecnico / operario',
+  firma_coordinador: 'Firma del gerente / coordinador',
+};
+
+export function construirPayloadFormato(form, mantenimientoId, templateKey, template) {
+  return {
+    ...form,
+    mantenimiento_id: String(mantenimientoId),
+    tecnico_id: form.tecnico_id || null,
+    fecha: form.fecha || null,
+    tipo_equipo: form.tipo_equipo || templateKey,
+    trabajos_realizados: {
+      ...form.trabajos_realizados,
+      _plantilla: templateKey,
+      _titulo_plantilla: template.titulo,
+    },
+  };
+}
+
+export function obtenerMensajeErrorFormato(error, mensajePredeterminado) {
+  const detalle = error?.response?.data?.detail;
+
+  if (typeof detalle === 'string') return detalle;
+
+  if (Array.isArray(detalle)) {
+    const mensajes = detalle
+      .map((item) => {
+        const campo = item?.loc?.at(-1);
+        const etiqueta = ETIQUETAS_CAMPOS[campo] || campo;
+        const mensaje = item?.msg;
+
+        if (!mensaje) return null;
+        return etiqueta ? `${etiqueta}: ${mensaje}` : mensaje;
+      })
+      .filter(Boolean);
+
+    if (mensajes.length > 0) return mensajes.join('\n');
+  }
+
+  if (detalle && typeof detalle === 'object') {
+    return detalle.mensaje || detalle.message || detalle.msg || mensajePredeterminado;
+  }
+
+  return mensajePredeterminado;
+}
