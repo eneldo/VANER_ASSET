@@ -771,6 +771,18 @@
   resize: vertical;
 }
 
+.tec-evidence-limit {
+  display: block;
+  margin: -2px 0 4px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.tec-evidence-limit.is-full {
+  color: #b91c1c;
+}
+
 .tec-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1080,7 +1092,7 @@
 
 .tec-step-progress {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 12px 0 16px;
 }

@@ -407,8 +407,25 @@ def _tarjeta_evidencia(evidencia, styles, color_primario):
     return card
 
 
+ORDEN_TIPOS_EVIDENCIA = {
+    "ANTES": 0,
+    "DURANTE": 1,
+    "DESPUES": 2,
+    "SOPORTE": 3,
+}
+
+
+def _ordenar_evidencias(evidencias):
+    def prioridad(evidencia):
+        tipo = str(getattr(evidencia, "tipo", None) or "SOPORTE").strip().upper()
+        return ORDEN_TIPOS_EVIDENCIA.get(tipo, len(ORDEN_TIPOS_EVIDENCIA))
+
+    return sorted(evidencias, key=prioridad)
+
+
 def _tabla_evidencias(evidencias, styles, color_primario):
-    cards = [_tarjeta_evidencia(item, styles, color_primario) for item in evidencias]
+    evidencias_ordenadas = _ordenar_evidencias(evidencias)
+    cards = [_tarjeta_evidencia(item, styles, color_primario) for item in evidencias_ordenadas]
     rows = []
     for indice in range(0, len(cards), 3):
         rows.append([
@@ -437,12 +454,11 @@ def _celda_firma(imagen, nombre, rol, styles):
     return contenido
 
 
-def _tabla_firmas(firma_cliente, firma_tecnico, firma_gerente, nombres, styles):
+def _tabla_firmas(firma_cliente, firma_gerente, nombres, styles):
     table = Table([[
-        _celda_firma(firma_cliente, nombres[0], "Cliente / usuario", styles),
-        _celda_firma(firma_tecnico, nombres[1], "Tecnico responsable", styles),
-        _celda_firma(firma_gerente, nombres[2], "Gerente / coordinador", styles),
-    ]], colWidths=[174, 174, 174])
+        _celda_firma(firma_cliente, nombres[0], "Cliente / Usuario", styles),
+        _celda_firma(firma_gerente, nombres[1], "Gerente / Coordinador SGA", styles),
+    ]], colWidths=[261, 261])
     table.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.45, colors.HexColor("#CBD5E1")),
         ("INNERGRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#E2E8F0")),
@@ -650,7 +666,6 @@ def _generar_pdf_ot(db, mantenimiento, destino):
         story.append(Paragraph("No se registraron incidencias.", styles["CellValue"]))
 
     firma_cliente = _imagen_firma(getattr(formato, "firma_usuario", None)) if formato else None
-    firma_tecnico = _imagen_firma(getattr(formato, "firma_operario", None)) if formato else None
     firma_gerente_valor = getattr(formato, "firma_coordinador", None) if formato else None
     firma_gerente = _imagen_firma(firma_gerente_valor)
     gerente_nombre = (
@@ -678,11 +693,9 @@ def _generar_pdf_ot(db, mantenimiento, destino):
             Spacer(1, 7),
             _tabla_firmas(
                 firma_cliente,
-                firma_tecnico,
                 firma_gerente,
                 [
                     getattr(empresa, "nombre", None),
-                    tecnico_nombre,
                     gerente_nombre or "Gerente responsable",
                 ],
                 styles,

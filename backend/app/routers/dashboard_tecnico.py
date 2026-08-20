@@ -50,6 +50,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "evidencias")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+TIPOS_EVIDENCIA_ETAPA = frozenset({"ANTES", "DURANTE", "DESPUES"})
+MAX_EVIDENCIAS_POR_ETAPA = 4
+
 
 # =========================================================
 # HELPERS
@@ -195,6 +198,21 @@ def requisitos_finalizacion(evidencias, mantenimiento=None):
             faltantes.append(etiqueta)
 
     return faltantes
+
+
+def validar_limite_evidencias_por_etapa(tipo, cantidad_existente):
+    tipo_normalizado = str(tipo or "").strip().upper()
+    if (
+        tipo_normalizado in TIPOS_EVIDENCIA_ETAPA
+        and cantidad_existente >= MAX_EVIDENCIAS_POR_ETAPA
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Solo puedes cargar hasta {MAX_EVIDENCIAS_POR_ETAPA} evidencias "
+                f"de tipo {tipo_normalizado}."
+            ),
+        )
 
 
 def validar_finalizacion(db: Session, mantenimiento: Mantenimiento):
@@ -625,12 +643,14 @@ async def subir_evidencia_tecnico(
     if tipo in {"ANTES", "DURANTE", "DESPUES"} and not descripcion.strip():
         raise HTTPException(status_code=422, detail="El comentario de la evidencia es obligatorio")
 
-    existentes = {
+    tipos_existentes = [
         str(row[0]).upper()
         for row in db.query(Evidencia.tipo).filter(
             Evidencia.mantenimiento_id == mantenimiento.id
         ).all()
-    }
+    ]
+    existentes = set(tipos_existentes)
+    validar_limite_evidencias_por_etapa(tipo, tipos_existentes.count(tipo))
     if tipo == "DURANTE" and "ANTES" not in existentes:
         raise HTTPException(status_code=409, detail="Primero debes cargar la foto del estado inicial")
     if tipo == "DESPUES" and not {"ANTES", "DURANTE"}.issubset(existentes):

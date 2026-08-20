@@ -24,6 +24,8 @@ import {
 
 import AdminLayout from "./AdminLayout";
 import "../../styles/equipos-saas-pro-enterprise.css";
+import { getAccessToken } from "../../utils/authStorage";
+import { coincideBusquedaEquipoConContexto } from "./equiposBusquedaUtils";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -84,7 +86,7 @@ const hojaInicial = {
 };
 
 function getToken() {
-  return localStorage.getItem("access_token") || localStorage.getItem("token");
+  return getAccessToken();
 }
 
 function authHeaders(json = true) {
@@ -156,7 +158,7 @@ export default function EquiposPage() {
   const [sedeFiltro, setSedeFiltro] = useState("");
   const [menuSedesAbierto, setMenuSedesAbierto] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
-  const equiposPorPagina = 10;
+  const [equiposPorPagina, setEquiposPorPagina] = useState(20);
   const menuSedesRef = useRef(null);
 
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -268,6 +270,14 @@ export default function EquiposPage() {
     () => new Map(sedes.map((sede) => [String(sede.id), sede.nombre || ""])),
     [sedes],
   );
+  const empresasPorId = useMemo(
+    () => new Map(empresas.map((empresa) => [String(empresa.id), empresa.nombre || ""])),
+    [empresas],
+  );
+  const categoriasPorId = useMemo(
+    () => new Map(categorias.map((categoria) => [String(categoria.id), categoria.nombre || ""])),
+    [categorias],
+  );
 
   const seleccionarSedeFiltro = (sedeId) => {
     setSedeFiltro(sedeId);
@@ -276,11 +286,9 @@ export default function EquiposPage() {
   };
 
   const equiposFiltrados = useMemo(() => {
-    const term = busqueda.trim().toLocaleLowerCase("es");
-
     return equipos.filter((equipo) => {
       const sedeNombre = sedesPorId.get(String(equipo.sede_id)) || "";
-      const texto = [
+      const coincideBusqueda = coincideBusquedaEquipoConContexto([
         equipo.nombre,
         equipo.marca,
         equipo.modelo,
@@ -289,23 +297,29 @@ export default function EquiposPage() {
         equipo.inventario,
         equipo.ubicacion,
         sedeNombre,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLocaleLowerCase("es");
-
-      const coincideBusqueda = !term || texto.includes(term);
+        empresasPorId.get(String(equipo.empresa_id)) || "",
+      ], [
+        categoriasPorId.get(String(equipo.categoria_id)) || "",
+      ], busqueda);
       const coincideSede = !sedeFiltro || String(equipo.sede_id) === sedeFiltro;
 
       return coincideBusqueda && coincideSede;
     });
-  }, [equipos, busqueda, sedeFiltro, sedesPorId]);
+  }, [equipos, busqueda, sedeFiltro, sedesPorId, empresasPorId, categoriasPorId]);
   const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / equiposPorPagina));
+  const paginaVisible = Math.min(paginaActual, totalPaginas);
 
   const equiposPaginados = equiposFiltrados.slice(
-    (paginaActual - 1) * equiposPorPagina,
-    paginaActual * equiposPorPagina
+    (paginaVisible - 1) * equiposPorPagina,
+    paginaVisible * equiposPorPagina
   );
+  const sedeFiltroNombre = sedeFiltro ? sedesPorId.get(sedeFiltro) || "la sede seleccionada" : "";
+  const inicioPagina = equiposFiltrados.length ? (paginaVisible - 1) * equiposPorPagina + 1 : 0;
+  const finPagina = Math.min(paginaVisible * equiposPorPagina, equiposFiltrados.length);
+  const detalleResultados = [
+    busqueda.trim() ? `para “${busqueda.trim()}”` : "",
+    sedeFiltroNombre ? `en ${sedeFiltroNombre}` : "",
+  ].filter(Boolean).join(" ") || "en todo el inventario";
 
   const inventarioDuplicado = useMemo(() => {
     const numero = equipoForm.inventario.trim().toLowerCase();
@@ -762,7 +776,7 @@ export default function EquiposPage() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Buscar por equipo, inventario o sede..."
+              placeholder="Buscar equipos, cámaras, inventario o sede..."
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value);
@@ -788,6 +802,14 @@ export default function EquiposPage() {
               <ChevronDown size={16} aria-hidden="true" />
             </div>
           </label>
+        </div>
+
+        <div className="enterprise-results-summary" role="status" aria-live="polite">
+          <div>
+            <strong>{equiposFiltrados.length}</strong>
+            <span>{equiposFiltrados.length === 1 ? "equipo encontrado" : "equipos encontrados"}</span>
+          </div>
+          <p>{detalleResultados}</p>
         </div>
 
         <div className="enterprise-table-wrapper">
@@ -920,15 +942,36 @@ export default function EquiposPage() {
         </div>
 
         <div className="enterprise-pagination">
-          <button disabled={paginaActual === 1} onClick={() => setPaginaActual((prev) => Math.max(1, prev - 1))}>
-            Anterior
-          </button>
+          <div className="enterprise-pagination-meta">
+            <span>Mostrando {inicioPagina}-{finPagina} de {equiposFiltrados.length}</span>
+            <label>
+              Equipos por página
+              <select
+                aria-label="Equipos por página"
+                value={equiposPorPagina}
+                onChange={(event) => {
+                  setEquiposPorPagina(Number(event.target.value));
+                  setPaginaActual(1);
+                }}
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+          </div>
 
-          <span>Página {paginaActual} de {totalPaginas}</span>
+          <div className="enterprise-pagination-actions">
+            <button disabled={paginaVisible === 1} onClick={() => setPaginaActual(Math.max(1, paginaVisible - 1))}>
+              Anterior
+            </button>
 
-          <button disabled={paginaActual === totalPaginas} onClick={() => setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))}>
-            Siguiente
-          </button>
+            <span>Página {paginaVisible} de {totalPaginas}</span>
+
+            <button disabled={paginaVisible === totalPaginas} onClick={() => setPaginaActual(Math.min(totalPaginas, paginaVisible + 1))}>
+              Siguiente
+            </button>
+          </div>
         </div>
 
         {modalAbierto && (

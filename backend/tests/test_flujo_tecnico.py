@@ -4,7 +4,11 @@ from types import SimpleNamespace
 
 from fastapi import HTTPException
 
-from app.routers.dashboard_tecnico import requisitos_finalizacion, router as dashboard_tecnico_router
+from app.routers.dashboard_tecnico import (
+    requisitos_finalizacion,
+    router as dashboard_tecnico_router,
+    validar_limite_evidencias_por_etapa,
+)
 from app.routers.mantenimientos import TRANSICIONES_VALIDAS
 from app.services.mantenimiento_estado_service import (
     aplicar_reapertura,
@@ -40,6 +44,24 @@ class FlujoTecnicoTests(unittest.TestCase):
         evidencias = [SimpleNamespace(tipo=tipo) for tipo in ("ANTES", "DURANTE", "DESPUES")]
 
         self.assertEqual(requisitos_finalizacion(evidencias), [])
+
+    def test_permite_hasta_cuatro_evidencias_por_etapa(self):
+        validar_limite_evidencias_por_etapa("ANTES", 3)
+        validar_limite_evidencias_por_etapa("DURANTE", 3)
+        validar_limite_evidencias_por_etapa("DESPUES", 3)
+
+    def test_rechaza_una_quinta_evidencia_por_etapa(self):
+        for tipo in ("ANTES", "DURANTE", "DESPUES"):
+            with self.subTest(tipo=tipo):
+                with self.assertRaises(HTTPException) as error:
+                    validar_limite_evidencias_por_etapa(tipo, 4)
+
+                self.assertEqual(error.exception.status_code, 409)
+                self.assertIn("hasta 4 evidencias", error.exception.detail)
+                self.assertIn(tipo, error.exception.detail)
+
+    def test_soporte_no_usa_limite_por_etapa(self):
+        validar_limite_evidencias_por_etapa("SOPORTE", 20)
 
     def test_reapertura_conserva_datos_y_limpia_cierre(self):
         fecha_inicio = datetime(2026, 8, 16, 8, 0)

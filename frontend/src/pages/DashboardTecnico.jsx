@@ -14,6 +14,12 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { AuthContext } from "../context/auth-context";
 import { isImageEvidence, isPdfEvidence } from "../utils/evidenciaUtils";
+import {
+  MAX_EVIDENCIAS_POR_ETAPA,
+  contarEvidenciasPorTipo,
+  obtenerCuposEvidencia,
+  validarSeleccionEvidencias,
+} from "../utils/evidenciasTecnicoUtils";
 import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
 
 import {
@@ -89,11 +95,13 @@ export default function DashboardTecnico() {
   const [modalEjecucion, setModalEjecucion] = useState(null);
   const [modalHistorico, setModalHistorico] = useState(false);
 
-  const [archivo, setArchivo] = useState(null);
+  const [archivos, setArchivos] = useState([]);
+  const [archivoInputKey, setArchivoInputKey] = useState(0);
   const [tipoEvidencia, setTipoEvidencia] = useState("ANTES");
   const [descripcionEvidencia, setDescripcionEvidencia] = useState("");
   const [evidenciasTecnico, setEvidenciasTecnico] = useState([]);
   const [cargandoEvidencias, setCargandoEvidencias] = useState(false);
+  const [subiendoEvidencias, setSubiendoEvidencias] = useState(false);
   const [previewEvidencia, setPreviewEvidencia] = useState(null);
 
   const [pagina, setPagina] = useState(1);
@@ -271,7 +279,8 @@ export default function DashboardTecnico() {
 
   const abrirModalEvidencia = async (mantenimiento) => {
     setModalEvidencia(mantenimiento);
-    setArchivo(null);
+    setArchivos([]);
+    setArchivoInputKey((actual) => actual + 1);
     setTipoEvidencia("ANTES");
     setDescripcionEvidencia("");
     await cargarEvidenciasMantenimiento(mantenimiento.mantenimiento_id);
@@ -304,38 +313,86 @@ export default function DashboardTecnico() {
     }
   };
 
+  const limpiarSeleccionEvidencias = () => {
+    setArchivos([]);
+    setArchivoInputKey((actual) => actual + 1);
+  };
+
+  const cambiarTipoEvidencia = (nuevoTipo) => {
+    setTipoEvidencia(nuevoTipo);
+    limpiarSeleccionEvidencias();
+  };
+
+  const seleccionarArchivosEvidencia = (event) => {
+    const seleccion = validarSeleccionEvidencias(
+      event.target.files,
+      evidenciasTecnico,
+      tipoEvidencia
+    );
+    if (seleccion.error) {
+      alert(seleccion.error);
+      event.target.value = "";
+      setArchivos([]);
+      return;
+    }
+    setArchivos(seleccion.archivos);
+  };
+
   const subirEvidenciaRapida = async () => {
     if (String(modalEvidencia?.estado || "").toUpperCase() === "FINALIZADO") {
       alert("Solicita al coordinador o administrador que reabra el mantenimiento antes de cargar evidencias.");
       return;
     }
 
-    if (!archivo || !modalEvidencia) {
-      alert("Selecciona un archivo.");
+    if (!archivos.length || !modalEvidencia) {
+      alert("Selecciona al menos un archivo.");
       return;
     }
 
+    const seleccion = validarSeleccionEvidencias(
+      archivos,
+      evidenciasTecnico,
+      tipoEvidencia
+    );
+    if (seleccion.error) {
+      alert(seleccion.error);
+      return;
+    }
+
+    let cantidadSubida = 0;
     try {
-      const formData = new FormData();
-      formData.append("usuario_id", usuarioId);
-      formData.append("tipo", tipoEvidencia);
-      formData.append("descripcion", descripcionEvidencia);
-      formData.append("archivo", archivo);
+      setSubiendoEvidencias(true);
+      for (const archivoSeleccionado of seleccion.archivos) {
+        const formData = new FormData();
+        formData.append("usuario_id", usuarioId);
+        formData.append("tipo", tipoEvidencia);
+        formData.append("descripcion", descripcionEvidencia);
+        formData.append("archivo", archivoSeleccionado);
 
-      await API.post(
-        `/dashboard-tecnico/mantenimiento/${modalEvidencia.mantenimiento_id}/evidencia`,
-        formData
-      );
+        await API.post(
+          `/dashboard-tecnico/mantenimiento/${modalEvidencia.mantenimiento_id}/evidencia`,
+          formData
+        );
+        cantidadSubida += 1;
+      }
 
-      setArchivo(null);
+      limpiarSeleccionEvidencias();
       setDescripcionEvidencia("");
 
       await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
       await cargarDashboardTecnico();
-      alert("Evidencia subida correctamente.");
+      alert(cantidadSubida === 1 ? "Evidencia subida correctamente." : cantidadSubida + " evidencias subidas correctamente.");
     } catch (error) {
       console.error(error);
-      alert(error.response?.data?.detail || "Error subiendo evidencia.");
+      if (cantidadSubida > 0) {
+        await cargarEvidenciasMantenimiento(modalEvidencia.mantenimiento_id);
+        await cargarDashboardTecnico();
+      }
+      const detail = error.response?.data?.detail;
+      const mensaje = typeof detail === "string" ? detail : detail?.mensaje || "Error subiendo evidencia.";
+      alert(cantidadSubida > 0 ? "Se cargaron " + cantidadSubida + " archivo(s). " + mensaje : mensaje);
+    } finally {
+      setSubiendoEvidencias(false);
     }
   };
 
@@ -344,6 +401,8 @@ export default function DashboardTecnico() {
   }
 
   const evidenciaSoloLectura = String(modalEvidencia?.estado || "").toUpperCase() === "FINALIZADO";
+  const cuposTipoEvidencia = obtenerCuposEvidencia(evidenciasTecnico, tipoEvidencia);
+  const cantidadTipoEvidencia = contarEvidenciasPorTipo(evidenciasTecnico, tipoEvidencia);
 
   return (
     <div className="tec-shell">
@@ -550,20 +609,28 @@ export default function DashboardTecnico() {
                 </div>
               )}
               <label>Tipo</label>
-              <select disabled={evidenciaSoloLectura} value={tipoEvidencia} onChange={(e) => setTipoEvidencia(e.target.value)}>
-                <option value="ANTES">Antes</option>
-                <option value="DURANTE">Durante</option>
-                <option value="DESPUES">Después</option>
+              <select disabled={evidenciaSoloLectura} value={tipoEvidencia} onChange={(e) => cambiarTipoEvidencia(e.target.value)}>
+                <option value="ANTES">Antes ({contarEvidenciasPorTipo(evidenciasTecnico, "ANTES")}/4)</option>
+                <option value="DURANTE">Durante ({contarEvidenciasPorTipo(evidenciasTecnico, "DURANTE")}/4)</option>
+                <option value="DESPUES">Después ({contarEvidenciasPorTipo(evidenciasTecnico, "DESPUES")}/4)</option>
                 <option value="SOPORTE">Soporte</option>
               </select>
 
-              <label>Archivo</label>
+              <label>Archivos</label>
               <input
+                key={archivoInputKey}
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
-                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                disabled={evidenciaSoloLectura}
+                multiple={tipoEvidencia !== "SOPORTE"}
+                onChange={seleccionarArchivosEvidencia}
+                disabled={evidenciaSoloLectura || cuposTipoEvidencia === 0}
               />
+              <small className={cuposTipoEvidencia === 0 ? "tec-evidence-limit is-full" : "tec-evidence-limit"}>
+                {cuposTipoEvidencia === null
+                  ? "Selecciona un archivo de soporte."
+                  : cantidadTipoEvidencia + "/" + MAX_EVIDENCIAS_POR_ETAPA + " cargadas. Puedes seleccionar hasta " + cuposTipoEvidencia + " archivo(s) más."}
+                {archivos.length > 0 ? " Seleccionados: " + archivos.length + "." : ""}
+              </small>
 
               <label>Descripción</label>
               <textarea
@@ -572,9 +639,13 @@ export default function DashboardTecnico() {
                 disabled={evidenciaSoloLectura}
               />
 
-              <button className="tec-btn-primary" onClick={subirEvidenciaRapida} disabled={evidenciaSoloLectura}>
+              <button
+                className="tec-btn-primary"
+                onClick={subirEvidenciaRapida}
+                disabled={evidenciaSoloLectura || subiendoEvidencias || !archivos.length || cuposTipoEvidencia === 0}
+              >
                 <UploadCloud size={17} />
-                Subir evidencia
+                {subiendoEvidencias ? "Subiendo..." : archivos.length > 1 ? "Subir evidencias" : "Subir evidencia"}
               </button>
 
               <div className="tec-evidence-manager">

@@ -13,6 +13,12 @@ import { useEffect, useMemo, useState } from "react";
 import API from "../api/axios";
 import { isNetworkError, queueOfflineRequest } from "../utils/offlineQueue";
 import { isImageEvidence, isPdfEvidence } from "../utils/evidenciaUtils";
+import {
+  MAX_EVIDENCIAS_POR_ETAPA,
+  contarEvidenciasPorTipo,
+  obtenerCuposEvidencia,
+  validarSeleccionEvidencias,
+} from "../utils/evidenciasTecnicoUtils";
 
 import {
   X,
@@ -55,7 +61,8 @@ export default function ModalEjecucionTecnica({
   const [repuestos, setRepuestos] = useState([]);
   const [incidencias, setIncidencias] = useState([]);
 
-  const [archivo, setArchivo] = useState(null);
+  const [archivos, setArchivos] = useState([]);
+  const [archivoInputKey, setArchivoInputKey] = useState(0);
   const [tipoEvidencia, setTipoEvidencia] = useState("DURANTE");
   const [descripcionEvidencia, setDescripcionEvidencia] = useState("");
 
@@ -96,6 +103,8 @@ export default function ModalEjecucionTecnica({
   }, [evidenciasIniciales]);
 
   const tiposCargados = new Set(evidencias.map((item) => String(item.tipo || "").toUpperCase()));
+  const cuposTipoEvidencia = obtenerCuposEvidencia(evidencias, tipoEvidencia);
+  const cantidadTipoEvidencia = contarEvidenciasPorTipo(evidencias, tipoEvidencia);
   const pasosCompletos = ["ANTES", "DURANTE", "DESPUES"].every((tipo) => tiposCargados.has(tipo));
   const puedeFinalizar = pasosCompletos;
 
@@ -173,13 +182,47 @@ export default function ModalEjecucionTecnica({
     }
   };
 
+  const limpiarSeleccionEvidencias = () => {
+    setArchivos([]);
+    setArchivoInputKey((actual) => actual + 1);
+  };
+
+  const cambiarTipoEvidencia = (nuevoTipo) => {
+    setTipoEvidencia(nuevoTipo);
+    limpiarSeleccionEvidencias();
+  };
+
+  const seleccionarArchivosEvidencia = (event) => {
+    const seleccion = validarSeleccionEvidencias(
+      event.target.files,
+      evidencias,
+      tipoEvidencia
+    );
+    if (seleccion.error) {
+      alert(seleccion.error);
+      event.target.value = "";
+      setArchivos([]);
+      return;
+    }
+    setArchivos(seleccion.archivos);
+  };
+
+  const crearFormDataEvidencia = (archivoSeleccionado) => {
+    const formData = new FormData();
+    formData.append("usuario_id", usuarioId);
+    formData.append("tipo", tipoEvidencia);
+    formData.append("descripcion", descripcionEvidencia || "");
+    formData.append("archivo", archivoSeleccionado);
+    return formData;
+  };
+
   const subirEvidencia = async () => {
     if (esFinalizado) {
       alert("Un coordinador o administrador debe reabrir el mantenimiento antes de cargar evidencias.");
       return;
     }
-    if (!archivo) {
-      alert("Selecciona una imagen o PDF.");
+    if (!archivos.length) {
+      alert("Selecciona al menos una imagen o PDF.");
       return;
     }
     if (["ANTES", "DURANTE", "DESPUES"].includes(tipoEvidencia) && !descripcionEvidencia.trim()) {
@@ -187,26 +230,31 @@ export default function ModalEjecucionTecnica({
       return;
     }
 
-    const formData = new FormData();
-    formData.append("usuario_id", usuarioId);
-    formData.append("tipo", tipoEvidencia);
-    formData.append("descripcion", descripcionEvidencia || "");
-    formData.append("archivo", archivo);
+    const seleccion = validarSeleccionEvidencias(archivos, evidencias, tipoEvidencia);
+    if (seleccion.error) {
+      alert(seleccion.error);
+      return;
+    }
 
+    const evidenciasSubidas = [];
+    let indiceActual = 0;
     try {
       setSubiendo(true);
 
-      const res = await API.post(
-        `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
-        formData
-      );
+      for (; indiceActual < seleccion.archivos.length; indiceActual += 1) {
+        const res = await API.post(
+          `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
+          crearFormDataEvidencia(seleccion.archivos[indiceActual])
+        );
+        if (res.data?.evidencia) evidenciasSubidas.push(res.data.evidencia);
+      }
 
-      setArchivo(null);
+      limpiarSeleccionEvidencias();
       setDescripcionEvidencia("");
       setTipoEvidencia(nextEvidenceType(tipoEvidencia));
 
-      if (res.data?.evidencia) {
-        setEvidencias((prev) => [res.data.evidencia, ...prev]);
+      if (evidenciasSubidas.length) {
+        setEvidencias((prev) => [...evidenciasSubidas.reverse(), ...prev]);
       }
 
       await cargarEvidencias();
@@ -216,28 +264,35 @@ export default function ModalEjecucionTecnica({
         await onRefreshDetalle(mantenimientoId);
       }
 
-      alert("Evidencia cargada correctamente.");
+      alert(seleccion.archivos.length === 1 ? "Evidencia cargada correctamente." : seleccion.archivos.length + " evidencias cargadas correctamente.");
     } catch (error) {
       console.error(error);
       if (isNetworkError(error)) {
-        const pendiente = await queueOfflineRequest({
-          method: "post",
-          url: `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
-          data: formData,
-        });
-        setEvidencias((prev) => [{
-          id: `offline-${pendiente.id}`,
-          tipo: tipoEvidencia,
-          descripcion: descripcionEvidencia,
-          nombre_original: archivo.name,
-          archivo_url: URL.createObjectURL(archivo),
-          pendiente_sincronizacion: true,
-        }, ...prev]);
-        setArchivo(null);
+        const pendientes = [];
+        for (const archivoPendiente of seleccion.archivos.slice(indiceActual)) {
+          const pendiente = await queueOfflineRequest({
+            method: "post",
+            url: `/dashboard-tecnico/mantenimiento/${mantenimientoId}/evidencia`,
+            data: crearFormDataEvidencia(archivoPendiente),
+          });
+          pendientes.push({
+            id: `offline-${pendiente.id}`,
+            tipo: tipoEvidencia,
+            descripcion: descripcionEvidencia,
+            nombre_original: archivoPendiente.name,
+            archivo_url: URL.createObjectURL(archivoPendiente),
+            pendiente_sincronizacion: true,
+          });
+        }
+        setEvidencias((prev) => [...pendientes.reverse(), ...evidenciasSubidas.reverse(), ...prev]);
+        limpiarSeleccionEvidencias();
         setDescripcionEvidencia("");
         setTipoEvidencia(nextEvidenceType(tipoEvidencia));
-        alert("Sin conexión: la evidencia quedó protegida en este dispositivo y se sincronizará automáticamente.");
+        alert("Sin conexión: las evidencias pendientes quedaron protegidas en este dispositivo y se sincronizarán automáticamente.");
         return;
+      }
+      if (evidenciasSubidas.length) {
+        await cargarEvidencias();
       }
       alert(formatApiError(error, "No se pudo subir la evidencia."));
     } finally {
@@ -420,7 +475,7 @@ export default function ModalEjecucionTecnica({
               <div className="tec-step-progress" role="list" aria-label="Progreso de evidencias">
                 {[["ANTES", "1. Estado inicial"], ["DURANTE", "2. Proceso"], ["DESPUES", "3. Estado final"]].map(([tipo, label]) => (
                   <span key={tipo} role="listitem" className={tiposCargados.has(tipo) ? "complete" : "pending"}>
-                    {tiposCargados.has(tipo) ? "✓" : "○"} {label}
+                    {tiposCargados.has(tipo) ? "✓" : "○"} {label} ({contarEvidenciasPorTipo(evidencias, tipo)}/4)
                   </span>
                 ))}
               </div>
@@ -428,27 +483,36 @@ export default function ModalEjecucionTecnica({
               <div className="tec-exec-upload">
                 <select
                   value={tipoEvidencia}
-                  onChange={(e) => setTipoEvidencia(e.target.value)}
+                  onChange={(e) => cambiarTipoEvidencia(e.target.value)}
                   disabled={esFinalizado}
                 >
-                  <option value="ANTES">Antes</option>
-                  <option value="DURANTE" disabled={!tiposCargados.has("ANTES")}>Durante</option>
-                  <option value="DESPUES" disabled={!tiposCargados.has("ANTES") || !tiposCargados.has("DURANTE")}>Después</option>
+                  <option value="ANTES">Antes ({contarEvidenciasPorTipo(evidencias, "ANTES")}/4)</option>
+                  <option value="DURANTE" disabled={!tiposCargados.has("ANTES")}>Durante ({contarEvidenciasPorTipo(evidencias, "DURANTE")}/4)</option>
+                  <option value="DESPUES" disabled={!tiposCargados.has("ANTES") || !tiposCargados.has("DURANTE")}>Después ({contarEvidenciasPorTipo(evidencias, "DESPUES")}/4)</option>
                   <option value="SOPORTE">Soporte</option>
                 </select>
 
                 <input
+                  key={archivoInputKey}
                   type="file"
                   accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                  disabled={esFinalizado}
+                  multiple={tipoEvidencia !== "SOPORTE"}
+                  onChange={seleccionarArchivosEvidencia}
+                  disabled={esFinalizado || cuposTipoEvidencia === 0}
                 />
 
-                <button onClick={subirEvidencia} disabled={subiendo || esFinalizado}>
+                <button onClick={subirEvidencia} disabled={subiendo || esFinalizado || !archivos.length || cuposTipoEvidencia === 0}>
                   <UploadCloud size={16} />
-                  {subiendo ? "Subiendo..." : "Subir"}
+                  {subiendo ? "Subiendo..." : archivos.length > 1 ? "Subir todas" : "Subir"}
                 </button>
               </div>
+
+              <small className={cuposTipoEvidencia === 0 ? "tec-evidence-limit is-full" : "tec-evidence-limit"}>
+                {cuposTipoEvidencia === null
+                  ? "Selecciona un archivo de soporte."
+                  : cantidadTipoEvidencia + "/" + MAX_EVIDENCIAS_POR_ETAPA + " cargadas. Puedes seleccionar hasta " + cuposTipoEvidencia + " archivo(s) más."}
+                {archivos.length > 0 ? " Seleccionados: " + archivos.length + "." : ""}
+              </small>
 
               <input
                 className="tec-exec-desc"

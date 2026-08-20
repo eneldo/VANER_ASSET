@@ -296,14 +296,23 @@ describe("EquiposPage", () => {
     );
 
     const buscador = await screen.findByPlaceholderText(
-      "Buscar por equipo, inventario o sede...",
+      "Buscar equipos, cámaras, inventario o sede...",
     );
     expect(await screen.findByText("Mini Split Norte")).toBeInTheDocument();
     expect(await screen.findByText("Mini Split Central")).toBeInTheDocument();
+    expect(screen.getByText("2", { selector: ".enterprise-results-summary strong" })).toBeInTheDocument();
+
+    const equiposPorPagina = screen.getByLabelText("Equipos por página");
+    expect(equiposPorPagina).toHaveValue("20");
+    expect(Array.from(equiposPorPagina.options).map((option) => option.value)).toEqual(["20", "50", "100"]);
+    fireEvent.change(equiposPorPagina, { target: { value: "50" } });
+    expect(equiposPorPagina).toHaveValue("50");
 
     fireEvent.change(buscador, { target: { value: "hipoterapia" } });
     expect(screen.getByText("Mini Split Norte")).toBeInTheDocument();
     expect(screen.queryByText("Mini Split Central")).not.toBeInTheDocument();
+    expect(screen.getByText("1", { selector: ".enterprise-results-summary strong" })).toBeInTheDocument();
+    expect(screen.getByText("para “hipoterapia”")).toBeInTheDocument();
 
     fireEvent.change(buscador, { target: { value: "" } });
     fireEvent.change(screen.getByLabelText("Filtrar por sede"), {
@@ -311,6 +320,8 @@ describe("EquiposPage", () => {
     });
     expect(screen.queryByText("Mini Split Norte")).not.toBeInTheDocument();
     expect(screen.getByText("Mini Split Central")).toBeInTheDocument();
+    expect(screen.getByText("1", { selector: ".enterprise-results-summary strong" })).toBeInTheDocument();
+    expect(screen.getByText("en Hospital Central")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Abrir filtro de sedes" }));
     expect(screen.getByRole("menu", { name: "Sedes disponibles" })).toBeInTheDocument();
@@ -319,6 +330,80 @@ describe("EquiposPage", () => {
     expect(screen.getByLabelText("Filtrar por sede")).toHaveValue("sede-norte");
     expect(screen.getByText("Mini Split Norte")).toBeInTheDocument();
     expect(screen.queryByText("Mini Split Central")).not.toBeInTheDocument();
+  });
+
+  it("filtra cámaras reales sin incluir accesorios de la misma categoría", async () => {
+    const sede = { id: "sede-1", empresa_id: "empresa-1", nombre: "Sede Principal" };
+    const categoria = { id: "categoria-camaras", nombre: "Cámaras de seguridad" };
+    const equipos = [
+      {
+        id: "camara-1",
+        empresa_id: "empresa-1",
+        sede_id: sede.id,
+        categoria_id: categoria.id,
+        nombre: "Cámara IP Hikvision",
+        estado: "OPERATIVO",
+        criticidad: "MEDIA",
+        activo: true,
+      },
+      {
+        id: "monitor-1",
+        empresa_id: "empresa-1",
+        sede_id: sede.id,
+        categoria_id: categoria.id,
+        nombre: "Monitor 24 pulgadas",
+        estado: "OPERATIVO",
+        criticidad: "BAJA",
+        activo: true,
+      },
+      {
+        id: "disco-1",
+        empresa_id: "empresa-1",
+        sede_id: sede.id,
+        categoria_id: categoria.id,
+        nombre: "Disco duro 4 TB",
+        estado: "OPERATIVO",
+        criticidad: "BAJA",
+        activo: true,
+      },
+    ];
+
+    vi.stubGlobal("fetch", vi.fn(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/empresas/")) {
+        return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
+      }
+      if (url.endsWith("/sedes/")) return jsonResponse([sede]);
+      if (url.endsWith("/categorias/")) return jsonResponse([categoria]);
+      if (url.endsWith("/equipos/")) return jsonResponse(equipos);
+
+      throw new Error("Solicitud inesperada: " + url);
+    }));
+
+    render(
+      <AuthContext.Provider
+        value={{
+          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          logout: vi.fn(),
+        }}
+      >
+        <MemoryRouter initialEntries={["/admin/equipos"]}>
+          <EquiposPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    const buscador = await screen.findByPlaceholderText(
+      "Buscar equipos, cámaras, inventario o sede...",
+    );
+
+    for (const busqueda of ["camara de seguridad", "cámara", "camara", "camaras", "CÁMARA"]) {
+      fireEvent.change(buscador, { target: { value: busqueda } });
+      expect(screen.getByText("Cámara IP Hikvision")).toBeInTheDocument();
+      expect(screen.queryByText("Monitor 24 pulgadas")).not.toBeInTheDocument();
+      expect(screen.queryByText("Disco duro 4 TB")).not.toBeInTheDocument();
+      expect(screen.getByText("1", { selector: ".enterprise-results-summary strong" })).toBeInTheDocument();
+    }
   });
 
   it("permite importar nuevamente y muestra las filas omitidas", async () => {
