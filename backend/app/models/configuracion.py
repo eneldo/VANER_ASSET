@@ -9,6 +9,7 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
+from app.product import PRODUCT_NAME
 
 
 class ConfiguracionSistema(Base):
@@ -23,7 +24,7 @@ class ConfiguracionSistema(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Datos plataforma
-    nombre_plataforma = Column(String(150), nullable=False, default="SGAHolding SaaS")
+    nombre_plataforma = Column(String(150), nullable=False, default=PRODUCT_NAME)
     empresa_propietaria = Column(String(180), nullable=True)
     nit = Column(String(50), nullable=True)
     correo_soporte = Column(String(160), nullable=True)

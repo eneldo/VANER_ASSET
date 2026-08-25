@@ -1,12 +1,12 @@
 ﻿# ============================================================
-# SGA SaaS - docker-compose.prod.yml
+# VANER ASSET - docker-compose.prod.yml
 # Usa imágenes pre-built de Docker Hub (no compila en el VPS)
 # ============================================================
 
 services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:16-bookworm}
-    container_name: sga_postgres
+    container_name: vaner_asset_postgres
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB es obligatoria}
@@ -18,7 +18,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/docker/init-app-role.sh:/docker-entrypoint-initdb.d/10-init-app-role.sh:ro
     networks:
-      - sga_internal
+      - vaner_asset_internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 20s
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: ${REDIS_IMAGE:-redis:7.4.2-alpine}
-    container_name: sga_redis
+    container_name: vaner_asset_redis
     restart: always
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD es obligatoria}
@@ -44,10 +44,10 @@ services:
     cap_drop:
       - ALL
     networks:
-      - sga_internal
+      - vaner_asset_internal
 
   migrate:
-    image: vanstralhen/sga-backend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
+    image: ${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
     pull_policy: always
     restart: "no"
     entrypoint: ["alembic"]
@@ -62,15 +62,15 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - sga_internal
+      - vaner_asset_internal
 
   backend:
-    image: vanstralhen/sga-backend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
-    container_name: sga_backend
+    image: ${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
+    container_name: vaner_asset_backend
     pull_policy: always
     restart: always
     environment:
-      APP_NAME: ${APP_NAME:-SGAHolding}
+      APP_NAME: ${APP_NAME:-VANER ASSET}
       APP_ENV: production
       DEBUG: "false"
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
@@ -83,7 +83,7 @@ services:
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-sga_refresh_token}
+      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-vaner_asset_refresh_token}
       REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/auth}
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-true}
       REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-lax}
@@ -103,7 +103,7 @@ services:
       S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-}
       S3_BACKUP_ACCESS_KEY_ID: ${S3_BACKUP_ACCESS_KEY_ID:-}
       S3_BACKUP_SECRET_ACCESS_KEY: ${S3_BACKUP_SECRET_ACCESS_KEY:-}
-      S3_BACKUP_PREFIX: ${S3_BACKUP_PREFIX:-sga-production}
+      S3_BACKUP_PREFIX: ${S3_BACKUP_PREFIX:-vaner-asset-production}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -130,12 +130,12 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - sga_internal
+      - vaner_asset_internal
       - caddy_net
 
   frontend:
-    image: vanstralhen/sga-frontend:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
-    container_name: sga_frontend
+    image: ${FRONTEND_IMAGE:-vanstralhen/vaner-asset-frontend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
+    container_name: vaner_asset_frontend
     pull_policy: always
     restart: always
     depends_on:
@@ -149,7 +149,7 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - sga_internal
+      - vaner_asset_internal
       - caddy_net
     security_opt:
       - no-new-privileges:true
@@ -164,7 +164,7 @@ volumes:
   backups_data:
 
 networks:
-  sga_internal:
+  vaner_asset_internal:
     driver: bridge
 
   caddy_net:

@@ -25,8 +25,11 @@ import {
   Settings,
   Receipt,
   FileCog,
+  ClipboardList,
+  PackageSearch,
 } from "lucide-react";
 
+import { PRODUCT } from "../config/product";
 import "../styles/sidebar.css";
 
 export default function Sidebar({
@@ -110,12 +113,12 @@ export default function Sidebar({
       <div className="sga-brand">
 
         <div className="sga-logo">
-          SGA
+          {PRODUCT.shortName}
         </div>
 
         <div>
-          <h2>SGAHolding</h2>
-          <p>Gestión Empresarial</p>
+          <h2>{PRODUCT.productName}</h2>
+          <p>{PRODUCT.companyName}</p>
         </div>
 
       </div>
@@ -139,7 +142,7 @@ export default function Sidebar({
       )}
 
       <p className="sga-menu-title">
-        MÓDULO PRINCIPAL
+        MÓDULOS VANER ASSET
       </p>
 
       <nav className="sga-menu">
@@ -226,25 +229,58 @@ export default function Sidebar({
             </NavLink>
 
             <NavLink
-              to="/admin/equipos"
+              to="/admin/inventarios"
               onClick={closeMobile}
               className={itemClass}
-              aria-label="Equipos"
-              title={collapsed ? "Equipos" : undefined}
+              aria-label="Inventarios"
+              title={collapsed ? "Inventarios" : undefined}
+            >
+              <PackageSearch size={17} />
+              <span>Inventarios</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/activos"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Activos"
+              title={collapsed ? "Activos" : undefined}
             >
               <MonitorCog size={17} />
-              <span>Equipos</span>
+              <span>Activos</span>
             </NavLink>
 
             <NavLink
               to="/admin/mantenimientos"
               onClick={closeMobile}
               className={itemClass}
-              aria-label="Mantenimientos"
-              title={collapsed ? "Mantenimientos" : undefined}
+              aria-label="Mantenimiento"
+              title={collapsed ? "Mantenimiento" : undefined}
             >
               <Wrench size={17} />
-              <span>Mantenimientos</span>
+              <span>Mantenimiento</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/ordenes-trabajo"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Órdenes de trabajo"
+              title={collapsed ? "Órdenes de trabajo" : undefined}
+            >
+              <ClipboardList size={17} />
+              <span>Órdenes de trabajo</span>
+            </NavLink>
+
+            <NavLink
+              to="/admin/repuestos"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Repuestos"
+              title={collapsed ? "Repuestos" : undefined}
+            >
+              <PackageSearch size={17} />
+              <span>Repuestos</span>
             </NavLink>
 
             <NavLink

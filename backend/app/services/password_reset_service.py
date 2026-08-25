@@ -22,6 +22,7 @@ from app.models.password_reset import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.usuario import Usuario
 from app.config import settings
+from app.product import PRODUCT_NAME
 from app.services.smtp_inteligente_service import enviar_correo_smtp
 
 
@@ -159,7 +160,7 @@ def enviar_email_recuperacion(db: Session, destinatario: str, reset_url: str) ->
     enviar_correo_smtp(
         db,
         destinatario=destinatario,
-        asunto="Recuperación de contraseña - SGAHolding",
+        asunto=f"Recuperación de contraseña - {PRODUCT_NAME}",
         mensaje=mensaje,
         plantilla="password_reset",
         html=html,

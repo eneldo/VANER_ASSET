@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.models.configuracion_saas import ConfiguracionSaaS
 from app.models.smtp_log import SMTPLog
+from app.product import PRODUCT_NAME
 from app.services.secret_store import decrypt_mapping
 
 try:
@@ -23,7 +24,7 @@ except Exception:  # pragma: no cover - compatible si la fase 34.2.1 no está ap
     Automatizacion = None
 
 
-DEFAULT_FROM_NAME = "SGA SaaS PRO"
+DEFAULT_FROM_NAME = PRODUCT_NAME
 
 
 def obtener_configuracion_smtp(db: Session) -> Dict[str, Any]:
@@ -93,7 +94,7 @@ def render_template_base(titulo: str, mensaje: str, subtitulo: Optional[str] = N
               </tr>
               <tr>
                 <td style="padding:18px 30px;background:#f8fafc;color:#64748b;font-size:12px;">
-                  SGA SaaS PRO · Notificación automática empresarial
+                  {PRODUCT_NAME} · Notificación automática empresarial
                 </td>
               </tr>
             </table>
@@ -147,7 +148,7 @@ def enviar_correo_smtp(
     msg["From"] = f"{from_name} <{from_email}>"
     msg["To"] = destinatario
 
-    html_body = html or render_template_base(asunto, mensaje, "SGA SaaS PRO")
+    html_body = html or render_template_base(asunto, mensaje, PRODUCT_NAME)
     msg.attach(MIMEText(mensaje, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 

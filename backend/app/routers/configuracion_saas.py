@@ -30,6 +30,7 @@ from app.schemas.configuracion_saas import (
 )
 from app.services.backup_service import create_backup_marker
 from app.services.email_service import send_test_email
+from app.product import PRODUCT_NAME
 from app.services.secret_store import (
     decrypt_mapping,
     encrypt_secret,
@@ -53,7 +54,7 @@ def default_config_payload() -> dict:
     """Valores por defecto profesionales de la configuración SaaS."""
     return {
         "id": 1,
-        "nombre_plataforma": "SGA SaaS PRO",
+        "nombre_plataforma": PRODUCT_NAME,
         "logo_url": None,
         "color_primario": "#2563eb",
         "color_secundario": "#0f172a",
@@ -64,7 +65,7 @@ def default_config_payload() -> dict:
             "username": "",
             "password": "",
             "from_email": "",
-            "from_name": "SGA SaaS PRO",
+            "from_name": PRODUCT_NAME,
             "use_tls": True,
             "use_ssl": False,
         },

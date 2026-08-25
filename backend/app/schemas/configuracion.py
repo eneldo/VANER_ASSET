@@ -5,11 +5,12 @@
 
 from typing import Optional
 from pydantic import BaseModel, Field
+from app.product import PRODUCT_NAME
 
 
 class ConfiguracionBase(BaseModel):
     # Datos plataforma
-    nombre_plataforma: str = Field(default="SGAHolding SaaS", max_length=150)
+    nombre_plataforma: str = Field(default=PRODUCT_NAME, max_length=150)
     empresa_propietaria: Optional[str] = None
     nit: Optional[str] = None
     correo_soporte: Optional[str] = None

@@ -7,6 +7,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { clearSession } from "../../utils/authStorage";
+import { PRODUCT } from "../../config/product";
 
 import {
   LayoutDashboard,
@@ -66,10 +67,10 @@ export default function ClienteLayout() {
         {/* ================================================= */}
 
         <div className="cliente-brand">
-          <div className="cliente-logo">SGA</div>
+          <div className="cliente-logo">{PRODUCT.shortName}</div>
 
           <div>
-            <h2>SGAHolding</h2>
+            <h2>{PRODUCT.productName}</h2>
             <p>Portal Empresa</p>
           </div>
         </div>
@@ -103,7 +104,7 @@ export default function ClienteLayout() {
 
           <NavLink to="/cliente/equipos" className="cliente-link">
             <MonitorCog size={18} />
-            Hoja de vida equipos
+            Activos y hojas de vida
           </NavLink>
 
           <NavLink to="/cliente/mantenimientos" className="cliente-link">

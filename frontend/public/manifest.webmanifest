@@ -1,7 +1,7 @@
 {
-  "name": "SGA SaaS - Gestión de Mantenimiento",
-  "short_name": "SGA Técnico",
-  "description": "Gestión móvil de órdenes de trabajo preventivas y correctivas.",
+  "name": "VANER ASSET - VANER SOFTWARE",
+  "short_name": "VANER ASSET",
+  "description": "Plataforma para la gestión de inventarios, activos y mantenimiento.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,9 +10,9 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/vaner-asset-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

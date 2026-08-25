@@ -1,0 +1,7 @@
+{
+  "id": "vaner",
+  "name": "Cliente VANER",
+  "slug": "vaner",
+  "status": "internal",
+  "enabled_modules": ["Inventarios", "Activos", "Mantenimiento", "Ordenes de trabajo", "Repuestos", "Tecnicos", "Reportes", "Dashboard", "Administracion"]
+}

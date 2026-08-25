@@ -1,0 +1,7 @@
+{
+  "id": "cliente-3",
+  "name": "Cliente 3",
+  "slug": "cliente-3",
+  "status": "planned",
+  "enabled_modules": ["Inventarios", "Activos", "Mantenimiento", "Ordenes de trabajo", "Reportes"]
+}

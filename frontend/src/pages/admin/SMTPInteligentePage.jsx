@@ -27,6 +27,7 @@ import {
   probarSMTP,
 } from "../../api/smtpInteligenteApi";
 import AdminLayout from "./AdminLayout";
+import { PRODUCT } from "../../config/product";
 
 export default function SMTPInteligentePage() {
   const [estado, setEstado] = useState(null);
@@ -38,8 +39,8 @@ export default function SMTPInteligentePage() {
 
   const [testForm, setTestForm] = useState({
     destinatario: "",
-    asunto: "Prueba SMTP SGA SaaS PRO",
-    mensaje: "Correo de prueba enviado desde SGA SaaS PRO.",
+    asunto: `Prueba SMTP ${PRODUCT.productName}`,
+    mensaje: `Correo de prueba enviado desde ${PRODUCT.productName}.`,
   });
 
   const [manualForm, setManualForm] = useState({

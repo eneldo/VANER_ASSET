@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">VANER ASSET</title>
+  <desc id="description">Monograma VA para la plataforma VANER ASSET.</desc>
+  <defs>
+    <linearGradient id="background" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/>
+      <stop offset="0.55" stop-color="#153e75"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="160" y1="120" x2="360" y2="392" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f3ff63"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <path d="M118 132h72l66 188 66-188h72L288 394h-64L118 132Z" fill="#fff"/>
+  <path d="M256 116 406 394h-74l-25-52H205l-25 52h-74L256 116Zm0 113-28 60h56l-28-60Z" fill="url(#accent)"/>
+  <rect x="196" y="418" width="120" height="12" rx="6" fill="#f3ff63" opacity=".9"/>
+</svg>

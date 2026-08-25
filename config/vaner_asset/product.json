@@ -1,0 +1,16 @@
+{
+  "company": "VANER SOFTWARE",
+  "product": "VANER ASSET",
+  "description": "Plataforma para la gestión de inventarios, activos y mantenimiento.",
+  "modules": [
+    "Inventarios",
+    "Activos",
+    "Mantenimiento",
+    "Órdenes de trabajo",
+    "Repuestos",
+    "Técnicos",
+    "Reportes",
+    "Dashboard",
+    "Administración"
+  ]
+}

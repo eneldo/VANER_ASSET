@@ -1,5 +1,5 @@
 // =========================================================
-// DASHBOARD TÉCNICO PRO - SGAHolding
+// DASHBOARD TÉCNICO PRO - VANER ASSET
 // Archivo: frontend/src/pages/DashboardTecnico.jsx
 //
 // Fase A + B:
@@ -21,6 +21,7 @@ import {
   validarSeleccionEvidencias,
 } from "../utils/evidenciasTecnicoUtils";
 import ModalEjecucionTecnica from "./ModalEjecucionTecnica";
+import { PRODUCT } from "../config/product";
 
 import {
   Wrench,
@@ -408,9 +409,9 @@ export default function DashboardTecnico() {
     <div className="tec-shell">
       <aside className="tec-sidebar">
         <div className="tec-brand">
-          <div className="tec-logo">SGA</div>
+          <div className="tec-logo">{PRODUCT.shortName}</div>
           <div>
-            <h2>SGAHolding</h2>
+            <h2>{PRODUCT.productName}</h2>
             <p>Portal Técnico</p>
           </div>
         </div>
@@ -441,7 +442,7 @@ export default function DashboardTecnico() {
       <main className="tec-main">
         <div className="tec-header">
           <div>
-            <p className="tec-kicker">SGAHolding · PORTAL TÉCNICO</p>
+            <p className="tec-kicker">{PRODUCT.productName} · PORTAL TÉCNICO</p>
             <h1>Dashboard Técnico</h1>
             <p>Gestiona únicamente tus mantenimientos asignados.</p>
           </div>

@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from app.database import Base
+from app.product import PRODUCT_NAME
 
 
 class ConfiguracionSaaS(Base):
@@ -24,7 +25,7 @@ class ConfiguracionSaaS(Base):
     id = Column(Integer, primary_key=True, index=True, default=1)
 
     # Datos visuales / identidad de plataforma
-    nombre_plataforma = Column(String(150), nullable=False, default="SGA SaaS PRO")
+    nombre_plataforma = Column(String(150), nullable=False, default=PRODUCT_NAME)
     logo_url = Column(Text, nullable=True)
     color_primario = Column(String(20), nullable=False, default="#2563eb")
     color_secundario = Column(String(20), nullable=False, default="#0f172a")

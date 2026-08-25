@@ -281,7 +281,7 @@ export default function ReportesPage() {
         <section className="reportes-pro-page">
           <div className="reportes-pro-header">
             <div>
-              <span className="reportes-pro-badge">SGAHolding</span>
+              <span className="reportes-pro-badge">VANER ASSET</span>
               <h1>Reportes PRO</h1>
               <p>
                 Genera reportes profesionales de mantenimientos por empresa, sede,

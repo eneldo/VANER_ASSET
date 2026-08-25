@@ -23,12 +23,13 @@ import {
 } from "lucide-react";
 import AdminLayout from "./AdminLayout";
 import { configuracionApi } from "../../api/configuracionApi";
+import { PRODUCT } from "../../config/product";
 import "../../styles/configuracion-saas-pro.css";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 
 const DEFAULT_CONFIG = {
-  nombre_plataforma: "SGA SaaS PRO",
+  nombre_plataforma: PRODUCT.productName,
   logo_url: null,
   color_primario: "#2563eb",
   color_secundario: "#0f172a",
@@ -39,7 +40,7 @@ const DEFAULT_CONFIG = {
     username: "",
     password: "",
     from_email: "",
-    from_name: "SGA SaaS PRO",
+    from_name: PRODUCT.productName,
     use_tls: true,
     use_ssl: false,
   },
@@ -215,8 +216,8 @@ export default function ConfiguracionPage() {
       setSaving(true);
       await configuracionApi.probarCorreo({
         to_email: testEmail,
-        subject: "Prueba SMTP - SGA SaaS PRO",
-        message: "El correo corporativo quedó configurado correctamente en SGA SaaS PRO.",
+        subject: `Prueba SMTP - ${PRODUCT.productName}`,
+        message: `El correo corporativo quedó configurado correctamente en ${PRODUCT.productName}.`,
       });
       showMessage("success", "Correo de prueba enviado correctamente.");
     } catch (error) {

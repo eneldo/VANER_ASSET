@@ -16,7 +16,7 @@ def ejecutar_smtp_job():
 
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("================================================")
-    print("SGA SaaS PRO - SMTP JOB")
+    print("VANER ASSET - SMTP JOB")
     print(f"Fecha ejecución: {ahora}")
     print("SMTP inteligente verificado correctamente.")
     print("================================================")

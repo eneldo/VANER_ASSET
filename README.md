@@ -1,78 +1,73 @@
-# SGAHolding — Plataforma GMAO Multi-Tenant
+# VANER ASSET
 
-Sistema SaaS de Gestión de Mantenimiento Asistido por Computadora (GMAO/CMMS) para administrar empresas, activos, órdenes de trabajo y evidencias técnicas.
+**VANER SOFTWARE**
 
-**Dominio:** `sgaholding.online`
-**Stack:** React 19 + FastAPI + PostgreSQL 16 + Docker
+**Descripción:** Plataforma para la gestión de inventarios, activos y mantenimiento.
 
-## Requisitos del VPS
+VANER ASSET es una plataforma SaaS multi-tenant para administrar inventarios, activos, mantenimientos, ordenes de trabajo, repuestos, tecnicos, reportes y operacion administrativa.
 
-- Ubuntu 24.04 LTS
-- 2 vCPU, 8 GB RAM y 100 GB NVMe como base recomendada
-- Docker Engine + Docker Compose
-- Puertos 80 y 443 públicos; PostgreSQL únicamente en la red interna
-
-## Despliegue
-
-### 1. Configurar DNS
-
-Crear registros `A` hacia la IP pública del VPS:
-
-- `sgaholding.online`
-- `www.sgaholding.online`
-
-### 2. Preparar el proyecto
-
-```bash
-sudo mkdir -p /opt/sga_saas
-cd /opt/sga_saas
-cp .env.example .env
-openssl rand -hex 32
-```
-
-Reemplazar en `.env` todos los valores `CAMBIAR_*` y usar claves distintas para PostgreSQL, el rol de aplicación y JWT.
-
-Generar también una clave Fernet para `CONFIG_ENCRYPTION_KEY`:
-
-`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
-
-El workflow `Release immutable images` publica backend y frontend usando el SHA completo del commit. Configurar ese SHA en `IMAGE_TAG`; producción no utiliza la etiqueta mutable `latest`.
-
-### 3. Desplegar
-
-```bash
-chmod +x deploy.sh
-./deploy.sh
-```
-
-El script crea la red externa `caddy_net`, inicia Caddy, descarga las imágenes publicadas y levanta PostgreSQL, backend y frontend.
-
-### 4. Crear el primer administrador
-
-Después del primer despliegue, ejecutar el bootstrap local dentro del contenedor. La contraseña se solicita de forma interactiva y no queda en el historial del shell:
-
-`docker compose --env-file .env -f docker-compose.prod.yml exec backend python scripts/create_initial_admin.py --name "Administrador" --username admin --email admin@dominio.com`
-
-El comando se niega a crear otro usuario cuando ya existe un ADMIN. El endpoint HTTP de bootstrap permanece deshabilitado mientras `BOOTSTRAP_ADMIN_TOKEN` esté vacío.
-
-### 5. Verificar
-
-```bash
-curl -f https://sgaholding.online/health/ready
-curl -f https://sgaholding.online/api/health/ready
-```
-
-Verificar además que cada backup muestre una clave remota en S3/R2 y ejecutar una restauración de prueba en una base temporal antes de abrir el servicio a usuarios.
-
-## Estructura
+## Estructura comercial
 
 ```text
-SGA_SaaS/
-├── backend/          # FastAPI + SQLAlchemy + Alembic
-├── frontend/         # React 19 + Vite
-├── docs/             # Arquitectura y operación
-├── Caddyfile
-├── deploy.sh
-├── docker-compose.yml
-└── .env.example
+VANER SOFTWARE
+└── VANER ASSET
+    ├── Cliente 1
+    ├── Cliente 2
+    ├── Cliente 3
+    └── Cliente VANER
 ```
+
+Los clientes son tenants de una sola base de codigo. Cada tenant conserva aislamiento de datos, usuarios, archivos, configuracion y auditoria mediante el modelo multiempresa existente.
+
+## Modulos
+
+- Inventarios
+- Activos y hojas de vida
+- Mantenimiento
+- Ordenes de trabajo
+- Repuestos asociados a ordenes
+- Tecnicos
+- Reportes
+- Dashboard
+- Administracion
+
+## Version anterior preservada
+
+La entrega SGAHolding permanece congelada en:
+
+- etiqueta `v1.0.14`;
+- rama `support/sgaholding-v1`;
+- bundle `backups/VANER_SOFTWARE/legacy/SGA_HOLDING/v1.0.14/v1.0.14.bundle`;
+- ZIP y manifiesto con hashes SHA-256 en el mismo directorio.
+
+La nueva linea de producto se desarrolla fuera de la rama de soporte SGA.
+
+## Desarrollo local
+
+```bash
+cp .env.example .env
+docker compose --env-file .env up -d --build
+```
+
+No use valores `CAMBIAR_*` fuera de un entorno local aislado.
+
+## Produccion
+
+1. Configure `DOMAIN`, `PROJECT_DIR`, secretos y URLs en `.env`.
+2. Publique imagenes inmutables usando el SHA completo del commit.
+3. Configure `IMAGE_TAG` con ese SHA.
+4. Ejecute `./deploy.sh` en el servidor autorizado.
+5. Verifique `/health/ready` y `/api/health/ready`.
+
+El dominio no esta fijado en el codigo; Caddy utiliza `DOMAIN` desde el entorno.
+
+## Clientes
+
+Los metadatos de ejemplo estan en `config/vaner_asset/clients/`. Los archivos reales con secretos, integraciones o credenciales no deben entrar en Git.
+
+## Stack
+
+- React 19 + Vite
+- FastAPI + SQLAlchemy + Alembic
+- PostgreSQL 16 + Redis
+- Docker Compose + Caddy

@@ -8,6 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict
+from app.product import PRODUCT_NAME
 
 
 def send_test_email(smtp_config: Dict, to_email: str, subject: str, message: str) -> None:
@@ -21,7 +22,7 @@ def send_test_email(smtp_config: Dict, to_email: str, subject: str, message: str
     username = smtp_config.get("username", "")
     password = smtp_config.get("password", "")
     from_email = smtp_config.get("from_email") or username
-    from_name = smtp_config.get("from_name", "SGA SaaS PRO")
+    from_name = smtp_config.get("from_name", PRODUCT_NAME)
     use_tls = bool(smtp_config.get("use_tls", True))
     use_ssl = bool(smtp_config.get("use_ssl", False))
 
@@ -37,7 +38,7 @@ def send_test_email(smtp_config: Dict, to_email: str, subject: str, message: str
     <html>
       <body style="font-family: Arial, sans-serif; background:#f8fafc; padding:24px;">
         <div style="max-width:640px;margin:auto;background:white;border-radius:16px;padding:24px;border:1px solid #e5e7eb;">
-          <h2 style="color:#2563eb;margin-top:0;">SGA SaaS PRO</h2>
+          <h2 style="color:#2563eb;margin-top:0;">{PRODUCT_NAME}</h2>
           <p>{message}</p>
           <p style="color:#64748b;font-size:13px;">Este mensaje confirma que la configuración SMTP corporativa está funcionando.</p>
         </div>

@@ -1,5 +1,6 @@
 import { Download, FileSpreadsheet, Printer, X } from "lucide-react";
 import API from "../api/axios";
+import { PRODUCT } from "../config/product";
 import { isImageEvidence, isPdfEvidence } from "../utils/evidenciaUtils";
 import "../styles/mantenimientoInforme.css";
 
@@ -41,9 +42,9 @@ export default function MantenimientoInformeModal({ detalle, onClose, onDownload
 
         <div className="maintenance-report-sheet">
           <header className="maintenance-report-heading">
-            <div className="maintenance-report-brand">SGA</div>
+            <div className="maintenance-report-brand">{PRODUCT.shortName}</div>
             <div>
-              <p>SGAHolding · Gestión de activos</p>
+              <p>{PRODUCT.productName} · Gestión de activos</p>
               <h1>Informe completo de mantenimiento</h1>
               <span>Orden de trabajo {detalle.id}</span>
             </div>
@@ -129,7 +130,7 @@ export default function MantenimientoInformeModal({ detalle, onClose, onDownload
           </section>
 
           <footer className="maintenance-report-footer">
-            Documento generado desde SGAHolding · {new Date().toLocaleString("es-CO")}
+            Documento generado desde {PRODUCT.productName} · {new Date().toLocaleString("es-CO")}
           </footer>
         </div>
       </article>

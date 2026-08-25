@@ -220,7 +220,7 @@ def shutdown_automatizacion_saas():
 def root():
     """Ruta inicial para comprobar que el backend está activo."""
     return {
-        "message": "Backend SGAHolding funcionando correctamente",
+        "message": f"Backend {settings.APP_NAME} funcionando correctamente",
         "version": "1.0.0",
         "fase": "34.2.9 - BI Ejecutivo SaaS PRO",
     }

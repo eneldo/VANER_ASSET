@@ -57,7 +57,7 @@ class DeploymentConfigTests(unittest.TestCase):
 
         self.assertIn("APP_ENV: production", backend)
         self.assertIn('DEBUG: "false"', backend)
-        self.assertIn("APP_NAME: ${APP_NAME:-SGAHolding}", backend)
+        self.assertIn("APP_NAME: ${APP_NAME:-VANER ASSET}", backend)
         self.assertIn("ALGORITHM: ${ALGORITHM:-HS256}", backend)
 
     def test_frontend_no_conserva_backend_local_hardcodeado(self):

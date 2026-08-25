@@ -1,4 +1,4 @@
-name: Release immutable images
+name: Release VANER ASSET immutable images
 
 on:
   workflow_dispatch:
@@ -48,26 +48,26 @@ jobs:
         with:
           context: backend
           push: true
-          tags: vanstralhen/sga-backend:${{ github.sha }}
+          tags: vanstralhen/vaner-asset-backend:${{ github.sha }}
           provenance: mode=max
           sbom: true
       - uses: docker/build-push-action@v6
         with:
           context: frontend
           push: true
-          tags: vanstralhen/sga-frontend:${{ github.sha }}
+          tags: vanstralhen/vaner-asset-frontend:${{ github.sha }}
           build-args: VITE_API_URL=/api
           provenance: mode=max
           sbom: true
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: vanstralhen/sga-backend:${{ github.sha }}
+          image-ref: vanstralhen/vaner-asset-backend:${{ github.sha }}
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: vanstralhen/sga-frontend:${{ github.sha }}
+          image-ref: vanstralhen/vaner-asset-frontend:${{ github.sha }}
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true

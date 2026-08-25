@@ -89,7 +89,7 @@ export default function MonitorVpsPage() {
             <span className="monitor-chip">FASE 34.2.4</span>
             <h1>Monitor VPS + PostgreSQL PRO</h1>
             <p>
-              Centro de observabilidad para CPU, RAM, disco, PostgreSQL, Docker y estado general del sistema SGA SaaS.
+              Centro de observabilidad para CPU, RAM, disco, PostgreSQL, Docker y estado general de VANER ASSET.
             </p>
           </div>
 

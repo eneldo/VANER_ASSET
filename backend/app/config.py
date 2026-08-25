@@ -9,6 +9,7 @@ from base64 import urlsafe_b64decode
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
+from app.product import PRODUCT_NAME
 
 
 class Settings(BaseSettings):
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
     # INFORMACIÓN GENERAL
     # =====================================================
 
-    APP_NAME: str = "SGAHolding"
+    APP_NAME: str = PRODUCT_NAME
     APP_ENV: str = "development"
 
     # development / production
@@ -55,7 +56,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    REFRESH_COOKIE_NAME: str = 'sga_refresh_token'
+    REFRESH_COOKIE_NAME: str = 'vaner_asset_refresh_token'
     REFRESH_COOKIE_PATH: str = '/auth'
     REFRESH_COOKIE_SECURE: bool = False
     REFRESH_COOKIE_SAMESITE: str = 'lax'
@@ -74,7 +75,7 @@ class Settings(BaseSettings):
     S3_BACKUP_BUCKET: str | None = None
     S3_BACKUP_ACCESS_KEY_ID: str | None = None
     S3_BACKUP_SECRET_ACCESS_KEY: str | None = None
-    S3_BACKUP_PREFIX: str = "sga-production"
+    S3_BACKUP_PREFIX: str = "vaner-asset-production"
 
     # =====================================================
     # UPLOADS / ARCHIVOS

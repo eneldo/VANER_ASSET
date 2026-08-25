@@ -1,14 +1,13 @@
 #!/bin/bash
 # ============================================================
-# SGA SaaS - Despliegue en VPS con Caddy
-# Usa imágenes pre-built de Docker Hub (vanstralhen/sga-*)
+# VANER ASSET - Despliegue en VPS con Caddy
+# Usa imagenes pre-built de Docker Hub (vanstralhen/vaner-asset-*)
 # Ejecutar como root o usuario con acceso a docker
 # ============================================================
 set -euo pipefail
 umask 077
 
-DOMAIN="sgaholding.online"
-PROJECT_DIR="/opt/sga_saas"
+PROJECT_DIR="${PROJECT_DIR:-/opt/vaner_asset}"
 COMPOSE_FILE="$PROJECT_DIR/docker-compose.prod.yml"
 ENV_FILE="$PROJECT_DIR/.env"
 
@@ -30,6 +29,9 @@ set -a
 . "$ENV_FILE"
 set +a
 CADDY_IMAGE="${CADDY_IMAGE:-caddy:2.10.0-alpine}"
+DOMAIN="${DOMAIN:?DOMAIN es obligatorio}"
+BACKEND_IMAGE="${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}"
+FRONTEND_IMAGE="${FRONTEND_IMAGE:-vanstralhen/vaner-asset-frontend}"
 
 on_error() {
   echo "ERROR: el despliegue no terminó correctamente"
@@ -39,9 +41,9 @@ on_error() {
 trap on_error ERR
 
 echo "=============================================="
-echo " SGA SaaS - Despliegue Producción con Caddy"
+echo " VANER ASSET - Despliegue Produccion con Caddy"
 echo " Dominio: $DOMAIN"
-echo " Imágenes: vanstralhen/sga-backend + sga-frontend"
+echo " Imagenes: $BACKEND_IMAGE + $FRONTEND_IMAGE"
 echo "=============================================="
 
 # --- 1. Requisitos ---
@@ -69,9 +71,10 @@ fi
 cp "$PROJECT_DIR/Caddyfile" /etc/caddy/Caddyfile
 
 docker pull "$CADDY_IMAGE"
-docker rm -f caddy >/dev/null 2>&1 || true
+docker rm -f vaner_asset_caddy >/dev/null 2>&1 || true
 docker run -d \
-  --name caddy \
+  --name vaner_asset_caddy \
+  -e DOMAIN="$DOMAIN" \
   --restart always \
   --security-opt no-new-privileges \
   --cap-drop ALL \

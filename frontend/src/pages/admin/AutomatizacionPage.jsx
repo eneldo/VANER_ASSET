@@ -132,7 +132,7 @@ export default function AutomatizacionPage() {
       <div className="auto-saas-page">
       <section className="auto-hero">
         <div>
-          <span className="auto-eyebrow">FASE 34.2.1 · SGA SaaS PRO</span>
+          <span className="auto-eyebrow">VANER ASSET · AUTOMATIZACIÓN</span>
           <h1>Automatización Inteligente SaaS</h1>
           <p>
             Núcleo seguro para backups, correos, WhatsApp, monitor, logs, tareas recurrentes,

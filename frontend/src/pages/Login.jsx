@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
+import { PRODUCT } from "../config/product";
 
 import "../styles/login.css";
 
@@ -87,24 +88,25 @@ export default function Login() {
 
         <div className="hero-content">
           <div className="brand-chip">
-            <img src="/logo.png" alt="SGAHolding" />
+            <img src={PRODUCT.logoUrl} alt={PRODUCT.productName} />
             <div>
-              <strong>SGA HOLDING SAS</strong>
-              <span>Gestión inteligente de activos</span>
+              <strong>{PRODUCT.productName}</strong>
+              <span>{PRODUCT.companyName}</span>
             </div>
           </div>
 
-          <h1>Plataforma SaaS para gestión de activos y mantenimiento.</h1>
+          <h1>{PRODUCT.description}</h1>
 
           <p>
-            Administra empresas, sedes, inventario, técnicos, mantenimientos,
-            evidencias, hojas de vida y trazabilidad en una sola plataforma.
+            Administra inventarios, activos, órdenes de trabajo, repuestos,
+            técnicos y trazabilidad multiempresa en una sola plataforma.
           </p>
 
           <div className="hero-badges">
             <span>Multiempresa</span>
             <span>Inventario</span>
-            <span>Evidencias</span>
+            <span>Activos</span>
+            <span>Mantenimiento</span>
             <span>Reportes</span>
           </div>
         </div>
@@ -113,12 +115,12 @@ export default function Login() {
       <section className="login-panel">
         <form className="login-card-pro" onSubmit={handleLogin}>
           <div className="login-logo-wrap">
-            <img src="/logo.png" alt="SGAHolding" />
+            <img src={PRODUCT.logoUrl} alt={PRODUCT.productName} />
           </div>
 
           <div className="login-title">
             <h2>Bienvenidos</h2>
-            <p>Acceso seguro a SGAHolding</p>
+            <p>Acceso seguro a {PRODUCT.productName}</p>
           </div>
 
           {error && <div className="login-error">{error}</div>}
@@ -130,7 +132,7 @@ export default function Login() {
               name="username"
               value={form.username}
               onChange={handleChange}
-              placeholder="admin@sga.com"
+              placeholder="admin@vanerasset.com"
               autoComplete="username"
             />
           </div>

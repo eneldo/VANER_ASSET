@@ -9,12 +9,13 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
+from app.product import PRODUCT_NAME
 
 
 class SMTPTestRequest(BaseModel):
     destinatario: EmailStr
-    asunto: str = Field(default="Prueba SMTP SGA SaaS PRO", max_length=255)
-    mensaje: str = Field(default="Correo de prueba enviado desde SGA SaaS PRO.")
+    asunto: str = Field(default=f"Prueba SMTP {PRODUCT_NAME}", max_length=255)
+    mensaje: str = Field(default=f"Correo de prueba enviado desde {PRODUCT_NAME}.")
 
 
 class SMTPManualRequest(BaseModel):

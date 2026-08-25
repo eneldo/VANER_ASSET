@@ -35,6 +35,7 @@ from app.models.ot_incidencia import OtIncidencia
 from app.models.formato_mantenimiento import FormatoMantenimiento
 from app.models.plantilla_reporte import PlantillaReporte
 from app.routers.auth import obtener_usuario_actual
+from app.product import PRODUCT_NAME
 from app.services.evidencia_service import get_evidencia_path
 
 
@@ -305,7 +306,7 @@ def _decorador_paginas(empresa, mantenimiento, plantilla, logo_path, generado_en
     empresa_nombre = _texto_pdf(getattr(empresa, "nombre", None), "Empresa cliente")
     pie = _texto_pdf(
         getattr(plantilla, "pie_pagina", None),
-        f"{empresa_nombre} | Documento generado por SGA Holding",
+        f"{empresa_nombre} | Documento generado por {PRODUCT_NAME}",
     )
     numero_ot = str(mantenimiento.id)
 
@@ -313,7 +314,7 @@ def _decorador_paginas(empresa, mantenimiento, plantilla, logo_path, generado_en
         page_width, page_height = letter
         canvas.saveState()
         canvas.setTitle(f"Informe de mantenimiento OT {numero_ot}")
-        canvas.setAuthor("SGA Holding")
+        canvas.setAuthor(PRODUCT_NAME)
         canvas.setFillColor(color_primario)
         canvas.rect(0, page_height - 13, page_width, 13, stroke=0, fill=1)
 
@@ -530,7 +531,7 @@ def _generar_pdf_ot(db, mantenimiento, destino):
         topMargin=88,
         bottomMargin=54,
         title=f"Informe de mantenimiento OT {mantenimiento.id}",
-        author="SGA Holding",
+        author=PRODUCT_NAME,
     )
 
     estado = _texto_pdf(mantenimiento.estado, "SIN ESTADO").upper()

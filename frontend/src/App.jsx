@@ -1,5 +1,5 @@
 // =========================================================
-// APP PRINCIPAL SGA SAAS PRO
+// APP PRINCIPAL VANER ASSET
 // Archivo: frontend/src/App.jsx
 // Corregido según estructura real del proyecto
 // =========================================================
@@ -92,8 +92,12 @@ function App() {
         <Route path="/admin/tecnicos" element={<ProtectedRoute><TecnicosPage /></ProtectedRoute>} />
         <Route path="/admin/usuarios" element={<ProtectedRoute><UsuariosPage /></ProtectedRoute>} />
         <Route path="/admin/equipos" element={<ProtectedRoute><EquiposPage /></ProtectedRoute>} />
+        <Route path="/admin/inventarios" element={<ProtectedRoute><EquiposPage /></ProtectedRoute>} />
+        <Route path="/admin/activos" element={<ProtectedRoute><EquiposPage /></ProtectedRoute>} />
         <Route path="/admin/hoja-vida/:id" element={<ProtectedRoute><HojaVidaEquipoPage /></ProtectedRoute>} />
         <Route path="/admin/mantenimientos" element={<ProtectedRoute><MantenimientosPage /></ProtectedRoute>} />
+        <Route path="/admin/ordenes-trabajo" element={<ProtectedRoute><MantenimientosPage /></ProtectedRoute>} />
+        <Route path="/admin/repuestos" element={<ProtectedRoute><MantenimientosPage /></ProtectedRoute>} />
         <Route path="/admin/evidencias" element={<ProtectedRoute><EvidenciasPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/auditoria" element={<ProtectedRoute><AuditoriaPage /></ProtectedRoute>} />

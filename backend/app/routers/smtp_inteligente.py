@@ -21,6 +21,7 @@ from app.services.smtp_inteligente_service import (
     obtener_estado_smtp,
     render_template_base,
 )
+from app.product import PRODUCT_NAME
 
 router = APIRouter(
     prefix="/smtp-inteligente",
@@ -47,7 +48,7 @@ def plantillas_smtp():
 @router.post("/probar", response_model=SMTPLogOut)
 def probar_smtp(payload: SMTPTestRequest, db: Session = Depends(get_db)):
     html = render_template_base(
-        "Prueba SMTP SGA SaaS PRO",
+        f"Prueba SMTP {PRODUCT_NAME}",
         f"<p>{payload.mensaje}</p><p>Si recibes este correo, la configuración SMTP está funcionando correctamente.</p>",
         "Validación SMTP corporativa",
     )

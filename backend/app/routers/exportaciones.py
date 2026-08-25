@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.excel_exporter import crear_excel
 from app.utils.pdf_exporter import crear_pdf
+from app.product import PRODUCT_NAME
 
 
 router = APIRouter(prefix="/exportaciones", tags=["Exportaciones PRO"])
@@ -152,7 +153,7 @@ def exportar_reporte_general(
     )
     filas = _rows_to_dicts(db.execute(sql))
     columnas = ["indicador", "total"]
-    return _generar_archivo(formato, "reporte_general_sga", "Reporte General SGAHolding", columnas, filas)
+    return _generar_archivo(formato, "reporte_general_vaner_asset", f"Reporte General {PRODUCT_NAME}", columnas, filas)
 
 
 # ============================================================
@@ -215,7 +216,7 @@ def exportar_equipos(
         "marca", "modelo", "serie", "ubicacion", "estado", "criticidad", "fecha_creacion",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_equipos", "Reporte de Equipos SGAHolding", columnas, filas)
+    return _generar_archivo(formato, "reporte_activos", f"Reporte de Activos {PRODUCT_NAME}", columnas, filas)
 
 
 # ============================================================
@@ -272,7 +273,7 @@ def exportar_mantenimientos(
         "descripcion", "observaciones", "costo", "creado_en",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_mantenimientos", "Reporte de Mantenimientos SGAHolding", columnas, filas)
+    return _generar_archivo(formato, "reporte_mantenimientos", f"Reporte de Mantenimientos {PRODUCT_NAME}", columnas, filas)
 
 
 # ============================================================
@@ -325,4 +326,4 @@ def exportar_auditoria(
         "descripcion", "entidad", "entidad_id", "ip_origen",
     ]
     filas = _rows_to_dicts(db.execute(sql, params))
-    return _generar_archivo(formato, "reporte_auditoria", "Reporte de Auditoría SGAHolding", columnas, filas)
+    return _generar_archivo(formato, "reporte_auditoria", f"Reporte de Auditoría {PRODUCT_NAME}", columnas, filas)

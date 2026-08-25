@@ -6,6 +6,7 @@
 
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, EmailStr
+from app.product import PRODUCT_NAME
 
 
 class SMTPConfig(BaseModel):
@@ -14,7 +15,7 @@ class SMTPConfig(BaseModel):
     username: str = ""
     password: str = ""
     from_email: str = ""
-    from_name: str = "SGA SaaS PRO"
+    from_name: str = PRODUCT_NAME
     use_tls: bool = True
     use_ssl: bool = False
 
@@ -63,7 +64,7 @@ class NotificacionesConfig(BaseModel):
 
 
 class ConfiguracionSaaSBase(BaseModel):
-    nombre_plataforma: str = "SGA SaaS PRO"
+    nombre_plataforma: str = PRODUCT_NAME
     logo_url: Optional[str] = None
     color_primario: str = "#2563eb"
     color_secundario: str = "#0f172a"
@@ -89,8 +90,8 @@ class ConfiguracionSaaSOut(ConfiguracionSaaSBase):
 
 class TestEmailRequest(BaseModel):
     to_email: EmailStr
-    subject: str = "Prueba SMTP - SGA SaaS PRO"
-    message: str = "Correo de prueba enviado correctamente desde la configuración SGA SaaS PRO."
+    subject: str = f"Prueba SMTP - {PRODUCT_NAME}"
+    message: str = f"Correo de prueba enviado correctamente desde la configuración {PRODUCT_NAME}."
 
 
 class ApiResponse(BaseModel):

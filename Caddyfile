@@ -1,12 +1,9 @@
 # ============================================================
-# Caddyfile - SGA SaaS
+# Caddyfile - VANER ASSET
 # Reverse proxy + HTTPS automático con Let's Encrypt
 # ============================================================
 
-sgaholding.online, www.sgaholding.online {
-	# Redirigir www -> sin www
-	@www host www.sgaholding.online
-	redir @www https://sgaholding.online{uri} permanent
+{$DOMAIN} {
 
 	# Encoding
 	encode gzip zstd
@@ -26,7 +23,7 @@ sgaholding.online, www.sgaholding.online {
 	# ── API Backend ──
 	# El backend publica rutas sin el prefijo externo /api.
 	handle_path /api/* {
-		reverse_proxy sga_backend:8000 {
+		reverse_proxy vaner_asset_backend:8000 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 		}
@@ -34,12 +31,12 @@ sgaholding.online, www.sgaholding.online {
 
 	# ── Health check ──
 	handle /health/* {
-		reverse_proxy sga_backend:8000
+		reverse_proxy vaner_asset_backend:8000
 	}
 
 	# ── Frontend ──
 	handle {
-		reverse_proxy sga_frontend:8080 {
+		reverse_proxy vaner_asset_frontend:8080 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 		}

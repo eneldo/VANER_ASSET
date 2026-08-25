@@ -30,6 +30,7 @@ import {
 import API from "../api/axios";
 import { CoordinatorCompanyContext } from "../context/CoordinatorCompanyContext";
 import { clearSession } from "../utils/authStorage";
+import { PRODUCT } from "../config/product";
 import "../styles/coordinador.css";
 
 export default function CoordinadorLayout() {
@@ -135,7 +136,7 @@ export default function CoordinadorLayout() {
       permisos: ["CRONOGRAMA_VER", "COORDINADOR_CRONOGRAMA"],
     },
     {
-      label: "Inventario / Equipos",
+      label: "Inventarios y activos",
       to: "/coordinador/equipos",
       icon: PackageSearch,
       permisos: ["EQUIPOS_VER", "INVENTARIO_VER"],
@@ -201,7 +202,7 @@ export default function CoordinadorLayout() {
           </div>
           {open && (
             <div>
-              <h2>SGAHolding</h2>
+              <h2>{PRODUCT.productName}</h2>
               <span>Portal Coordinador</span>
             </div>
           )}
@@ -249,8 +250,8 @@ export default function CoordinadorLayout() {
           </button>
 
           <div>
-            <h1>Módulo Coordinador PRO</h1>
-            <p>Inventario, hojas de vida, mantenimientos, evidencias y reportes operativos.</p>
+            <h1>Operación VANER ASSET</h1>
+            <p>Inventarios, activos, órdenes de trabajo, repuestos y reportes operativos.</p>
           </div>
           {esCoordinador && (
             <label className="coord-company-switcher">

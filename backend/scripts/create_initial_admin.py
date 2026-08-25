@@ -13,7 +13,7 @@ from app.security import hash_password
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Create the first SGAHolding administrator.")
+    parser = argparse.ArgumentParser(description="Create the first VANER ASSET administrator.")
     parser.add_argument("--name", required=True)
     parser.add_argument("--username", required=True)
     parser.add_argument("--email", required=True)

@@ -21,6 +21,7 @@ import {
   PackageSearch,
   AlertTriangle,
 } from "lucide-react";
+import { PRODUCT } from "../../config/product";
 import "../../styles/coordinador.css";
 
 const estadoClass = (estado) => `coord-badge ${String(estado || "sin").toLowerCase()}`;
@@ -119,7 +120,7 @@ export default function CoordinadorDashboard() {
     <div className="coord-page">
       <div className="coord-hero">
         <div>
-          <span className="coord-eyebrow">SGAHolding · PANEL OPERATIVO</span>
+          <span className="coord-eyebrow">{PRODUCT.productName} · PANEL OPERATIVO</span>
           <h2>Dashboard Coordinador</h2>
           <p>Control centralizado de mantenimientos, técnicos, estados, inventario y operación diaria.</p>
         </div>

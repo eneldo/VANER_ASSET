@@ -192,7 +192,7 @@ export default function ExportacionesPage() {
           <span className="exportaciones-kicker">FASE 27 · EXPORTACIÓN PRO</span>
           <h1>Exportaciones Excel / PDF</h1>
           <p>
-            Descarga reportes del sistema SGAHolding con filtros por empresa, sede,
+            Descarga reportes de VANER ASSET con filtros por empresa, sede,
             estado y fechas según el tipo de reporte.
           </p>
         </div>
