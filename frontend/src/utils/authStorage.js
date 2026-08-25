@@ -6,19 +6,22 @@
 // Esto evita tener localStorage disperso por todo el frontend.
 // ============================================================
 
-const ACCESS_TOKEN_KEY = "access_token";
 const USER_KEY = "user";
 const SESSION_CREATED_AT_KEY = "session_created_at";
+let accessToken = null;
 
 export function saveSession({ access_token, user }) {
-  if (access_token) localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
+  if (access_token) accessToken = access_token;
   if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
 
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("refresh_token");
   localStorage.setItem(SESSION_CREATED_AT_KEY, new Date().toISOString());
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return accessToken;
 }
 
 export function getStoredUser() {
@@ -33,12 +36,14 @@ export function getStoredUser() {
 
 export function updateAccessToken(token) {
   if (token) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    accessToken = token;
   }
 }
 
 export function clearSession() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  accessToken = null;
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(SESSION_CREATED_AT_KEY);

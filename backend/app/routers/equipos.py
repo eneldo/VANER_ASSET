@@ -27,6 +27,10 @@ from app.models.sede import Sede
 from app.models.categoria import Categoria
 from app.schemas.equipo import EquipoCreate, EquipoUpdate, EquipoOut
 from app.core.auth_dependencies import require_roles
+from app.services.inventory_import_security import (
+    read_inventory_upload,
+    validate_inventory_shape,
+)
 
 
 router = APIRouter(
@@ -585,13 +589,15 @@ async def importar_equipos(
     """Importa equipos y aísla los errores para que una fila no aborte todo el archivo."""
 
     try:
-        contenido = await archivo.read()
-        filename = (archivo.filename or "").lower()
+        contenido, extension = await read_inventory_upload(archivo)
 
-        if filename.endswith(".csv"):
-            df = pd.read_csv(BytesIO(contenido))
+        if extension == ".csv":
+            df = pd.read_csv(BytesIO(contenido), encoding="utf-8-sig")
         else:
-            df = pd.read_excel(BytesIO(contenido))
+            df = pd.read_excel(BytesIO(contenido), engine="openpyxl")
+        validate_inventory_shape(len(df.index), len(df.columns))
+    except HTTPException:
+        raise
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

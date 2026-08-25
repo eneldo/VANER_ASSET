@@ -10,6 +10,7 @@ FIX PRODUCCIÓN:
 */
 
 import axios from "axios";
+import { getAccessToken } from "../utils/authStorage";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -18,7 +19,7 @@ const API_BASE =
 const API = `${String(API_BASE).replace(/\/$/, "")}/evidencias`;
 
 function getToken() {
-  return localStorage.getItem("access_token") || localStorage.getItem("token");
+  return getAccessToken();
 }
 
 export const subirEvidencia = async (formData) => {

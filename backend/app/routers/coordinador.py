@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import func, or_
@@ -663,11 +663,46 @@ def catalogos_coordinador(
 
 @router.get("/equipos")
 def listar_equipos_coordinador(
+    response: Response,
+    busqueda: Optional[str] = Query(default=None, max_length=150),
+    sede_id: Optional[UUID] = Query(default=None),
+    categoria_id: Optional[UUID] = Query(default=None),
+    estado: Optional[str] = Query(default=None, max_length=50),
+    criticidad: Optional[str] = Query(default=None, max_length=50),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
     _validar_rol(usuario_actual)
-    equipos = _query_equipos_por_usuario(db, usuario_actual).order_by(Equipo.created_at.desc()).all()
+    query = _query_equipos_por_usuario(db, usuario_actual)
+    if busqueda:
+        patron = f"%{busqueda.strip()}%"
+        query = query.filter(
+            or_(
+                Equipo.nombre.ilike(patron),
+                Equipo.marca.ilike(patron),
+                Equipo.modelo.ilike(patron),
+                Equipo.serie.ilike(patron),
+                Equipo.ubicacion.ilike(patron),
+                Equipo.codigo_id.ilike(patron),
+                Equipo.inventario.ilike(patron),
+            )
+        )
+    if sede_id:
+        query = query.filter(Equipo.sede_id == sede_id)
+    if categoria_id:
+        query = query.filter(Equipo.categoria_id == categoria_id)
+    if estado:
+        query = query.filter(Equipo.estado == estado)
+    if criticidad:
+        query = query.filter(Equipo.criticidad == criticidad)
+
+    total = query.order_by(None).count()
+    equipos = query.order_by(Equipo.created_at.desc()).offset(offset).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["X-Limit"] = str(limit)
+    response.headers["X-Offset"] = str(offset)
     return [_serializar_equipo(e, db) for e in equipos]
 
 
@@ -886,9 +921,12 @@ def actualizar_hoja_vida_coordinador(
 
 @router.get("/mantenimientos")
 def listar_mantenimientos(
+    response: Response,
     estado: Optional[str] = Query(default=None),
     equipo_id: Optional[UUID] = Query(default=None),
     tecnico_id: Optional[UUID] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
@@ -906,7 +944,11 @@ def listar_mantenimientos(
     if tecnico_id:
         query = query.filter(Mantenimiento.tecnico_id == tecnico_id)
 
-    mantenimientos = query.order_by(_orden_mantenimiento()).all()
+    total = query.order_by(None).count()
+    mantenimientos = query.order_by(_orden_mantenimiento()).offset(offset).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    response.headers["X-Limit"] = str(limit)
+    response.headers["X-Offset"] = str(offset)
     return [_serializar_mantenimiento(m) for m in mantenimientos]
 
 
@@ -1140,19 +1182,28 @@ def eliminar_mantenimiento(
 
 @router.get("/cronograma")
 def cronograma(
+    response: Response,
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
-    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
+    query = _aplicar_filtro_empresa_mantenimientos(
         _query_mantenimientos_base(db),
         usuario_actual,
-    ).order_by(Mantenimiento.fecha_programada.asc()).all()
+    )
+    total = query.order_by(None).count()
+    mantenimientos = query.order_by(Mantenimiento.fecha_programada.asc()).offset(offset).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
 
     return [_serializar_mantenimiento(m) for m in mantenimientos]
 
 
 @router.get("/evidencias")
 def evidencias_coordinador(
+    response: Response,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
@@ -1167,19 +1218,27 @@ def evidencias_coordinador(
             .filter(Equipo.empresa_id == _empresa_usuario(usuario_actual))
         )
 
-    evidencias = query.order_by(Evidencia.created_at.desc()).all()
+    total = query.order_by(None).count()
+    evidencias = query.order_by(Evidencia.created_at.desc()).offset(offset).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
     return [_serializar_evidencia(e, db) for e in evidencias]
 
 
 @router.get("/informes")
 def informes(
+    response: Response,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
 ):
-    mantenimientos = _aplicar_filtro_empresa_mantenimientos(
+    query = _aplicar_filtro_empresa_mantenimientos(
         _query_mantenimientos_base(db),
         usuario_actual,
-    ).order_by(_orden_mantenimiento()).all()
+    )
+    total = query.order_by(None).count()
+    mantenimientos = query.order_by(_orden_mantenimiento()).offset(offset).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
 
     return [_serializar_mantenimiento(m) for m in mantenimientos]
 

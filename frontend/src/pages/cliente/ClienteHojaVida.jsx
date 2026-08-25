@@ -18,6 +18,7 @@ import {
   RefreshCcw,
   Wrench,
 } from "lucide-react";
+import { getAccessToken } from "../../utils/authStorage";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -39,7 +40,7 @@ export default function ClienteHojaVida() {
   }, []);
 
   const getHeaders = () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+    const token = getAccessToken();
 
     return {
       Authorization: token ? `Bearer ${token}` : "",

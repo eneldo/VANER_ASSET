@@ -4,15 +4,19 @@
 // ============================================================
 
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 import api from "../../api/axios";
 import "../../styles/password-recovery.css";
 
 export default function ResetPassword() {
-  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const token = params.get("token") || "";
+  const [token] = useState(() => {
+    const fragment = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    return new URLSearchParams(fragment).get("token") || "";
+  });
 
   const [validating, setValidating] = useState(true);
   const [valid, setValid] = useState(false);
@@ -25,6 +29,10 @@ export default function ResetPassword() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
     const validate = async () => {
       if (!token) {
         setError("Token no encontrado.");
@@ -33,7 +41,7 @@ export default function ResetPassword() {
       }
 
       try {
-        const { data } = await api.get(`/auth/reset-password/validate?token=${encodeURIComponent(token)}`);
+        const { data } = await api.post("/auth/reset-password/validate", { token });
         setValid(Boolean(data.valid));
         setEmail(data.email || "");
       } catch (err) {
@@ -51,8 +59,8 @@ export default function ResetPassword() {
     setError("");
     setMessage("");
 
-    if (password.length < 8) {
-      setError("La contraseña debe tener mínimo 8 caracteres.");
+    if (password.length < 12) {
+      setError("La contraseña debe tener mínimo 12 caracteres.");
       return;
     }
 
@@ -89,38 +97,45 @@ export default function ResetPassword() {
 
         {!validating && valid && (
           <form onSubmit={handleSubmit}>
-            <label>Nueva contraseña</label>
+            <label htmlFor="new-password">Nueva contraseña</label>
             <div className="recovery-input">
               <Lock size={18} />
               <input
+                id="new-password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Mínimo 12 caracteres"
                 autoComplete="new-password"
+                minLength={12}
+                required
               />
               <button
                 type="button"
                 className="recovery-eye"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
-            <label>Confirmar contraseña</label>
+            <label htmlFor="confirm-password">Confirmar contraseña</label>
             <div className="recovery-input">
               <Lock size={18} />
               <input
+                id="confirm-password"
                 type={showPassword ? "text" : "password"}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Repite la contraseña"
                 autoComplete="new-password"
+                minLength={12}
+                required
               />
             </div>
 
-            <button disabled={loading}>{loading ? "Guardando..." : "Guardar contraseña"}</button>
+            <button type="submit" disabled={loading}>{loading ? "Guardando..." : "Guardar contraseña"}</button>
           </form>
         )}
 

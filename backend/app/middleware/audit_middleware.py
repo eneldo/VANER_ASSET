@@ -19,6 +19,10 @@ from app.services.audit_service import get_client_ip, get_request_id
 class AuditMiddleware(BaseHTTPMiddleware):
     """Auditoría HTTP liviana y segura."""
 
+    SENSITIVE_QUERY_PARAMETERS = frozenset(
+        {"token", "signature", "code", "secret", "key", "password"}
+    )
+
     EXCLUDED_PREFIXES = (
         "/docs",
         "/redoc",
@@ -60,6 +64,18 @@ class AuditMiddleware(BaseHTTPMiddleware):
             return "MEDIA"
         return "INFO"
 
+    def _query_metadata(self, request: Request) -> dict:
+        parameter_names = sorted(set(request.query_params.keys()))
+        sensitive_parameters = sorted(
+            name
+            for name in parameter_names
+            if name.lower() in self.SENSITIVE_QUERY_PARAMETERS
+        )
+        return {
+            "query_parameters": parameter_names,
+            "sensitive_parameters_redacted": sensitive_parameters,
+        }
+
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
@@ -91,7 +107,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     permitido=response.status_code < 400,
                     severidad=self._severidad(request.method, response.status_code),
                     detalle=f"{request.method} {path} -> {response.status_code}",
-                    metadata={"query": str(request.url.query or "")},
+                    metadata=self._query_metadata(request),
                 )
                 db.add(evento)
                 db.commit()

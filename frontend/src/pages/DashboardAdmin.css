@@ -437,7 +437,7 @@
   font-weight: 700;
 }
 
-/* GRÃFICAS */
+/* GRÁFICAS */
 
 .dadmin-charts-grid {
   display: grid;
@@ -699,7 +699,7 @@
 .dadmin-status.anulado,
 .dadmin-status.fuera_de_servicio,
 .dadmin-status.critica,
-.dadmin-status.crÃ­tica {
+.dadmin-status.crítica {
   background: #fee2e2;
   color: #991b1b;
 }

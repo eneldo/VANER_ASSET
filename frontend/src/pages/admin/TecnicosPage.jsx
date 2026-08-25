@@ -30,6 +30,7 @@ import {
 
 import AdminLayout from "./AdminLayout";
 import "../../styles/categorias-tecnicos-saas-pro.css";
+import { getAccessToken } from "../../utils/authStorage";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
@@ -43,7 +44,7 @@ const initialForm = {
 };
 
 function getToken() {
-  return localStorage.getItem("access_token") || localStorage.getItem("token");
+  return getAccessToken();
 }
 
 function normalizarTecnico(item) {

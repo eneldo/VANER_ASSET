@@ -18,7 +18,7 @@ class Sede(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Relación con empresa
-    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False)
+    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False, index=True)
 
     # Datos principales de la sede
     nombre = Column(String(150), nullable=False)

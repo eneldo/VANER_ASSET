@@ -7,6 +7,8 @@ describe("almacenamiento seguro de sesión", () => {
     vi.setSystemTime(new Date("2026-07-12T12:00:00Z"));
     saveSession({ access_token: "access", user: { id: "u1", rol: "EMPRESA", empresa_id: "empresa-a" } });
     expect(getAccessToken()).toBe("access");
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(localStorage.getItem("token")).toBeNull();
     expect(localStorage.getItem("refresh_token")).toBeNull();
     expect(getStoredUser()).toMatchObject({ rol: "EMPRESA", empresa_id: "empresa-a" });
     expect(isSessionActive()).toBe(true);

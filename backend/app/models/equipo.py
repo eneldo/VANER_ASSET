@@ -18,9 +18,9 @@ class Equipo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Relaciones principales
-    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False)
-    sede_id = Column(UUID(as_uuid=True), ForeignKey("sedes.id"), nullable=False)
-    categoria_id = Column(UUID(as_uuid=True), ForeignKey("categorias.id"), nullable=False)
+    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False, index=True)
+    sede_id = Column(UUID(as_uuid=True), ForeignKey("sedes.id"), nullable=False, index=True)
+    categoria_id = Column(UUID(as_uuid=True), ForeignKey("categorias.id"), nullable=False, index=True)
 
     # Datos básicos del equipo
     nombre = Column(String(150), nullable=False)
@@ -47,5 +47,5 @@ class Equipo(Base):
     activo = Column(Boolean, default=True)
 
     # Auditoría
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), index=True)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

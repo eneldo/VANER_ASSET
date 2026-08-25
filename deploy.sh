@@ -73,6 +73,12 @@ docker rm -f caddy >/dev/null 2>&1 || true
 docker run -d \
   --name caddy \
   --restart always \
+  --security-opt no-new-privileges \
+  --cap-drop ALL \
+  --cap-add NET_BIND_SERVICE \
+  --pids-limit 200 \
+  --memory 256m \
+  --cpus 0.50 \
   --network caddy_net \
   -p 80:80 -p 443:443 \
   -v /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro \

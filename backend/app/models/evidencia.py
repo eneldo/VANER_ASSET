@@ -21,7 +21,8 @@ class Evidencia(Base):
     mantenimiento_id = Column(
         UUID(as_uuid=True),
         ForeignKey("mantenimientos.id"),
-        nullable=False
+        nullable=False,
+        index=True,
     )
 
     # Equipo relacionado.
@@ -29,7 +30,8 @@ class Evidencia(Base):
     equipo_id = Column(
         UUID(as_uuid=True),
         ForeignKey("equipos.id"),
-        nullable=False
+        nullable=False,
+        index=True,
     )
 
     # Tipo de evidencia:
@@ -46,4 +48,4 @@ class Evidencia(Base):
     descripcion = Column(Text, nullable=True)
 
     # Fecha de carga
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now(), index=True)

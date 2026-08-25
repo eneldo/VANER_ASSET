@@ -47,10 +47,10 @@ class Usuario(Base):
 
     # Roles permitidos:
     # ADMIN, TECNICO, EMPRESA, COORDINADOR
-    rol = Column(String(30), nullable=False)
+    rol = Column(String(30), nullable=False, index=True)
 
     # Empresa asociada, aplica principalmente para rol EMPRESA
-    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=True)
+    empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=True, index=True)
 
     empresas_autorizadas = relationship(
         "Empresa",

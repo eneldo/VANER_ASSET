@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.middleware.audit_middleware import AuditMiddleware
-from app.middleware.rate_limit import InMemoryRateLimitMiddleware as RateLimitMiddleware
+from app.middleware.rate_limit import DistributedRateLimitMiddleware as RateLimitMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.automation.scheduler import iniciar_scheduler_sga, detener_scheduler_sga
@@ -108,6 +108,7 @@ app.add_middleware(
     allow_credentials="*" not in CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Total-Count", "X-Limit", "X-Offset"],
 )
 
 app.add_middleware(SecurityHeadersMiddleware)

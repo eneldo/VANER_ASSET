@@ -4,7 +4,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import OfflineStatus from "./components/OfflineStatus";
+import ToastViewport from "./components/ToastViewport";
 import { syncOfflineQueue } from "./utils/offlineQueue";
+import { installAlertBridge } from "./utils/toast";
 
 // ============================================================
 // ESTILOS BASE DEL SISTEMA
@@ -36,6 +38,8 @@ import "./styles/fase32_4/modulos-tecnico-pro.css";
 import "./styles/fase32_4/modulos-coordinador-pro.css";
 import "./styles/fase32_4/print-fixes.css";
 
+installAlertBridge();
+
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", async () => {
     try {
@@ -55,6 +59,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <OfflineStatus />
+      <ToastViewport />
       <App />
     </AuthProvider>
   </React.StrictMode>

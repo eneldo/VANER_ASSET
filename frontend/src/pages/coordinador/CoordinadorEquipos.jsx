@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Download,
@@ -51,13 +51,15 @@ export default function CoordinadorEquipos() {
   const [exportando, setExportando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [pagina, setPagina] = useState(1);
+  const [totalEquipos, setTotalEquipos] = useState(0);
   const registrosPorPagina = 10;
 
-  const cargarDatosAlMontar = useEffectEvent(() => cargarDatos());
+  const cargarDatosAlCambiarFiltros = useEffectEvent(() => cargarDatos());
 
   useEffect(() => {
-    cargarDatosAlMontar();
-  }, []);
+    const timer = window.setTimeout(cargarDatosAlCambiarFiltros, 250);
+    return () => window.clearTimeout(timer);
+  }, [busqueda, filtroSede, filtroCategoria, filtroEstado, filtroCriticidad, pagina]);
 
   const mostrarMensaje = (tipo, texto) => {
     setMensaje({ tipo, texto });
@@ -68,10 +70,21 @@ export default function CoordinadorEquipos() {
     try {
       setCargando(true);
       const [resEquipos, resCatalogos] = await Promise.all([
-        API.get("/coordinador/equipos"),
+        API.get("/coordinador/equipos", {
+          params: {
+            busqueda: busqueda || undefined,
+            sede_id: filtroSede || undefined,
+            categoria_id: filtroCategoria || undefined,
+            estado: filtroEstado || undefined,
+            criticidad: filtroCriticidad || undefined,
+            limit: registrosPorPagina,
+            offset: (pagina - 1) * registrosPorPagina,
+          },
+        }),
         API.get("/coordinador/catalogos"),
       ]);
       setEquipos(resEquipos.data || []);
+      setTotalEquipos(Number(resEquipos.headers?.["x-total-count"] || resEquipos.data?.length || 0));
       setCatalogos(resCatalogos.data || { sedes: [], categorias: [] });
     } catch (error) {
       console.error("Error cargando inventario:", error);
@@ -185,22 +198,8 @@ export default function CoordinadorEquipos() {
     }
   };
 
-  const equiposFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
-    return equipos.filter((equipo) => {
-      const coincideTexto = `${equipo.nombre || ""} ${equipo.marca || ""} ${equipo.modelo || ""} ${equipo.serie || ""} ${equipo.ubicacion || ""} ${equipo.codigo_id || ""} ${equipo.inventario || ""}`
-        .toLowerCase()
-        .includes(texto);
-      return coincideTexto
-        && (!filtroSede || String(equipo.sede_id) === String(filtroSede))
-        && (!filtroCategoria || String(equipo.categoria_id) === String(filtroCategoria))
-        && (!filtroEstado || equipo.estado === filtroEstado)
-        && (!filtroCriticidad || equipo.criticidad === filtroCriticidad);
-    });
-  }, [equipos, busqueda, filtroSede, filtroCategoria, filtroEstado, filtroCriticidad]);
-
-  const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / registrosPorPagina));
-  const visibles = equiposFiltrados.slice((pagina - 1) * registrosPorPagina, pagina * registrosPorPagina);
+  const totalPaginas = Math.max(1, Math.ceil(totalEquipos / registrosPorPagina));
+  const visibles = equipos;
 
   return (
     <div className="coord-page">
@@ -211,10 +210,10 @@ export default function CoordinadorEquipos() {
           <p>Listado profesional, filtros, edicion y acceso directo a la hoja de vida.</p>
         </div>
         <div className="coord-actions">
-          <button className="coord-btn secondary" onClick={exportarInventario} disabled={exportando}>
+          <button type="button" className="coord-btn secondary" onClick={exportarInventario} disabled={exportando}>
             <Download size={17} />{exportando ? "Exportando..." : "Exportar filtrado"}
           </button>
-          <button className="coord-btn secondary" onClick={cargarDatos}><RefreshCw size={17} />Actualizar</button>
+          <button type="button" className="coord-btn secondary" onClick={cargarDatos}><RefreshCw size={17} />Actualizar</button>
           <button className="coord-btn primary" onClick={abrirCrear}><Plus size={17} />Nuevo equipo</button>
         </div>
       </div>
@@ -268,10 +267,10 @@ export default function CoordinadorEquipos() {
                   <td><span className={`coord-badge ${String(equipo.estado || "").toLowerCase()}`}>{equipo.estado || "N/A"}</span></td>
                   <td><span className={`coord-badge ${String(equipo.criticidad || "media").toLowerCase()}`}>{equipo.criticidad || "MEDIA"}</span></td>
                   <td><div className="coord-table-actions">
-                    <button onClick={() => setDetalle(equipo)} title="Ver detalle"><Eye size={16} /></button>
-                    <button onClick={() => abrirEditar(equipo)} title="Editar"><Pencil size={16} /></button>
-                    <button onClick={() => navigate(`/coordinador/hoja-vida/${equipo.id}`)} title="Hoja de vida"><FileText size={16} /></button>
-                    <button onClick={() => navigate(`/coordinador/mantenimientos?equipo_id=${equipo.id}`)} title="Mantenimientos"><Wrench size={16} /></button>
+                    <button type="button" onClick={() => setDetalle(equipo)} title="Ver detalle" aria-label={"Ver detalle de " + equipo.nombre}><Eye size={16} /></button>
+                    <button type="button" onClick={() => abrirEditar(equipo)} title="Editar" aria-label={"Editar " + equipo.nombre}><Pencil size={16} /></button>
+                    <button type="button" onClick={() => navigate(`/coordinador/hoja-vida/${equipo.id}`)} title="Hoja de vida" aria-label={"Ver hoja de vida de " + equipo.nombre}><FileText size={16} /></button>
+                    <button type="button" onClick={() => navigate(`/coordinador/mantenimientos?equipo_id=${equipo.id}`)} title="Mantenimientos" aria-label={"Ver mantenimientos de " + equipo.nombre}><Wrench size={16} /></button>
                   </div></td>
                 </tr>
               ))}
@@ -281,9 +280,9 @@ export default function CoordinadorEquipos() {
       </section>
 
       <div className="coord-pagination">
-        <button disabled={pagina <= 1} onClick={() => setPagina((valor) => valor - 1)}>Anterior</button>
-        <span>Pagina {pagina} de {totalPaginas} - {equiposFiltrados.length} equipos</span>
-        <button disabled={pagina >= totalPaginas} onClick={() => setPagina((valor) => valor + 1)}>Siguiente</button>
+        <button type="button" disabled={pagina <= 1} onClick={() => setPagina((valor) => valor - 1)}>Anterior</button>
+        <span>Página {pagina} de {totalPaginas} - {totalEquipos} equipos</span>
+        <button type="button" disabled={pagina >= totalPaginas} onClick={() => setPagina((valor) => valor + 1)}>Siguiente</button>
       </div>
 
       {modal && <EquipoModal form={form} setForm={setForm} editando={editando} cargando={cargando} catalogos={catalogos} guardar={guardar} cerrar={cerrarModal} />}
@@ -296,7 +295,7 @@ function EquipoModal({ form, setForm, editando, cargando, catalogos, guardar, ce
   return (
     <div className="coord-modal-backdrop">
       <div className="coord-modal large">
-        <div className="coord-modal-header"><div><h3>{editando ? "Editar equipo" : "Nuevo equipo"}</h3><p>Datos basicos del inventario.</p></div><button onClick={cerrar}><X size={18} /></button></div>
+        <div className="coord-modal-header"><div><h3>{editando ? "Editar equipo" : "Nuevo equipo"}</h3><p>Datos básicos del inventario.</p></div><button type="button" onClick={cerrar} aria-label="Cerrar formulario de equipo"><X size={18} /></button></div>
         <form onSubmit={guardar} className="coord-form-grid">
           <label>Nombre del equipo<input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} required /></label>
           <label>Sede<select value={form.sede_id} onChange={(event) => setForm({ ...form, sede_id: event.target.value })} required><option value="">Seleccionar sede</option>{catalogos.sedes?.map((sede) => <option key={sede.id} value={sede.id}>{sede.nombre}</option>)}</select></label>
@@ -323,6 +322,6 @@ function DetalleEquipo({ equipo, cerrar, editar, abrirHoja }) {
     ["Modelo", equipo.modelo], ["Serie", equipo.serie], ["Estado", equipo.estado], ["Criticidad", equipo.criticidad],
   ];
   return (
-    <div className="coord-modal-backdrop"><div className="coord-modal"><div className="coord-modal-header"><div><h3>{equipo.nombre}</h3><p>Detalle completo del activo.</p></div><button onClick={cerrar}><X size={18} /></button></div><div className="coord-detail-grid">{campos.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || "N/A"}</strong></div>)}</div><div className="coord-modal-actions"><button className="coord-btn secondary" onClick={() => editar(equipo)}><Pencil size={16} />Editar</button><button className="coord-btn primary" onClick={abrirHoja}><FileText size={16} />Hoja de vida</button></div></div></div>
+    <div className="coord-modal-backdrop"><div className="coord-modal"><div className="coord-modal-header"><div><h3>{equipo.nombre}</h3><p>Detalle completo del activo.</p></div><button type="button" onClick={cerrar} aria-label="Cerrar detalle del equipo"><X size={18} /></button></div><div className="coord-detail-grid">{campos.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value || "N/A"}</strong></div>)}</div><div className="coord-modal-actions"><button type="button" className="coord-btn secondary" onClick={() => editar(equipo)}><Pencil size={16} />Editar</button><button type="button" className="coord-btn primary" onClick={abrirHoja}><FileText size={16} />Hoja de vida</button></div></div></div>
   );
 }

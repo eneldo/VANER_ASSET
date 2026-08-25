@@ -12,6 +12,7 @@
 import axios from "axios";
 import {
   getAccessToken,
+  getStoredUser,
   updateAccessToken,
   clearSession,
 } from "../utils/authStorage";
@@ -39,20 +40,12 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-const leerAccessTokenSeguro = () => {
-  return (
-    getAccessToken?.() ||
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token")
-  );
-};
+const leerAccessTokenSeguro = () => getAccessToken?.() || null;
 
 const guardarAccessTokenSeguro = (token) => {
   if (!token) return;
 
   updateAccessToken?.(token);
-  localStorage.setItem("access_token", token);
-  localStorage.setItem("token", token);
 };
 
 const cerrarSesionSegura = () => {
@@ -79,7 +72,7 @@ api.interceptors.request.use(
     }
 
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const user = getStoredUser();
       const empresaActiva = localStorage.getItem("coordinator_active_company_id");
       if (
         String(user?.rol || "").toUpperCase() === "COORDINADOR"
@@ -119,7 +112,9 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/auth/login") ||
       url.includes("/auth/refresh") ||
-      url.includes("/auth/logout");
+      url.includes("/auth/logout") ||
+      url.includes("/auth/forgot-password") ||
+      url.includes("/auth/reset-password");
 
     if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;

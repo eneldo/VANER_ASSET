@@ -19,6 +19,7 @@ import {
 
 import AdminLayout from "./AdminLayout";
 import "../../styles/categorias-tecnicos-saas-pro.css";
+import { getAccessToken } from "../../utils/authStorage";
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -65,7 +66,7 @@ export default function CategoriasPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
-  const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+  const token = getAccessToken();
 
   const authHeaders = {
     "Content-Type": "application/json",

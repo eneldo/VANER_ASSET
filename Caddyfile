@@ -11,11 +11,8 @@ sgaholding.online, www.sgaholding.online {
 	# Encoding
 	encode gzip zstd
 
-	# Logs
-	log {
-		output file /var/log/caddy/sga.log
-		level info
-	}
+	# Access log deshabilitado hasta garantizar redacción de queries sensibles.
+	# Los errores operativos continúan disponibles en docker logs.
 
 	# Headers de seguridad globales
 	header {
@@ -42,7 +39,7 @@ sgaholding.online, www.sgaholding.online {
 
 	# ── Frontend ──
 	handle {
-		reverse_proxy sga_frontend:80 {
+		reverse_proxy sga_frontend:8080 {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 		}

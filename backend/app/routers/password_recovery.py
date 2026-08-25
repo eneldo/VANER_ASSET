@@ -5,7 +5,7 @@
 # Endpoints:
 #   POST /auth/forgot-password
 #   POST /auth/reset-password
-#   GET  /auth/reset-password/validate?token=...
+#   POST /auth/reset-password/validate
 # =========================================================
 
 from pydantic import BaseModel, EmailStr, Field
@@ -19,8 +19,11 @@ from app.services.password_reset_service import (
     construir_reset_url,
     crear_token_recuperacion,
     enviar_email_recuperacion,
+    invalidar_tokens_recuperacion_usuario,
     marcar_token_usado,
+    revocar_sesiones_usuario,
 )
+from app.services.security_logger import registrar_evento_seguridad
 
 # Import flexible del hash de contraseña para no romper entre fases.
 try:
@@ -50,6 +53,11 @@ class ResetPasswordRequest(BaseModel):
 
     token: str = Field(..., min_length=20)
     new_password: str = Field(..., min_length=12, max_length=128)
+
+class ValidateResetTokenRequest(BaseModel):
+    """Token enviado en body para evitar exposición en URLs y logs."""
+
+    token: str = Field(..., min_length=20)
 
 
 @router.post("/forgot-password")
@@ -92,10 +100,13 @@ def forgot_password(
     return respuesta
 
 
-@router.get("/reset-password/validate")
-def validate_reset_token(token: str, db: Session = Depends(get_db)):
+@router.post("/reset-password/validate")
+def validate_reset_token(
+    payload: ValidateResetTokenRequest,
+    db: Session = Depends(get_db),
+):
     """Valida si un token sigue activo antes de mostrar el formulario."""
-    registro = buscar_token_valido(db, token)
+    registro = buscar_token_valido(db, payload.token)
     if not registro:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -106,7 +117,11 @@ def validate_reset_token(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(
+    payload: ResetPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     """Cambia contraseña usando token válido."""
     registro = buscar_token_valido(db, payload.token)
     if not registro:
@@ -123,7 +138,22 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
         )
 
     usuario.password_hash = hash_password(payload.new_password)
-    marcar_token_usado(db, registro)
+    marcar_token_usado(db, registro, commit=False)
+    revocar_sesiones_usuario(db, usuario.id)
+    invalidar_tokens_recuperacion_usuario(db, usuario.id)
     db.commit()
+
+    registrar_evento_seguridad(
+        db,
+        request=request,
+        usuario_id=usuario.id,
+        usuario_email=usuario.email,
+        rol=usuario.rol,
+        empresa_id=usuario.empresa_id,
+        evento="PASSWORD_RESET_COMPLETADO",
+        modulo="AUTH",
+        permitido=True,
+        detalle="Contraseña restablecida y sesiones activas revocadas",
+    )
 
     return {"message": "Contraseña actualizada correctamente."}

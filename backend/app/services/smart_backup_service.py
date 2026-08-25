@@ -7,6 +7,7 @@
 import os
 import shutil
 import subprocess
+import tempfile
 import zipfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -19,6 +20,11 @@ from sqlalchemy.orm import Session
 
 from app.models.backup_historial import BackupHistorial
 from app.config import settings
+from app.services.backup_crypto import (
+    backup_encryption_enabled,
+    decrypt_backup_file,
+    encrypt_backup_file,
+)
 
 # Carpeta persistente recomendada. En Docker/Dokploy puede sobrescribirse con BACKUP_DIR.
 BACKUP_DIR = Path(os.getenv("BACKUP_DIR") or "app/backups").resolve()
@@ -81,14 +87,26 @@ class SmartBackupService:
                     if item.is_file():
                         zf.write(item, arcname=item.name)
 
-            remote_key = self._upload_remote_backup(zip_path)
+            stored_path = zip_path
+            if backup_encryption_enabled():
+                stored_path = zip_path.with_suffix(zip_path.suffix + ".sgaenc")
+                encrypt_backup_file(zip_path, stored_path)
+                zip_path.unlink(missing_ok=True)
+                metadata["encrypted"] = True
+                metadata["encryption_format"] = "SGABKP1"
+            elif settings.BACKUP_ENCRYPTION_REQUIRED:
+                raise RuntimeError("El cifrado de backups es obligatorio")
+            else:
+                metadata["encrypted"] = False
+
+            remote_key = self._upload_remote_backup(stored_path)
             if remote_key:
                 metadata["remote_key"] = remote_key
 
             registro.estado = "EXITOSO"
             registro.nombre_archivo = zip_name
-            registro.ruta_archivo = str(zip_path)
-            registro.tamano_bytes = zip_path.stat().st_size if zip_path.exists() else 0
+            registro.ruta_archivo = str(stored_path)
+            registro.tamano_bytes = stored_path.stat().st_size if stored_path.exists() else 0
             registro.mensaje = "Backup generado correctamente"
             registro.finalizado_en = datetime.now(timezone.utc)
             registro.metadata_json = metadata
@@ -110,15 +128,7 @@ class SmartBackupService:
         if not settings.S3_BACKUP_ENABLED:
             return None
 
-        import boto3
-
-        client = boto3.client(
-            "s3",
-            endpoint_url=settings.S3_BACKUP_ENDPOINT_URL,
-            region_name=settings.S3_BACKUP_REGION,
-            aws_access_key_id=settings.S3_BACKUP_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.S3_BACKUP_SECRET_ACCESS_KEY,
-        )
+        client = self._s3_client()
         prefix = settings.S3_BACKUP_PREFIX.strip("/")
         remote_key = f"{prefix}/{backup_path.name}" if prefix else backup_path.name
         client.upload_file(
@@ -128,6 +138,57 @@ class SmartBackupService:
             ExtraArgs={"ServerSideEncryption": "AES256"},
         )
         return remote_key
+
+    def _s3_client(self):
+        import boto3
+
+        return boto3.client(
+            "s3",
+            endpoint_url=settings.S3_BACKUP_ENDPOINT_URL,
+            region_name=settings.S3_BACKUP_REGION,
+            aws_access_key_id=settings.S3_BACKUP_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.S3_BACKUP_SECRET_ACCESS_KEY,
+        )
+
+    def _delete_remote_backup(self, item: BackupHistorial) -> None:
+        metadata = dict(item.metadata_json or {})
+        remote_key = metadata.get("remote_key")
+        if not remote_key:
+            return
+        if not settings.S3_BACKUP_ENABLED:
+            raise RuntimeError("S3 debe estar configurado para eliminar el backup remoto")
+        self._s3_client().delete_object(
+            Bucket=settings.S3_BACKUP_BUCKET,
+            Key=remote_key,
+        )
+
+    def preparar_descarga(self, item: BackupHistorial) -> tuple[Path, bool]:
+        source = self._safe_local_backup_path(item.ruta_archivo)
+        if not source.exists():
+            raise HTTPException(status_code=404, detail="Archivo de backup no encontrado")
+
+        if not bool((item.metadata_json or {}).get("encrypted")):
+            return source, False
+
+        file_descriptor, temporary_name = tempfile.mkstemp(prefix="sga_backup_", suffix=".zip")
+        os.close(file_descriptor)
+        temporary = Path(temporary_name)
+        try:
+            decrypt_backup_file(source, temporary)
+            return temporary, True
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+
+    def _safe_local_backup_path(self, value: str | None) -> Path:
+        if not value:
+            raise HTTPException(status_code=404, detail="Backup sin archivo asociado")
+        path = Path(value).resolve()
+        try:
+            path.relative_to(BACKUP_DIR)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Ruta de backup inválida") from exc
+        return path
 
     def _dump_postgres(self, destino: Path):
         database_url = settings.BACKUP_DATABASE_URL
@@ -197,13 +258,17 @@ class SmartBackupService:
         antiguos = self.db.query(BackupHistorial).filter(BackupHistorial.iniciado_en < limite).all()
         eliminados = 0
         for item in antiguos:
-            if item.ruta_archivo:
-                try:
-                    Path(item.ruta_archivo).unlink(missing_ok=True)
-                except Exception:
-                    pass
-            self.db.delete(item)
-            eliminados += 1
+            try:
+                self._delete_remote_backup(item)
+                if item.ruta_archivo:
+                    self._safe_local_backup_path(item.ruta_archivo).unlink(missing_ok=True)
+                self.db.delete(item)
+                eliminados += 1
+            except Exception as exc:
+                metadata = dict(item.metadata_json or {})
+                metadata["cleanup_error"] = str(exc)
+                metadata["cleanup_failed_at"] = datetime.now(timezone.utc).isoformat()
+                item.metadata_json = metadata
         self.db.commit()
         return eliminados
 

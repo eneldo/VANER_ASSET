@@ -115,6 +115,16 @@ frontend/logs/
 backend/app/exports/
 backend/exports/
 exports/
+output/local-dev/
+
+# Respaldos y artefactos locales
+backups/
+tmp/
+backend/tmp_*.py
+
+# Configuracion local de agentes
+.agents/
+AGENTS.md.md
 
 # ----------------------------
 # Alembic cache

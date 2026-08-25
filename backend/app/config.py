@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     RUN_SCHEDULER: bool = True
     ALLOW_DATABASE_RESTORE: bool = False
 
+    REDIS_URL: str | None = None
+    RATE_LIMIT_REDIS_REQUIRED: bool = False
+    BACKUP_ENCRYPTION_REQUIRED: bool = False
+
     S3_BACKUP_ENABLED: bool = False
     S3_BACKUP_ENDPOINT_URL: str | None = None
     S3_BACKUP_REGION: str = "auto"
@@ -78,6 +82,8 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "app/uploads"
     BACKUP_DIR: str = "app/backups"
+    MAX_INVENTORY_IMPORT_MB: int = 10
+    MAX_INVENTORY_IMPORT_ROWS: int = 10000
 
     # =====================================================
     # EXPORTACIONES
@@ -112,6 +118,10 @@ class Settings(BaseSettings):
             raise ValueError("CONFIG_ENCRYPTION_KEY is required in production")
         if not self.BACKUP_DATABASE_URL:
             raise ValueError("BACKUP_DATABASE_URL is required in production")
+        if self.RATE_LIMIT_REDIS_REQUIRED and not self.REDIS_URL:
+            raise ValueError("REDIS_URL is required when distributed rate limiting is enabled")
+        if self.BACKUP_ENCRYPTION_REQUIRED and not self.CONFIG_ENCRYPTION_KEY:
+            raise ValueError("CONFIG_ENCRYPTION_KEY is required to encrypt backups")
 
         try:
             app_database = make_url(self.DATABASE_URL)

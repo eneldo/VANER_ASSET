@@ -8,6 +8,7 @@
     "build": "vite build",
     "audit:prod": "audit-ci --config .audit-ci.jsonc",
     "verify:no-rsc": "node scripts/verify-no-rsc.mjs",
+    "verify:utf8": "node scripts/verify-utf8.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -19,6 +19,9 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - run: python scripts/verify_repository_security.py
+      - run: python -m pip_audit -r requirements.txt
+        working-directory: backend
       - run: python -m compileall -q app alembic tests
         working-directory: backend
         env:
@@ -48,6 +51,8 @@ jobs:
       - run: npm run audit:prod
         working-directory: frontend
       - run: npm run verify:no-rsc
+        working-directory: frontend
+      - run: npm run verify:utf8
         working-directory: frontend
       - run: npm test
         working-directory: frontend

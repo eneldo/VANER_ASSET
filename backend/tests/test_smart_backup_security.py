@@ -4,11 +4,51 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from cryptography.fernet import Fernet
+
 from app.config import settings
+from app.services.backup_crypto import decrypt_backup_file, encrypt_backup_file
 from app.services.smart_backup_service import SmartBackupService
 
 
 class SmartBackupSecurityTests(unittest.TestCase):
+    def test_cifrado_backup_roundtrip(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source = Path(temp_dir) / "backup.zip"
+            encrypted = Path(temp_dir) / "backup.zip.sgaenc"
+            restored = Path(temp_dir) / "restored.zip"
+            source.write_bytes(b"backup-sensible" * 1000)
+
+            with patch.object(
+                settings,
+                "CONFIG_ENCRYPTION_KEY",
+                Fernet.generate_key().decode("ascii"),
+            ):
+                encrypt_backup_file(source, encrypted)
+                decrypt_backup_file(encrypted, restored)
+
+            self.assertNotIn(b"backup-sensible", encrypted.read_bytes())
+            self.assertEqual(restored.read_bytes(), source.read_bytes())
+
+    def test_elimina_objeto_remoto_usando_metadata(self):
+        client = SimpleNamespace(delete_object=lambda **_kwargs: None)
+        item = SimpleNamespace(metadata_json={"remote_key": "sga/backup.sgaenc"})
+        service = SmartBackupService(db=None)
+
+        with (
+            patch.object(settings, "S3_BACKUP_ENABLED", True),
+            patch.object(settings, "S3_BACKUP_BUCKET", "bucket-pruebas"),
+            patch.object(service, "_s3_client", return_value=client) as factory,
+            patch.object(client, "delete_object", wraps=client.delete_object) as delete,
+        ):
+            service._delete_remote_backup(item)
+
+        factory.assert_called_once_with()
+        delete.assert_called_once_with(
+            Bucket="bucket-pruebas",
+            Key="sga/backup.sgaenc",
+        )
+
     def test_dump_usa_rol_backup_dedicado(self):
         completed = SimpleNamespace(returncode=0, stderr=b"")
 
