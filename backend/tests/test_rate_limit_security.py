@@ -24,7 +24,7 @@ class RateLimitSecurityTests(unittest.TestCase):
         )
         self.assertNotIn("203.0.113.10", key)
         self.assertNotIn("forgot-password", key)
-        self.assertTrue(key.startswith("sga:rate-limit:"))
+        self.assertTrue(key.startswith("vaner:rate-limit:"))
 
 
 if __name__ == "__main__":

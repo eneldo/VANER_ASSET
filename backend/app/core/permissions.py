@@ -1,5 +1,5 @@
 # ============================================================
-# SGAHolding — CORE PERMISSIONS
+# VANER ASSET — CORE PERMISSIONS
 # Archivo: backend/app/core/permissions.py
 #
 # Control centralizado de:

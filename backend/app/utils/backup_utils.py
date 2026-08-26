@@ -52,7 +52,7 @@ def generar_backup():
 
     fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    archivo = f"sga_backup_{fecha}.sql"
+    archivo = f"vaner_backup_{fecha}.sql"
 
     ruta = BACKUP_DIR / archivo
 

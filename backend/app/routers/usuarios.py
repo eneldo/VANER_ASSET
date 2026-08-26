@@ -15,7 +15,7 @@ from hmac import compare_digest
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -23,18 +23,40 @@ from app.database import get_db
 from app.config import settings
 from app.models.usuario import Usuario
 from app.models.empresa import Empresa
+from app.models.password_history import PasswordHistory
 from app.schemas.usuario import (
     AdminCreate,
     UsuarioCreate,
     UsuarioUpdate,
     ResetPasswordRequest,
+    CambioPasswordRequest,
     UsuarioOut,
 )
-from app.security import hash_password
+from app.security import hash_password, verify_password, needs_upgrade, utc_now
+from app.services.password_policy import password_policy, PasswordErrorCode
+from app.services.security_logger import registrar_evento_seguridad
+
+from app.routers.auth import obtener_usuario_actual
 
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 bootstrap_router = APIRouter(prefix="/usuarios", tags=["Bootstrap"], include_in_schema=False)
+
+
+# =========================================================
+# HELPER: HISTORIAL DE CONTRASEÑAS
+# =========================================================
+
+def _registrar_historial(db: Session, usuario: Usuario, *, password: str, motivo: str):
+    """Registra el hash de la contraseña actual antes de cambiarla."""
+    from app.security import hash_password as _hash
+    entry = PasswordHistory(
+        usuario_id=usuario.id,
+        empresa_id=usuario.empresa_id,
+        password_hash=_hash(password),
+        motivo=motivo,
+    )
+    db.add(entry)
 
 
 # =========================================================
@@ -165,6 +187,13 @@ def crear_admin_inicial(
             detail="Ya existe un usuario ADMIN en el sistema",
         )
 
+    validation = password_policy.validate(data.password)
+    if not validation.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation.errors[0],
+        )
+
     nuevo_admin = Usuario(
         nombre_completo=data.nombre_completo,
         username=data.username,
@@ -173,6 +202,7 @@ def crear_admin_inicial(
         rol="ADMIN",
         empresa_id=None,
         activo=True,
+        password_changed_at=utc_now(),
     )
 
     db.add(nuevo_admin)
@@ -223,6 +253,18 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
             detail="El username o email ya está registrado",
         )
 
+    temp_user = Usuario(
+        username=data.username,
+        email=data.email,
+        nombre_completo=data.nombre_completo,
+    )
+    validation = password_policy.validate(data.password, usuario=temp_user, db=db)
+    if not validation.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation.errors[0],
+        )
+
     nuevo_usuario = Usuario(
         nombre_completo=data.nombre_completo,
         username=data.username,
@@ -231,10 +273,14 @@ def crear_usuario(data: UsuarioCreate, db: Session = Depends(get_db)):
         rol=data.rol,
         empresa_id=empresa_id_final,
         activo=True,
+        password_changed_at=utc_now(),
     )
     nuevo_usuario.empresas_autorizadas = empresas_autorizadas
 
     db.add(nuevo_usuario)
+    db.flush()
+
+    _registrar_historial(db, nuevo_usuario, password=data.password, motivo="CREACION")
     db.commit()
     db.refresh(nuevo_usuario)
 
@@ -396,6 +442,7 @@ def reset_password(
 ):
     """
     Resetea o cambia la contraseña de un usuario.
+    Aplica política completa y registra historial.
     """
 
     usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
@@ -406,13 +453,19 @@ def reset_password(
             detail="Usuario no encontrado",
         )
 
-    if len(data.nueva_password) < 6:
+    validation = password_policy.validate(data.nueva_password, usuario=usuario, db=db)
+    if not validation.valid:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La contraseña debe tener mínimo 6 caracteres",
+            detail=validation.errors[0],
         )
 
+    _registrar_historial(db, usuario, password=data.nueva_password, motivo="RESET_ADMIN")
+
     usuario.password_hash = hash_password(data.nueva_password)
+    usuario.password_changed_at = utc_now()
+    usuario.debe_cambiar_password = False
+    usuario.temp_password_expires_at = None
 
     db.commit()
 
@@ -420,6 +473,74 @@ def reset_password(
         "message": "Contraseña actualizada correctamente",
         "usuario": usuario.username,
     }
+
+
+# =========================================================
+# CAMBIO DE CONTRASEÑA (AUTENTICADO)
+# =========================================================
+
+@router.post("/cambio-password")
+def cambio_password(
+    data: CambioPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+):
+    """
+    Cambio de contraseña desde sesión autenticada.
+    Requiere contraseña actual, valida historial y revoca sesiones.
+    """
+
+    if data.nueva_password != data.confirmar_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Las contraseñas no coinciden.",
+        )
+
+    if not verify_password(data.password_actual, usuario.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="La contraseña actual es incorrecta.",
+        )
+
+    validation = password_policy.validate_change(
+        data.nueva_password,
+        data.password_actual,
+        usuario=usuario,
+        db=db,
+    )
+    if not validation.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation.errors[0],
+        )
+
+    _registrar_historial(db, usuario, password=data.nueva_password, motivo="CAMBIO_USUARIO")
+
+    usuario.password_hash = hash_password(data.nueva_password)
+    usuario.password_changed_at = utc_now()
+    usuario.debe_cambiar_password = False
+    usuario.temp_password_expires_at = None
+
+    from app.services.password_reset_service import revocar_sesiones_usuario
+    revocar_sesiones_usuario(db, usuario.id)
+
+    registrar_evento_seguridad(
+        db,
+        request=request,
+        usuario_id=usuario.id,
+        usuario_email=usuario.email,
+        rol=usuario.rol,
+        empresa_id=usuario.empresa_id,
+        evento="PASSWORD_CHANGE_OK",
+        modulo="AUTH",
+        permitido=True,
+        detalle="Cambio de contraseña desde sesión autenticada",
+    )
+
+    db.commit()
+
+    return {"message": "Contraseña actualizada correctamente. Las sesiones anteriores fueron revocadas."}
 
 
 # =========================================================

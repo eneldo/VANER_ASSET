@@ -55,6 +55,7 @@ const formInicial = {
   tecnico_id: "",
   tipo: "PREVENTIVO",
   estado: "PROGRAMADO",
+  prioridad: "MEDIA",
   fecha_programada: "",
   fecha_inicio_programada: "",
   fecha_fin_programada: "",
@@ -65,7 +66,14 @@ const formInicial = {
   resultado_final: "",
   observaciones: "",
   descripcion: "",
+  falla_incidencia: "",
+  diagnostico: "",
+  trabajo_realizado: "",
   costo: "",
+  costo_mano_obra: "",
+  costo_repuestos: "",
+  costo_total: "",
+  solucion: "",
 };
 
 export default function MantenimientosPage({
@@ -295,6 +303,7 @@ export default function MantenimientosPage({
         form.descripcion ||
         form.acciones_realizadas ||
         "Mantenimiento registrado desde bitácora profesional.",
+      prioridad: form.prioridad || "MEDIA",
       fecha_programada: form.fecha_programada || null,
       fecha_inicio_programada: form.fecha_inicio_programada || null,
       fecha_fin_programada: form.fecha_fin_programada || null,
@@ -302,9 +311,16 @@ export default function MantenimientosPage({
       estado_inicial_equipo: form.estado_inicial_equipo || null,
       acciones_realizadas: form.acciones_realizadas || null,
       resultado_final: form.resultado_final || null,
+      falla_incidencia: form.falla_incidencia || null,
+      diagnostico: form.diagnostico || null,
+      trabajo_realizado: form.trabajo_realizado || null,
       latitud: form.latitud || null,
       longitud: form.longitud || null,
       costo: form.costo ? Number(form.costo) : null,
+      costo_mano_obra: form.costo_mano_obra ? Number(form.costo_mano_obra) : null,
+      costo_repuestos: form.costo_repuestos ? Number(form.costo_repuestos) : null,
+      costo_total: form.costo_total ? Number(form.costo_total) : null,
+      solucion: form.solucion || null,
     };
 
     try {
@@ -364,6 +380,7 @@ export default function MantenimientosPage({
       tecnico_id: m.tecnico_id || "",
       tipo: m.tipo || "PREVENTIVO",
       estado: m.estado || "PROGRAMADO",
+      prioridad: m.prioridad || "MEDIA",
       fecha_programada: convertirFechaInput(m.fecha_programada),
       fecha_inicio_programada: convertirFechaInput(m.fecha_inicio_programada),
       fecha_fin_programada: convertirFechaInput(m.fecha_fin_programada),
@@ -374,7 +391,14 @@ export default function MantenimientosPage({
       resultado_final: m.resultado_final || "",
       observaciones: m.observaciones || "",
       descripcion: m.descripcion || "",
+      falla_incidencia: m.falla_incidencia || "",
+      diagnostico: m.diagnostico || "",
+      trabajo_realizado: m.trabajo_realizado || "",
       costo: m.costo || "",
+      costo_mano_obra: m.costo_mano_obra || "",
+      costo_repuestos: m.costo_repuestos || "",
+      costo_total: m.costo_total || "",
+      solucion: m.solucion || "",
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -634,6 +658,18 @@ export default function MantenimientosPage({
                 </select>
               </Field>
 
+              <Field label="Prioridad">
+                <select
+                  value={form.prioridad}
+                  onChange={(e) => setForm({ ...form, prioridad: e.target.value })}
+                >
+                  <option value="BAJA">Baja</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="ALTA">Alta</option>
+                  <option value="CRITICA">Crítica</option>
+                </select>
+              </Field>
+
               <Field label="Estado">
                 <select
                   value={form.estado}
@@ -724,6 +760,37 @@ export default function MantenimientosPage({
                 />
               </Field>
 
+              <Field label="Falla / incidencia reportada">
+                <textarea
+                  value={form.falla_incidencia}
+                  onChange={(e) =>
+                    setForm({ ...form, falla_incidencia: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Diagnóstico técnico">
+                <textarea
+                  value={form.diagnostico}
+                  onChange={(e) =>
+                    setForm({ ...form, diagnostico: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+            )}
+
+            {!esCoordinador && (
+            <div className="mant-grid-3 mant-textarea-row">
+              <Field label="Trabajo realizado">
+                <textarea
+                  value={form.trabajo_realizado}
+                  onChange={(e) =>
+                    setForm({ ...form, trabajo_realizado: e.target.value })
+                  }
+                />
+              </Field>
+
               <Field label="Acciones realizadas">
                 <textarea
                   value={form.acciones_realizadas}
@@ -746,12 +813,43 @@ export default function MantenimientosPage({
 
             {!esCoordinador && (
               <div className="mant-grid-3 mant-textarea-row">
-                <Field label="Costo">
+                <Field label="Costo mano de obra">
                   <input
                     type="number"
                     placeholder="0"
-                    value={form.costo}
-                    onChange={(e) => setForm({ ...form, costo: e.target.value })}
+                    value={form.costo_mano_obra}
+                    onChange={(e) => setForm({ ...form, costo_mano_obra: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Costo repuestos">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.costo_repuestos}
+                    onChange={(e) => setForm({ ...form, costo_repuestos: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Costo total">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.costo_total}
+                    onChange={(e) => setForm({ ...form, costo_total: e.target.value })}
+                  />
+                </Field>
+              </div>
+            )}
+
+            {!esCoordinador && (
+              <div className="mant-textarea-row">
+                <Field label="Solución aplicada">
+                  <textarea
+                    value={form.solucion}
+                    onChange={(e) =>
+                      setForm({ ...form, solucion: e.target.value })
+                    }
                   />
                 </Field>
               </div>
@@ -942,8 +1040,18 @@ export default function MantenimientosPage({
                 <Detail label="Serie" value={equipoDetalle?.serie} />
                 <Detail label="Técnico" value={detalle.tecnico_nombre || getTecnico(detalle.tecnico_id)} />
                 <Detail label="Tipo" value={detalle.tipo} />
+                <Detail label="Prioridad" value={detalle.prioridad} />
                 <Detail label="Estado" value={detalle.estado} />
+                <Detail label="Cerrado" value={detalle.cerrado ? "Sí" : "No"} />
                 <Detail label="Fecha programada" value={formatearFecha(detalle.fecha_programada)} />
+                <Detail label="Fecha cierre" value={formatearFecha(detalle.fecha_cierre)} />
+                <Detail label="Falla / incidencia" value={detalle.falla_incidencia} />
+                <Detail label="Diagnóstico" value={detalle.diagnostico} />
+                <Detail label="Trabajo realizado" value={detalle.trabajo_realizado} />
+                <Detail label="Solución" value={detalle.solucion} />
+                <Detail label="Costo mano de obra" value={detalle.costo_mano_obra} />
+                <Detail label="Costo repuestos" value={detalle.costo_repuestos} />
+                <Detail label="Costo total" value={detalle.costo_total} />
                 <Detail label="Observaciones" value={detalle.observaciones} />
               </div>
             </div>

@@ -29,24 +29,15 @@ from pydantic import BaseModel
 # ============================================================
 
 class MantenimientoBase(BaseModel):
-    # ID del equipo relacionado.
-    # En PostgreSQL viene como UUID, por eso se maneja como str.
     equipo_id: str
-
-    # Tipo de mantenimiento:
-    # PREVENTIVO, CORRECTIVO, CALIBRACION, INSPECCION, etc.
     tipo: str
-
-    # Descripción general del mantenimiento.
     descripcion: Optional[str] = None
+    prioridad: Optional[str] = "MEDIA"
 
-    # Fecha programada.
-    # Se deja como datetime porque tu BD está devolviendo fecha + hora.
     fecha_programada: Optional[datetime] = None
     fecha_inicio_programada: Optional[datetime] = None
     fecha_fin_programada: Optional[datetime] = None
 
-    # Observaciones generales iniciales.
     observaciones: Optional[str] = None
     estado_inicial_equipo: Optional[str] = None
     acciones_realizadas: Optional[str] = None
@@ -54,8 +45,26 @@ class MantenimientoBase(BaseModel):
     latitud: Optional[str] = None
     longitud: Optional[str] = None
 
-    # Costo estimado o real del mantenimiento.
+    falla_incidencia: Optional[str] = None
+    diagnostico: Optional[str] = None
+    trabajo_realizado: Optional[str] = None
+    repuestos: Optional[list] = None
+
     costo: Optional[Decimal] = None
+    costo_mano_obra: Optional[Decimal] = None
+    costo_repuestos: Optional[Decimal] = None
+    costo_total: Optional[Decimal] = None
+
+    evidencia_fotos: Optional[list] = None
+    evidencia_documentos: Optional[list] = None
+
+    solucion: Optional[str] = None
+    cerrado: Optional[bool] = False
+    responsable_id: Optional[str] = None
+
+    tipo_movimiento: Optional[str] = None
+    activo_afectado_id: Optional[str] = None
+    activo_afectado_tipo: Optional[str] = None
 
 
 # ============================================================
@@ -77,6 +86,7 @@ class MantenimientoUpdate(BaseModel):
     equipo_id: Optional[str] = None
     tipo: Optional[str] = None
     descripcion: Optional[str] = None
+    prioridad: Optional[str] = None
     fecha_programada: Optional[datetime] = None
     fecha_inicio_programada: Optional[datetime] = None
     fecha_fin_programada: Optional[datetime] = None
@@ -86,7 +96,22 @@ class MantenimientoUpdate(BaseModel):
     resultado_final: Optional[str] = None
     latitud: Optional[str] = None
     longitud: Optional[str] = None
+    falla_incidencia: Optional[str] = None
+    diagnostico: Optional[str] = None
+    trabajo_realizado: Optional[str] = None
+    repuestos: Optional[list] = None
     costo: Optional[Decimal] = None
+    costo_mano_obra: Optional[Decimal] = None
+    costo_repuestos: Optional[Decimal] = None
+    costo_total: Optional[Decimal] = None
+    evidencia_fotos: Optional[list] = None
+    evidencia_documentos: Optional[list] = None
+    solucion: Optional[str] = None
+    cerrado: Optional[bool] = None
+    responsable_id: Optional[str] = None
+    tipo_movimiento: Optional[str] = None
+    activo_afectado_id: Optional[str] = None
+    activo_afectado_tipo: Optional[str] = None
 
 
 # ============================================================
@@ -170,42 +195,46 @@ class HistMantenimientoOut(BaseModel):
 # ============================================================
 
 class MantenimientoOut(BaseModel):
-    # ID del mantenimiento.
     id: str
-
-    # ID del equipo relacionado.
     equipo_id: str
-
-    # Tipo de mantenimiento.
     tipo: str
-
-    # Descripción.
     descripcion: Optional[str] = None
-
-    # Fecha programada.
+    prioridad: Optional[str] = None
     fecha_programada: Optional[datetime] = None
-
-    # Estado actual del flujo PRO.
     estado: str
-
-    # Técnico asignado.
     tecnico_id: Optional[str] = None
+    responsable_id: Optional[str] = None
 
-    # Fechas de trazabilidad.
     fecha_asignacion: Optional[datetime] = None
     fecha_inicio: Optional[datetime] = None
     fecha_pausa: Optional[datetime] = None
     fecha_finalizacion: Optional[datetime] = None
 
-    # Observaciones.
     observaciones: Optional[str] = None
     observacion_estado: Optional[str] = None
     motivo_anulacion: Optional[str] = None
 
-    # Costo.
-    costo: Optional[Decimal] = None
+    falla_incidencia: Optional[str] = None
+    diagnostico: Optional[str] = None
+    trabajo_realizado: Optional[str] = None
+    repuestos: Optional[list] = None
 
-    # Auditoría.
+    costo: Optional[Decimal] = None
+    costo_mano_obra: Optional[Decimal] = None
+    costo_repuestos: Optional[Decimal] = None
+    costo_total: Optional[Decimal] = None
+
+    evidencia_fotos: Optional[list] = None
+    evidencia_documentos: Optional[list] = None
+
+    solucion: Optional[str] = None
+    cerrado: Optional[bool] = None
+    fecha_cierre: Optional[datetime] = None
+
+    tipo_movimiento: Optional[str] = None
+    activo_afectado_id: Optional[str] = None
+    activo_afectado_tipo: Optional[str] = None
+
     creado_en: Optional[datetime] = None
     actualizado_en: Optional[datetime] = None
 

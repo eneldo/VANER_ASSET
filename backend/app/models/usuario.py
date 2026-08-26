@@ -68,6 +68,11 @@ class Usuario(Base):
     # Estado del usuario
     activo = Column(Boolean, default=True)
 
+    # Política de contraseñas
+    debe_cambiar_password = Column(Boolean, default=False)
+    password_changed_at = Column(DateTime, nullable=True)
+    temp_password_expires_at = Column(DateTime, nullable=True)
+
     # Auditoría
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())

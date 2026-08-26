@@ -73,6 +73,20 @@ class Settings(BaseSettings):
     RATE_LIMIT_REDIS_REQUIRED: bool = False
     BACKUP_ENCRYPTION_REQUIRED: bool = False
 
+    # =====================================================
+    # POLÍTICA DE CONTRASEÑAS
+    # =====================================================
+
+    PASSWORD_MIN_LENGTH: int = 15
+    PASSWORD_MIN_LENGTH_WITH_MFA: int = 12
+    PASSWORD_MAX_LENGTH: int = 128
+    PASSWORD_HISTORY_COUNT: int = 5
+    TEMP_PASSWORD_EXPIRATION_HOURS: int = 24
+    PASSWORD_RESET_EXPIRATION_MINUTES: int = 15
+    ARGON2_TIME_COST: int = 3
+    ARGON2_MEMORY_COST: int = 65536
+    ARGON2_PARALLELISM: int = 4
+
     S3_BACKUP_ENABLED: bool = False
     S3_BACKUP_ENDPOINT_URL: str | None = None
     S3_BACKUP_REGION: str = "auto"
@@ -173,8 +187,8 @@ class Settings(BaseSettings):
             raise ValueError("BACKUP_DATABASE_URL must include a username")
         if backup_database.username == app_database.username:
             raise ValueError("BACKUP_DATABASE_URL must use a dedicated backup role")
-        if backup_database.username != "sga_backup":
-            raise ValueError("BACKUP_DATABASE_URL must use the sga_backup role")
+        if backup_database.username != "vaner_backup":
+            raise ValueError("BACKUP_DATABASE_URL must use the vaner_backup role")
 
         try:
             decoded_key = urlsafe_b64decode(self.CONFIG_ENCRYPTION_KEY.encode("ascii"))

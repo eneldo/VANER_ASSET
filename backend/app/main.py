@@ -63,6 +63,7 @@ from app.routers import solicitudes_correctivas
 from app.routers import reportes_publicados
 from app.routers import facturacion
 from app.routers import plantillas_reporte
+from app.routers import exportaciones
 from app.routers import public_config
 
 
@@ -121,9 +122,6 @@ app.add_middleware(AuditMiddleware)
 # =========================================================
 # ARCHIVOS ESTÁTICOS / UPLOADS
 # =========================================================
-# Ruta correcta en tu proyecto local:
-#   C:\Proyectos\SGA_SaaS\backend\app\uploads\evidencias
-#
 # Ruta correcta dentro del contenedor Docker:
 #   /app/app/uploads/evidencias
 #
@@ -194,6 +192,7 @@ app.include_router(solicitudes_correctivas.router)
 app.include_router(reportes_publicados.router)
 app.include_router(facturacion.router)
 app.include_router(plantillas_reporte.router)
+app.include_router(exportaciones.router, dependencies=ADMIN_ONLY)
 
 
 # =========================================================

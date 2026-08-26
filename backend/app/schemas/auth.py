@@ -30,6 +30,7 @@ class TokenResponse(BaseModel):
     rol: str
     empresa_id: Optional[str] = None
     empresa_ids: list[str] = Field(default_factory=list)
+    debe_cambiar_password: bool = False
 
 
 class RefreshResponse(BaseModel):

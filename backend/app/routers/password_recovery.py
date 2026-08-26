@@ -23,6 +23,7 @@ from app.services.password_reset_service import (
     marcar_token_usado,
     revocar_sesiones_usuario,
 )
+from app.services.password_policy import password_policy
 from app.services.security_logger import registrar_evento_seguridad
 
 # Import flexible del hash de contraseña para no romper entre fases.
@@ -52,7 +53,7 @@ class ResetPasswordRequest(BaseModel):
     """Payload para guardar nueva contraseña."""
 
     token: str = Field(..., min_length=20)
-    new_password: str = Field(..., min_length=12, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 class ValidateResetTokenRequest(BaseModel):
     """Token enviado en body para evitar exposición en URLs y logs."""
@@ -137,7 +138,28 @@ def reset_password(
             detail="Usuario no encontrado.",
         )
 
+    validation = password_policy.validate(payload.new_password, usuario=usuario, db=db)
+    if not validation.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=validation.errors[0],
+        )
+
+    from app.models.password_history import PasswordHistory
+    from app.security import hash_password as _hash, utc_now
+    history_entry = PasswordHistory(
+        usuario_id=usuario.id,
+        empresa_id=usuario.empresa_id,
+        password_hash=_hash(payload.new_password),
+        motivo="RECUPERACION",
+    )
+    db.add(history_entry)
+
     usuario.password_hash = hash_password(payload.new_password)
+    usuario.password_changed_at = utc_now()
+    usuario.debe_cambiar_password = False
+    usuario.temp_password_expires_at = None
+
     marcar_token_usado(db, registro, commit=False)
     revocar_sesiones_usuario(db, usuario.id)
     invalidar_tokens_recuperacion_usuario(db, usuario.id)

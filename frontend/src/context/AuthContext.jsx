@@ -20,6 +20,7 @@ function normalizarUsuario(data, fallbackUsername = "") {
     empresa_id: data.empresa_id || null,
     empresa_ids: data.empresa_ids || (data.empresa_id ? [data.empresa_id] : []),
     permisos: data.permisos || [],
+    debe_cambiar_password: data.debe_cambiar_password || false,
   };
 }
 
@@ -76,6 +77,14 @@ export function AuthProvider({ children }) {
     });
     setUser(loggedUser);
     setAuthenticated(true);
+
+    if (response.data.debe_cambiar_password) {
+      loggedUser.debe_cambiar_password = true;
+      setTimeout(() => {
+        window.location.href = "/cambiar-password";
+      }, 100);
+    }
+
     return loggedUser;
   };
 

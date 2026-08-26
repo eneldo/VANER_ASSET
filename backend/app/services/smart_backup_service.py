@@ -60,7 +60,7 @@ class SmartBackupService:
         registro = self._crear_registro(tipo, incluir_db, incluir_uploads, incluir_codigo, creado_por)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         work_dir = BACKUP_DIR / f"tmp_backup_{timestamp}"
-        zip_name = f"sga_backup_{timestamp}.zip"
+        zip_name = f"vaner_backup_{timestamp}.zip"
         zip_path = BACKUP_DIR / zip_name
         work_dir.mkdir(parents=True, exist_ok=True)
 
@@ -170,7 +170,7 @@ class SmartBackupService:
         if not bool((item.metadata_json or {}).get("encrypted")):
             return source, False
 
-        file_descriptor, temporary_name = tempfile.mkstemp(prefix="sga_backup_", suffix=".zip")
+        file_descriptor, temporary_name = tempfile.mkstemp(prefix="vaner_backup_", suffix=".zip")
         os.close(file_descriptor)
         temporary = Path(temporary_name)
         try:

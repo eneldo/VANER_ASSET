@@ -9,7 +9,8 @@ if str(ROOT) not in sys.path:
 
 from app.database import SessionLocal
 from app.models.usuario import Usuario
-from app.security import hash_password
+from app.security import hash_password, utc_now
+from app.services.password_policy import password_policy
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,8 +25,20 @@ def main() -> int:
     args = parse_args()
     password = getpass.getpass("Administrator password: ")
     confirmation = getpass.getpass("Confirm password: ")
-    if password != confirmation or len(password) < 12:
-        print("Passwords must match and contain at least 12 characters.", file=sys.stderr)
+
+    if password != confirmation:
+        print("Passwords do not match.", file=sys.stderr)
+        return 2
+
+    temp_user = Usuario(
+        username=args.username.strip(),
+        email=args.email.strip().lower(),
+        nombre_completo=args.name.strip(),
+    )
+    validation = password_policy.validate(password, usuario=temp_user)
+    if not validation.valid:
+        for error in validation.errors:
+            print(f"Password policy error: {error}", file=sys.stderr)
         return 2
 
     db = SessionLocal()
@@ -51,6 +64,7 @@ def main() -> int:
             rol="ADMIN",
             empresa_id=None,
             activo=True,
+            password_changed_at=utc_now(),
         )
         db.add(admin)
         db.commit()

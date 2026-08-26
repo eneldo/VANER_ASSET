@@ -59,8 +59,8 @@ export default function ResetPassword() {
     setError("");
     setMessage("");
 
-    if (password.length < 12) {
-      setError("La contraseña debe tener mínimo 12 caracteres.");
+    if (password.length < 15) {
+      setError("La contraseña debe tener mínimo 15 caracteres.");
       return;
     }
 
@@ -105,9 +105,9 @@ export default function ResetPassword() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 12 caracteres"
+                placeholder="Mínimo 15 caracteres"
                 autoComplete="new-password"
-                minLength={12}
+                minLength={15}
                 required
               />
               <button
@@ -130,7 +130,7 @@ export default function ResetPassword() {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Repite la contraseña"
                 autoComplete="new-password"
-                minLength={12}
+                minLength={15}
                 required
               />
             </div>

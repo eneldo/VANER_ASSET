@@ -170,3 +170,41 @@ def detalle_evento(
         return {"detail": "Evento no encontrado"}
 
     return serializar_evento(evento)
+
+
+# ============================================================
+# LIMPIEZA DE AUDITORÍA
+# POST /auditoria-pro/limpiar?dias=90
+# ============================================================
+
+@router.post("/limpiar")
+def limpiar_auditoria_antigua(
+    dias: int = Query(90, ge=7, le=365),
+    db: Session = Depends(get_db),
+):
+    """Elimina eventos de auditoría más antiguos que N días."""
+    from datetime import datetime, timedelta, timezone
+    from app.models.security_event import SecurityEvent
+
+    limite = datetime.now(timezone.utc) - timedelta(days=dias)
+
+    eliminados_auditoria = (
+        db.query(AuditoriaProEvento)
+        .filter(AuditoriaProEvento.creado_en < limite)
+        .delete()
+    )
+
+    eliminados_seguridad = (
+        db.query(SecurityEvent)
+        .filter(SecurityEvent.creado_en < limite)
+        .delete()
+    )
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "dias_retencion": dias,
+        "eventos_auditoria_eliminados": eliminados_auditoria,
+        "eventos_seguridad_eliminados": eliminados_seguridad,
+    }

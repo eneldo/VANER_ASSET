@@ -1,0 +1,10 @@
+# Este archivo SVG representa el logo oficial de VANER Asset
+<!-- VANER Asset Logo -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <text y="50%" x="50%" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#1a73e8">
+    VANER
+  </text>
+  <text y="55%" x="50%" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#3c40c6">
+    Asset
+  </text>
+</svg>

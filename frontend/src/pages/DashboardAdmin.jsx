@@ -105,13 +105,20 @@ export default function DashboardAdmin() {
       setError("");
 
       // Promise.allSettled evita que todo el dashboard se caiga si un módulo falla.
-      const results = await Promise.allSettled([
-        API.get("/empresas/"),
-        API.get("/sedes/"),
-        API.get("/equipos/"),
-        API.get("/mantenimientos/"),
-        API.get("/tecnicos/"),
-      ]);
+      const nombresModulos = ["empresas", "sedes", "equipos", "mantenimientos", "tecnicos"];
+      const endpoints = ["/empresas/", "/sedes/", "/equipos/", "/mantenimientos/", "/tecnicos/"];
+      const results = await Promise.allSettled(
+        endpoints.map((ep) => API.get(ep))
+      );
+
+      results.forEach((result, idx) => {
+        if (result.status === "rejected") {
+          const err = result.reason;
+          const status = err?.response?.status || "N/A";
+          const detail = err?.response?.data?.detail || err?.message || "sin detalle";
+          console.error(`[Dashboard] Módulo ${nombresModulos[idx]} (${endpoints[idx]}) falló — status ${status}:`, detail);
+        }
+      });
 
       const [empresas, sedes, equipos, mantenimientos, tecnicos] = results.map((result) => {
         if (result.status === "fulfilled") return Array.isArray(result.value.data) ? result.value.data : [];

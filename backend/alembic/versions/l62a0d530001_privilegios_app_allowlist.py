@@ -43,6 +43,7 @@ APP_TABLES = (
     "notificaciones",
     "ot_incidencias",
     "ot_repuestos",
+    "password_history",
     "password_reset_tokens",
     "permisos_sistema",
     "plantillas_reporte",

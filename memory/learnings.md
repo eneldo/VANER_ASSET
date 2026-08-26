@@ -62,3 +62,134 @@ Auditoría y mejoras a los módulos de inventario y activos, asegurando hojas de
 *Fecha de cierre: 2026-08-26*
 *Sistema: VANER_ASSET - Transformación SGA → VANER Asset v2*
 *Próxima fase: 8 - Mantenimiento*
+
+### H. FASE 8 - Mantenimiento (2026-08-26)
+
+## Objetivo
+Sincronizar el modelo de mantenimiento con la base de datos, exponer campos de diagnóstico, costos y cierre en API y frontend.
+
+## Cambios realizados
+
+### Migración Alembic `n74c2f750001`
+- 17 columnas añadidas a `mantenimientos`: prioridad, falla_incidencia, diagnostico, trabajo_realizado, repuestos (JSON), costo_mano_obra, costo_repuestos, costo_total, evidencia_fotos (JSON), evidencia_documentos (JSON), solucion, cerrado, fecha_cierre, responsable_id (FK usuarios), tipo_movimiento, activo_afectado_id, activo_afectado_tipo.
+- FK `fk_mantenimientos_responsable_id_usuarios` e índice `ix_mantenimientos_responsable_id`.
+- Valor por defecto `cerrado = FALSE` para registros existentes.
+
+### Schema `mantenimiento.py`
+- `MantenimientoBase`: campos de diagnóstico, costos, cierre, responsable y trazabilidad.
+- `MantenimientoUpdate`: todos los campos opcionales para edición parcial.
+- `MantenimientoOut`: respuesta completa con todos los campos del modelo.
+
+### Router `mantenimientos.py`
+- `mantenimiento_dict()`: retorna prioridad, diagnóstico, costos detallados, evidencias, solucion, cerrado, fecha_cierre, responsable_id, tipo_movimiento, activo_afectado.
+- `crear_mantenimiento()`: persiste los nuevos campos.
+- `cambiar_estado()`: al FINALIZADO marca `cerrado=True` y `fecha_cierre=now()`.
+- `aplicar_reapertura()`: resetea `cerrado=False` y `fecha_cierre=None`.
+
+### Frontend `MantenimientosPage.jsx`
+- `formInicial`: campos prioridad, falla_incidencia, diagnostico, trabajo_realizado, costos (mano_obra, repuestos, total), solucion.
+- Formulario: select de prioridad (BAJA/MEDIA/ALTA/CRITICA), textareas de diagnóstico, costos numéricos, solución.
+- Tabla: incluye prioridad en el formulario.
+- Modal de detalle: muestra prioridad, cerrado, fecha_cierre, diagnóstico, trabajo realizado, solución, costos.
+
+### Tests `test_mantenimiento_fase8.py`
+- 10 pruebas: schemas, reapertura, dict, transiciones, coherencia modelo-migración.
+
+## Validación
+- 173 pruebas backend aprobadas (10 nuevas).
+- 62 pruebas frontend aprobadas.
+- Lint frontend: sin errores.
+- Build frontend: exitoso.
+- Alembic: head `n74c2f750001`, cadena lineal sin forks.
+
+## Estado actual
+Fase 8 completada y validada en backend y frontend.
+
+## Próximo paso recomendado
+Aplicar migración en base de integración PostgreSQL y continuar con Fase 9.
+
+### I. FASE 9 - Órdenes de Trabajo (2026-08-26)
+
+## Objetivo
+Completar el flujo de Órdenes de Trabajo: crear→asignar→ejecutar→cerrar con trazabilidad, repuestos, incidencias y evidencias.
+
+## Cambios realizados
+
+### Tests end-to-end del flujo OT
+- `tests/test_flujo_completo_ot.py`: 35 pruebas que validan:
+  - Transiciones de estado: PROGRAMADO→ASIGNADO→EN_PROCESO→FINALIZADO
+  - Flujos con pausa y reapertura
+  - Anulación desde estados intermedios
+  - Repuestos e incidencias: normalización, límites, validaciones
+  - Evidencias: requisitos de cierre (ANTES/DURANTE/DESPUES)
+  - Aplicar estado operativo: fechas automáticas
+  - Reapertura: reseteo de cerrado y fecha_cierre
+  - Normalización de fechas y listas vacías
+  - Coherencia del modelo de transiciones
+
+### Conversión automática Solicitud→OT
+- `routers/solicitudes_correctivas.py`: Al cambiar estado a `CONVERTIDA_OT`:
+  - Crea Mantenimiento en estado PROGRAMADO
+  - Copia empresa_id, sede_id, equipo_id de la solicitud
+  - Mapea prioridad de solicitud a prioridad de OT
+  - Registra evento en HistMantenimiento
+  - Valida que la solicitud tenga equipo asociado (equipo_id NOT NULL)
+  - Retorna `mantenimiento_creado_id` en la respuesta
+
+### Sidebar técnico con badge
+- `components/Sidebar.jsx`: Carga conteo de OTs activas al montar
+- Muestra badge rojo con número de OTs (asignadas + en proceso + pausadas)
+- `styles/sidebar.css`: Estilo `.sga-badge` para el indicador
+
+## Validación
+- 208 pruebas backend aprobadas (35 nuevas)
+- 62 pruebas frontend aprobadas
+- ESLint sin errores
+- Build exitoso
+
+## Estado actual
+Fase 9 completada y validada.
+
+## Próximo paso recomendado
+Continuar con Fase 12 — Despliegue.
+
+### K. FASE 11 - Auditoría y Seguridad (2026-08-26)
+
+## Objetivo
+Hardening de seguridad: tests de seguridad, limpieza de naming SGA, limpieza de auditoría.
+
+## Cambios realizados
+
+### Tests de seguridad (51 pruebas)
+- `test_seguridad_fase11.py`: suite completa que cubre:
+  - Password hashing PBKDF2-SHA256
+  - JWT tokens (access y refresh)
+  - Token hashing SHA-256
+  - Security headers (nosniff, SAMEORIGIN, CSP, HSTS, Referrer-Policy)
+  - Audit middleware (exclusiones, módulos, acciones, severidad)
+  - Rate limit keys (prefijo, hash no expone IP/ruta, reglas)
+  - SecurityEvent logger (tolerancia a fallos, IP forwarding)
+  - Config production (SECRET_KEY, DEBUG, CLIENT_CODE, HTTPS)
+  - Auth roles (require_roles)
+  - Cross-validation JWT (access vs refresh type)
+
+### Limpieza de naming SGA → VANER
+- `rate_limit.py`: `sga:rate-limit:` → `vaner:rate-limit:`
+- `config.py`: `sga_backup` → `vaner_backup` (rol de backup)
+- `auth.py`, `main.py`, `core/permissions.py`: headers actualizados
+- `utils/backup_utils.py`, `services/smart_backup_service.py`: prefijos de nombre de archivo
+
+### Limpieza de auditoría
+- Endpoint `POST /auditoria-pro/limpiar?dias=90`: elimina eventos antiguos de `auditoria_pro_eventos` y `seguridad_eventos`
+
+## Validación
+- 285 pruebas backend aprobadas (51 nuevas)
+- 62 pruebas frontend aprobadas
+- ESLint sin errores
+- Build exitoso
+
+## Estado actual
+Fase 11 completada y validada.
+
+## Próximo paso recomendado
+Continuar con Fase 12 — Despliegue.

@@ -335,6 +335,24 @@ export default function EquiposPage() {
     setMenuSedesAbierto(false);
   };
 
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setEstadoFiltro("");
+    setCriticidadFiltro("");
+    setCategoriaFiltro("");
+    setResponsableFiltro("");
+    seleccionarSedeFiltro("");
+    setSoloActivosFiltro(true);
+    cargarEquipos({
+      estado: "",
+      criticidad: "",
+      categoriaId: "",
+      responsableId: "",
+      sedeId: "",
+      soloActivos: true,
+    });
+  };
+
   const equiposFiltrados = useMemo(() => {
     return equipos.filter((equipo) => {
       const sedeNombre = sedesPorId.get(String(equipo.sede_id)) || "";
@@ -958,11 +976,23 @@ export default function EquiposPage() {
           </div>
         </div>
 
-        <div className="enterprise-toolbar">
+        <section className="enterprise-toolbar" aria-label="Búsqueda y filtros de inventario">
+          <div className="toolbar-heading">
+            <div>
+              <span>Explorar inventario</span>
+              <strong>Encuentra cualquier activo en segundos</strong>
+            </div>
+            <button type="button" className="clear-filters-button" onClick={limpiarFiltros}>
+              <RotateCcw size={15} />
+              Limpiar filtros
+            </button>
+          </div>
+
           <div className="search-enterprise">
-            <Search size={18} />
+            <Search size={19} />
             <input
               type="text"
+              aria-label="Buscar en inventario"
               placeholder="Buscar equipos, cámaras, inventario o sede..."
               value={busqueda}
               onChange={(e) => {
@@ -970,6 +1000,11 @@ export default function EquiposPage() {
                 setPaginaActual(1);
               }}
             />
+            {busqueda && (
+              <button type="button" aria-label="Limpiar búsqueda" onClick={() => setBusqueda("")}>
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           <div className="filters-enterprise">
@@ -1078,7 +1113,7 @@ export default function EquiposPage() {
               <span>Solo activos</span>
             </label>
           </div>
-        </div>
+        </section>
 
         <div className="enterprise-results-summary" role="status" aria-live="polite">
           <div>
@@ -1153,9 +1188,27 @@ export default function EquiposPage() {
                 <tr>
                   <td colSpan="11">
                     <div className="empty-enterprise">
-                      {equipos.length > 0
-                        ? "No hay equipos que coincidan con la búsqueda o la sede seleccionada."
-                        : "No existen equipos registrados."}
+                      <div className="empty-enterprise-icon">
+                        {equipos.length > 0 ? <Search size={30} /> : <MonitorCog size={30} />}
+                      </div>
+                      <strong>
+                        {equipos.length > 0
+                          ? "No encontramos equipos con estos filtros"
+                          : "Tu inventario está listo para comenzar"}
+                      </strong>
+                      <p>
+                        {equipos.length > 0
+                          ? "Prueba una búsqueda diferente o restablece los filtros para ver todo el inventario."
+                          : "Registra tu primer equipo para gestionar su ubicación, responsable, hoja de vida y mantenimiento."}
+                      </p>
+                      <button
+                        type="button"
+                        className={equipos.length > 0 ? "btn-secondary-enterprise" : "btn-primary-enterprise"}
+                        onClick={equipos.length > 0 ? limpiarFiltros : abrirNuevoEquipo}
+                      >
+                        {equipos.length > 0 ? <RotateCcw size={17} /> : <Plus size={17} />}
+                        {equipos.length > 0 ? "Restablecer filtros" : "Registrar primer equipo"}
+                      </button>
                     </div>
                   </td>
                 </tr>

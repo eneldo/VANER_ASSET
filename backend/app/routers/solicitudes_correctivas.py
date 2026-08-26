@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.equipo import Equipo
 from app.models.sede import Sede
+from app.models.mantenimiento import Mantenimiento
+from app.models.hist_mantenimiento import HistMantenimiento
 from app.models.solicitud_correctiva import SolicitudCorrectiva
 from app.models.usuario import Usuario
 from app.routers.auth import obtener_usuario_actual
@@ -159,10 +161,52 @@ def actualizar_estado(
     estado = data.estado.strip().upper()
     if estado not in ESTADOS:
         raise HTTPException(status_code=422, detail="Estado no permitido")
+
+    es_conversion = estado == "CONVERTIDA_OT" and item.estado != "CONVERTIDA_OT"
+
     item.estado = estado
     item.respuesta_coordinador = data.respuesta_coordinador
     if estado in {"RECHAZADA", "CERRADA", "CONVERTIDA_OT"}:
         item.atendida_at = datetime.utcnow()
+
+    mantenimiento_creado = None
+
+    if es_conversion:
+        if not item.equipo_id:
+            raise HTTPException(
+                status_code=422,
+                detail="La solicitud debe tener un equipo asociado para convertir a OT.",
+            )
+
+        mantenimiento = Mantenimiento(
+            equipo_id=item.equipo_id,
+            tipo="CORRECTIVO",
+            descripcion=f"Solicitud correctiva: {item.titulo}\n\n{item.descripcion}",
+            prioridad=item.prioridad if item.prioridad in {"BAJA", "MEDIA", "ALTA", "CRITICA"} else "ALTA",
+            estado="PROGRAMADO",
+            empresa_id=item.empresa_id,
+            sede_id=item.sede_id,
+            observaciones=data.respuesta_coordinador or "",
+        )
+        db.add(mantenimiento)
+        db.flush()
+
+        item.mantenimiento_id = mantenimiento.id
+
+        evento = HistMantenimiento(
+            mantenimiento_id=mantenimiento.id,
+            estado_anterior=None,
+            estado_nuevo="PROGRAMADO",
+            observacion=f"OT creada desde solicitud correctiva #{str(item.id)[:8]}",
+            creado_por=usuario.username or str(usuario.id),
+        )
+        db.add(evento)
+        mantenimiento_creado = str(mantenimiento.id)
+
     db.commit()
     db.refresh(item)
-    return _serializar(item, db)
+
+    resultado = _serializar(item, db)
+    if mantenimiento_creado:
+        resultado["mantenimiento_creado_id"] = mantenimiento_creado
+    return resultado

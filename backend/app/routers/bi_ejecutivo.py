@@ -106,7 +106,7 @@ def costos_empresa(db: Session = Depends(get_db)):
         resultados = (
             db.query(
                 Empresa.nombre,
-                func.count(Mantenimiento.id)
+                func.coalesce(func.sum(Mantenimiento.costo_total), 0)
             )
             .outerjoin(
                 Mantenimiento,

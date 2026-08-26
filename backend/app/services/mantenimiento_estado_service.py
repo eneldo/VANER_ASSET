@@ -28,6 +28,8 @@ def aplicar_reapertura(mantenimiento):
     mantenimiento.fecha_fin = None
     mantenimiento.fecha_pausa = None
     mantenimiento.fecha_inicio = mantenimiento.fecha_inicio or ahora
+    mantenimiento.cerrado = False
+    mantenimiento.fecha_cierre = None
     mantenimiento.actualizado_en = ahora
     mantenimiento.updated_at = ahora
     return estado_anterior

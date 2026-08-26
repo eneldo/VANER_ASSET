@@ -62,7 +62,7 @@ class DistributedRateLimitMiddleware(BaseHTTPMiddleware):
     def _key(self, ip: str, path: str, window: int, now: float) -> str:
         bucket = int(now // window)
         digest = hashlib.sha256(f"{ip}:{path}".encode("utf-8")).hexdigest()
-        return f"sga:rate-limit:{digest}:{bucket}"
+        return f"vaner:rate-limit:{digest}:{bucket}"
 
     async def _redis_count(self, key: str, window: int) -> int | None:
         if self.redis is None:

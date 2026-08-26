@@ -232,11 +232,13 @@ def mantenimiento_dict(m: Mantenimiento, db: Session):
         "sede_id": str_id(getattr(equipo, "sede_id", None)) if equipo else None,
         "tipo": m.tipo,
         "descripcion": m.descripcion,
+        "prioridad": m.prioridad,
         "fecha_programada": m.fecha_programada,
         "fecha_inicio_programada": m.fecha_inicio_programada,
         "fecha_fin_programada": m.fecha_fin_programada,
         "estado": m.estado,
         "tecnico_id": str_id(m.tecnico_id),
+        "responsable_id": str_id(m.responsable_id),
         "fecha_asignacion": m.fecha_asignacion,
         "fecha_inicio": m.fecha_inicio,
         "fecha_pausa": m.fecha_pausa,
@@ -246,11 +248,26 @@ def mantenimiento_dict(m: Mantenimiento, db: Session):
         "estado_inicial_equipo": m.estado_inicial_equipo,
         "acciones_realizadas": m.acciones_realizadas,
         "resultado_final": m.resultado_final,
+        "falla_incidencia": m.falla_incidencia,
+        "diagnostico": m.diagnostico,
+        "trabajo_realizado": m.trabajo_realizado,
+        "repuestos": m.repuestos,
         "latitud": m.latitud,
         "longitud": m.longitud,
         "observacion_estado": m.observacion_estado,
         "motivo_anulacion": m.motivo_anulacion,
         "costo": m.costo,
+        "costo_mano_obra": m.costo_mano_obra,
+        "costo_repuestos": m.costo_repuestos,
+        "costo_total": m.costo_total,
+        "evidencia_fotos": m.evidencia_fotos,
+        "evidencia_documentos": m.evidencia_documentos,
+        "solucion": m.solucion,
+        "cerrado": m.cerrado,
+        "fecha_cierre": m.fecha_cierre,
+        "tipo_movimiento": m.tipo_movimiento,
+        "activo_afectado_id": str_id(m.activo_afectado_id) if m.activo_afectado_id else None,
+        "activo_afectado_tipo": m.activo_afectado_tipo,
         "creado_en": m.creado_en,
         "actualizado_en": m.actualizado_en,
         "equipo_nombre": getattr(equipo, "nombre", None) if equipo else None,
@@ -365,6 +382,7 @@ def crear_mantenimiento(
             payload.descripcion
             or "Mantenimiento registrado desde bitácora profesional."
         ),
+        prioridad=payload.prioridad or "MEDIA",
         fecha_programada=fecha_programada,
         fecha_inicio_programada=payload.fecha_inicio_programada,
         fecha_fin_programada=payload.fecha_fin_programada,
@@ -372,9 +390,24 @@ def crear_mantenimiento(
         estado_inicial_equipo=payload.estado_inicial_equipo,
         acciones_realizadas=payload.acciones_realizadas,
         resultado_final=payload.resultado_final,
+        falla_incidencia=payload.falla_incidencia,
+        diagnostico=payload.diagnostico,
+        trabajo_realizado=payload.trabajo_realizado,
+        repuestos=payload.repuestos,
         latitud=payload.latitud,
         longitud=payload.longitud,
         costo=payload.costo,
+        costo_mano_obra=payload.costo_mano_obra,
+        costo_repuestos=payload.costo_repuestos,
+        costo_total=payload.costo_total,
+        evidencia_fotos=payload.evidencia_fotos,
+        evidencia_documentos=payload.evidencia_documentos,
+        solucion=payload.solucion,
+        cerrado=payload.cerrado or False,
+        responsable_id=payload.responsable_id,
+        tipo_movimiento=payload.tipo_movimiento,
+        activo_afectado_id=payload.activo_afectado_id,
+        activo_afectado_tipo=payload.activo_afectado_tipo,
         estado="PROGRAMADO",
     )
     sincronizar_tenant_desde_equipo(nuevo, equipo)
@@ -732,6 +765,8 @@ def cambiar_estado(
 
     elif estado_nuevo == "FINALIZADO":
         mantenimiento.fecha_finalizacion = ahora
+        mantenimiento.cerrado = True
+        mantenimiento.fecha_cierre = ahora
 
     elif estado_nuevo == "ANULADO":
         mantenimiento.motivo_anulacion = payload.observacion

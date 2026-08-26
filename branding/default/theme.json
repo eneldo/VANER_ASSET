@@ -1,0 +1,20 @@
+{
+  "product_name": "VANER Asset",
+  "client_name": "VANER Asset",
+  "show_vaner_brand": true,
+  
+  "primary_color": "#1a73e8",
+  "secondary_color": "#3c40c6",
+  "accent_color": "#ff5722",
+  
+  "sidebar_color": "#0d1b2a",
+  "login_background": "/branding/default/login-background.webp",
+  
+  "login_title": "Bienvenido",
+  "login_subtitle": "Gestión de activos y mantenimiento",
+  
+  "logo": "/branding/default/logo.svg",
+  "favicon": "/branding/favicon.ico",
+  
+  "footer_text": "Powered by VANER Asset"
+}

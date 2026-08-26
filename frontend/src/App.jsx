@@ -15,6 +15,7 @@ import RoleHomeRedirect from "./routes/RoleHomeRedirect";
 const Login = lazy(() => import("./pages/Login"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const ForcedPasswordChange = lazy(() => import("./pages/auth/ForcedPasswordChange"));
 const NoAutorizado = lazy(() => import("./pages/NoAutorizado"));
 
 // DASHBOARDS REALES
@@ -50,6 +51,7 @@ const MultiempresaEnterprisePage = lazy(() => import("./pages/admin/Multiempresa
 const BIExecutivePage = lazy(() => import("./pages/admin/BIExecutivePage"));
 const FacturacionPage = lazy(() => import("./pages/admin/FacturacionPage"));
 const PlantillasReportePage = lazy(() => import("./pages/admin/PlantillasReportePage"));
+const ExportacionesPage = lazy(() => import("./pages/admin/ExportacionesPage"));
 
 // CLIENTE
 const ClienteLayout = lazy(() => import("./pages/cliente/ClienteLayout"));
@@ -81,6 +83,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/cambiar-password" element={<ProtectedRoute><ForcedPasswordChange /></ProtectedRoute>} />
         <Route path="/no-autorizado" element={<NoAutorizado />} />
 
         {/* ADMIN */}
@@ -104,6 +107,7 @@ function App() {
         <Route path="/admin/bi-ejecutivo" element={<ProtectedRoute><BIExecutivePage /></ProtectedRoute>} />
         <Route path="/admin/facturacion" element={<ProtectedRoute><FacturacionPage /></ProtectedRoute>} />
         <Route path="/admin/plantillas-reportes" element={<ProtectedRoute><PlantillasReportePage /></ProtectedRoute>} />
+        <Route path="/admin/exportaciones" element={<ProtectedRoute><ExportacionesPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-inteligente" element={<ProtectedRoute><ConfiguracionPage /></ProtectedRoute>} />
         <Route path="/admin/configuracion-sistema" element={<ProtectedRoute><ConfiguracionSistemaPage /></ProtectedRoute>} />

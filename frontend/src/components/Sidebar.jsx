@@ -3,6 +3,7 @@
 // Archivo: frontend/src/components/Sidebar.jsx
 // =========================================================
 
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { clearSession } from "../utils/authStorage";
@@ -21,6 +22,7 @@ import {
   UserCog,
   ShieldCheck,
   Menu,
+  Download,
   X,
   Settings,
   Receipt,
@@ -57,6 +59,29 @@ export default function Sidebar({
   const esAdmin = rol === "ADMIN";
   const esTecnico = rol === "TECNICO";
   const esCoordinador = rol === "COORDINADOR";
+
+  const [otActivas, setOtActivas] = useState(0);
+
+  useEffect(() => {
+    if (!esTecnico || !userSeguro?.id) return;
+
+    let cancelled = false;
+    const cargarConteo = async () => {
+      try {
+        const res = await api.get(`/dashboard-tecnico/usuario/${userSeguro.id}`);
+        const resumen = res.data?.resumen;
+        if (!cancelled && resumen) {
+          setOtActivas(
+            (resumen.asignados || 0) + (resumen.en_proceso || 0) + (resumen.pausados || 0)
+          );
+        }
+      } catch {
+        // Silenciar errores de carga del badge
+      }
+    };
+    cargarConteo();
+    return () => { cancelled = true; };
+  }, [esTecnico, userSeguro?.id]);
 
   const closeMobile = () => {
     if (typeof onClose === "function") {
@@ -306,6 +331,17 @@ export default function Sidebar({
             </NavLink>
 
             <NavLink
+              to="/admin/exportaciones"
+              onClick={closeMobile}
+              className={itemClass}
+              aria-label="Exportaciones"
+              title={collapsed ? "Exportaciones" : undefined}
+            >
+              <Download size={17} />
+              <span>Exportaciones</span>
+            </NavLink>
+
+            <NavLink
               to="/admin/facturacion"
               onClick={closeMobile}
               className={itemClass}
@@ -372,6 +408,9 @@ export default function Sidebar({
             >
               <Wrench size={17} />
               <span>Mis mantenimientos</span>
+              {otActivas > 0 && (
+                <span className="sga-badge">{otActivas}</span>
+              )}
             </NavLink>
 
             <NavLink

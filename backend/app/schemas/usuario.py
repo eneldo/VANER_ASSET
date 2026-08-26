@@ -10,26 +10,23 @@ from datetime import datetime
 
 
 class AdminCreate(BaseModel):
-    # Crear primer administrador del sistema
     nombre_completo: str
     username: str
     email: EmailStr
-    password: str = Field(..., min_length=12, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
 
 
 class UsuarioCreate(BaseModel):
-    # Crear usuario normal del sistema
     nombre_completo: str
     username: str
     email: EmailStr
-    password: str = Field(..., min_length=12, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
     rol: str
     empresa_id: Optional[UUID] = None
     empresa_ids: list[UUID] = Field(default_factory=list)
 
 
 class UsuarioUpdate(BaseModel):
-    # Actualizar usuario parcialmente
     nombre_completo: Optional[str] = None
     username: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -40,12 +37,16 @@ class UsuarioUpdate(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    # Nueva contraseña del usuario
-    nueva_password: str = Field(..., min_length=12, max_length=128)
+    nueva_password: str = Field(..., min_length=8, max_length=128)
+
+
+class CambioPasswordRequest(BaseModel):
+    password_actual: str = Field(..., min_length=1)
+    nueva_password: str = Field(..., min_length=8, max_length=128)
+    confirmar_password: str = Field(..., min_length=1)
 
 
 class UsuarioOut(BaseModel):
-    # Respuesta segura del usuario sin password_hash
     id: UUID
     nombre_completo: str
     username: str
@@ -54,6 +55,7 @@ class UsuarioOut(BaseModel):
     empresa_id: Optional[UUID] = None
     empresa_ids: list[UUID] = Field(default_factory=list)
     activo: bool
+    debe_cambiar_password: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None
 

@@ -25,6 +25,23 @@ def _request(query_string: bytes = b"") -> Request:
     )
 
 
+class _QueryChain:
+    def __init__(self, result=None):
+        self._result = result
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def limit(self, *_args, **_kwargs):
+        return self
+
+    def all(self):
+        return self._result or []
+
+    def first(self):
+        return self._result[0] if self._result else None
+
+
 class _UserQuery:
     def __init__(self, user):
         self.user = user
@@ -34,6 +51,15 @@ class _UserQuery:
 
     def first(self):
         return self.user
+
+    def order_by(self, *_args, **_kwargs):
+        return _QueryChain([])
+
+    def limit(self, *_args, **_kwargs):
+        return _QueryChain([])
+
+    def all(self):
+        return []
 
 
 class _Session:
@@ -82,6 +108,7 @@ class PasswordRecoverySecurityTests(unittest.TestCase):
         registro = SimpleNamespace(usuario_id="usuario-1")
         usuario = SimpleNamespace(
             id="usuario-1",
+            username="usuario",
             email="usuario@example.com",
             rol="ADMIN",
             empresa_id=None,

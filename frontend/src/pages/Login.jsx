@@ -1,17 +1,11 @@
 // ============================================================
-// LOGIN ULTRA PRO - SGAHolding
+// LOGIN ULTRA PRO - VANER ASSET
 // Archivo: frontend/src/pages/Login.jsx
-// ============================================================
-// Login empresarial SaaS:
-// - usa AuthContext.login()
-// - evita doble petición al backend
-// - guarda access_token / refresh_token desde AuthContext
-// - redirecciona por rol
 // ============================================================
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, Building2, Package, Wrench, ClipboardList, BarChart3 } from "lucide-react";
 
 import { useAuth } from "../hooks/useAuth";
 import { PRODUCT } from "../config/product";
@@ -50,10 +44,6 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // ======================================================
-      // Login centralizado desde AuthContext
-      // Evita doble POST /auth/login
-      // ======================================================
       const user = await login({
         username: form.username.trim(),
         password: form.password,
@@ -82,36 +72,6 @@ export default function Login() {
 
   return (
     <div className="login-ultra">
-      <section className="login-hero">
-        <div className="login-glow login-glow-one"></div>
-        <div className="login-glow login-glow-two"></div>
-
-        <div className="hero-content">
-          <div className="brand-chip">
-            <img src={PRODUCT.logoUrl} alt={PRODUCT.productName} />
-            <div>
-              <strong>{PRODUCT.productName}</strong>
-              <span>{PRODUCT.organizationName}</span>
-            </div>
-          </div>
-
-          <h1>{PRODUCT.description}</h1>
-
-          <p>
-            Administra inventarios, activos, órdenes de trabajo, repuestos,
-            técnicos y trazabilidad multiempresa en una sola plataforma.
-          </p>
-
-          <div className="hero-badges">
-            <span>Multiempresa</span>
-            <span>Inventario</span>
-            <span>Activos</span>
-            <span>Mantenimiento</span>
-            <span>Reportes</span>
-          </div>
-        </div>
-      </section>
-
       <section className="login-panel">
         <form className="login-card-pro" onSubmit={handleLogin}>
           <div className="login-logo-wrap">
@@ -119,7 +79,7 @@ export default function Login() {
           </div>
 
           <div className="login-title">
-            <h2>Bienvenidos</h2>
+            <h2>Bienvenido</h2>
             <p>Acceso seguro a {PRODUCT.productName}</p>
           </div>
 
@@ -127,7 +87,7 @@ export default function Login() {
 
           <label>Usuario o correo electrónico</label>
           <div className="login-input-group">
-            <Mail size={18} />
+            <Mail size={16} />
             <input
               name="username"
               value={form.username}
@@ -139,7 +99,7 @@ export default function Login() {
 
           <label>Contraseña</label>
           <div className="login-input-group">
-            <Lock size={18} />
+            <Lock size={16} />
             <input
               name="password"
               type={showPassword ? "text" : "password"}
@@ -154,7 +114,7 @@ export default function Login() {
               className="password-eye"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
@@ -163,10 +123,44 @@ export default function Login() {
           </button>
 
           <div className="secure-note">
-            <ShieldCheck size={16} />
+            <ShieldCheck size={14} />
             Sesión protegida · Plataforma empresarial
           </div>
+
+          <div className="login-footer">
+            Elaborado por Eneldo Vanstralhen Ingeniero de Sistemas
+          </div>
         </form>
+      </section>
+
+      <section className="login-hero">
+        <div className="login-glow login-glow-one"></div>
+        <div className="login-glow login-glow-two"></div>
+
+        <div className="hero-content">
+          <div className="brand-chip">
+            <img src={PRODUCT.logoUrl} alt={PRODUCT.productName} />
+            <div>
+              <strong>{PRODUCT.productName}</strong>
+              <span>{PRODUCT.clientName}</span>
+            </div>
+          </div>
+
+          <h1>Control inteligente de activos y mantenimiento.</h1>
+
+          <p>
+            Centraliza inventarios, activos, órdenes de trabajo y mantenimiento
+            con trazabilidad multiempresa.
+          </p>
+
+          <div className="hero-badges">
+            <span><Building2 size={16} /> Multiempresa</span>
+            <span><Package size={16} /> Inventario</span>
+            <span><ClipboardList size={16} /> Activos</span>
+            <span><Wrench size={16} /> Mantenimiento</span>
+            <span><BarChart3 size={16} /> Reportes</span>
+          </div>
+        </div>
       </section>
     </div>
   );

@@ -1,5 +1,5 @@
 # =========================================================
-# ROUTER AUTH - SGAHolding
+# ROUTER AUTH - VANER ASSET
 # Archivo: backend/app/routers/auth.py
 #
 # FIX PRODUCCIÓN:
@@ -32,6 +32,8 @@ from app.security import (
     hash_token,
     utc_now,
     verify_password,
+    needs_upgrade,
+    hash_password,
 )
 from app.services.security_logger import registrar_evento_seguridad, get_client_ip
 
@@ -400,6 +402,44 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
             detail="Usuario o contraseña incorrectos",
         )
 
+    # Verificar si la contraseña temporal expiró
+    if usuario.temp_password_expires_at and utc_now() > usuario.temp_password_expires_at:
+        usuario.debe_cambiar_password = True
+        db.commit()
+        registrar_evento_seguridad(
+            db,
+            request=request,
+            usuario_id=usuario.id,
+            usuario_email=usuario.email,
+            rol=usuario.rol,
+            empresa_id=usuario.empresa_id,
+            evento="PASSWORD_TEMPORARY_EXPIRED",
+            modulo="AUTH",
+            permitido=False,
+            detalle="Contraseña temporal expirada",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tu contraseña temporal ha expirado. Contacta al administrador para restablecerla.",
+        )
+
+    # Migrar hash de PBKDF2 a Argon2id si es necesario
+    if needs_upgrade(usuario.password_hash):
+        usuario.password_hash = hash_password(data.password)
+        registrar_evento_seguridad(
+            db,
+            request=request,
+            usuario_id=usuario.id,
+            usuario_email=usuario.email,
+            rol=usuario.rol,
+            empresa_id=usuario.empresa_id,
+            evento="PASSWORD_HASH_UPGRADED",
+            modulo="AUTH",
+            permitido=True,
+            detalle="Hash migrado de PBKDF2 a Argon2id",
+        )
+        db.commit()
+
     access_token = create_access_token(
         _crear_payload_usuario(usuario, tipo="access")
     )
@@ -454,6 +494,7 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
         rol=usuario.rol,
         empresa_id=empresa_id,
         empresa_ids=empresa_ids,
+        debe_cambiar_password=usuario.debe_cambiar_password or False,
     )
 
 

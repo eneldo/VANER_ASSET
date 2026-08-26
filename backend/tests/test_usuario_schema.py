@@ -45,16 +45,18 @@ class UsuarioSchemaTests(unittest.TestCase):
         empresa_id = uuid4()
         empresa_query = MagicMock()
         usuario_query = MagicMock()
+        history_query = MagicMock()
         empresa_query.filter.return_value.first.return_value = SimpleNamespace(id=empresa_id)
         usuario_query.filter.return_value.first.return_value = None
+        history_query.filter.return_value.order_by.return_value.limit.return_value.all.return_value = []
         db = MagicMock()
-        db.query.side_effect = [empresa_query, usuario_query]
+        db.query.side_effect = [empresa_query, usuario_query, history_query]
         data = UsuarioCreate.model_validate(
             {
                 "nombre_completo": "Técnico de prueba",
                 "username": "tecnico.prueba",
                 "email": "tecnico.prueba@sgaholding.co",
-                "password": "password-seguro-123",
+                "password": "TecnicoSeguro2026!XY",
                 "rol": "TECNICO",
                 "empresa_id": empresa_id,
             }
@@ -64,8 +66,8 @@ class UsuarioSchemaTests(unittest.TestCase):
 
         self.assertEqual(usuario.empresa_id, empresa_id)
         self.assertEqual(usuario.rol, "TECNICO")
-        db.add.assert_called_once_with(usuario)
-        db.commit.assert_called_once()
+        db.add.assert_called()
+        db.commit.assert_called()
 
     def test_schema_coordinador_acepta_varias_empresas(self):
         empresa_principal = uuid4()

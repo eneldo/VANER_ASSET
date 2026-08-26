@@ -1,0 +1,20 @@
+{
+  "product_name": "VANER Asset",
+  "client_name": "Cliente B",
+  "show_vaner_brand": true,
+  
+  "primary_color": "#9b59b6",
+  "secondary_color": "#8e44ad",
+  "accent_color": "#f1c40f",
+  
+  "sidebar_color": "#6c3483",
+  "login_background": "/branding/clients/cliente-b/login-background.webp",
+  
+  "login_title": "Bienvenido",
+  "login_subtitle": "Gestión de activos - Cliente B",
+  
+  "logo": "/branding/clients/cliente-b/logo.svg",
+  "favicon": "/branding/clients/cliente-b/favicon.ico",
+  
+  "footer_text": "Powered by VANER Asset - Cliente B"
+}

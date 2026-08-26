@@ -11,9 +11,11 @@
 # ============================================================
 
 from typing import Optional, List, Dict, Any, Tuple
+import csv
+import io
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -46,9 +48,12 @@ def _descargar(path, media_type: str):
 
 def _generar_archivo(formato: str, nombre: str, titulo: str, columnas: List[str], filas: List[Dict[str, Any]]):
     """
-    Genera Excel o PDF según el formato solicitado.
-    Formatos soportados: excel, pdf.
+    Genera Excel, PDF o CSV según el formato solicitado.
+    Formatos soportados: excel, pdf, csv.
     """
+    if formato == "csv":
+        return _generar_csv(nombre, columnas, filas)
+
     if formato == "excel":
         path = crear_excel(nombre, titulo, columnas, filas)
         return _descargar(
@@ -58,6 +63,25 @@ def _generar_archivo(formato: str, nombre: str, titulo: str, columnas: List[str]
 
     path = crear_pdf(nombre, titulo, columnas, filas)
     return _descargar(path, "application/pdf")
+
+
+def _generar_csv(nombre: str, columnas: List[str], filas: List[Dict[str, Any]]):
+    """Genera un archivo CSV en memoria y lo retorna como descarga."""
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=columnas, extrasaction="ignore")
+    writer.writeheader()
+    for fila in filas:
+        writer.writerow({k: str(v) if v is not None else "" for k, v in fila.items()})
+
+    buffer.seek(0)
+    content = buffer.getvalue().encode("utf-8-sig")
+    buffer.close()
+
+    return StreamingResponse(
+        iter([content]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{nombre}.csv"'},
+    )
 
 
 def _filtros_base(

@@ -1,3 +1,11 @@
+# =========================================================
+# SEGURIDAD - VANER ASSET
+# Archivo: backend/app/security.py
+#
+# hashing: Argon2id (nuevos) + PBKDF2-SHA256 (legado)
+# tokens: JWT access/refresh con rotación JTI
+# =========================================================
+
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from typing import Any, Optional
@@ -9,18 +17,50 @@ from passlib.context import CryptContext
 from app.config import settings
 
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+# =========================================================
+# HASHING DE CONTRASEÑAS
+# =========================================================
+# Argon2id para hashes nuevos (OWASP recommendation).
+# PBKDF2-SHA256 se mantiene para verificar hashes heredados.
+
+argon2_context = CryptContext(
+    schemes=["argon2"],
+    deprecated="auto",
+    argon2__type="id",
+    argon2__memory_cost=int(getattr(settings, "ARGON2_MEMORY_COST", 65536)),
+    argon2__time_cost=int(getattr(settings, "ARGON2_TIME_COST", 3)),
+    argon2__parallelism=int(getattr(settings, "ARGON2_PARALLELISM", 4)),
+)
+
+pbkdf2_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+)
 
 
 def hash_password(password: str) -> str:
-    """Genera un hash PBKDF2-SHA256 para una contraseña."""
-    return pwd_context.hash(password)
+    """Genera un hash Argon2id para una contraseña nueva."""
+    return argon2_context.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Comprueba una contraseña contra su hash almacenado."""
-    return pwd_context.verify(password, password_hash)
+    """
+    Verifica una contraseña contra su hash.
+    Soporta Argon2id (nuevos) y PBKDF2-SHA256 (legado).
+    """
+    if password_hash.startswith("$argon2"):
+        return argon2_context.verify(password, password_hash)
+    return pbkdf2_context.verify(password, password_hash)
 
+
+def needs_upgrade(password_hash: str) -> bool:
+    """True si el hash debe migrarse a Argon2id en el siguiente login exitoso."""
+    return not password_hash.startswith("$argon2")
+
+
+# =========================================================
+# TOKENS JWT
+# =========================================================
 
 def _minutes(value: Any, default: int) -> int:
     """Convierte un valor de configuración a entero de forma segura."""
