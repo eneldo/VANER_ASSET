@@ -52,6 +52,7 @@ describe("EquiposPage", () => {
 
     vi.stubGlobal("fetch", vi.fn(async (input, options = {}) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
 
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
@@ -62,7 +63,7 @@ describe("EquiposPage", () => {
       if (url.endsWith("/categorias/")) {
         return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
       }
-      if (url.endsWith("/equipos/")) {
+      if (url.includes("/equipos/")) {
         return jsonResponse([equipo]);
       }
       if (url.endsWith("/equipo-hoja-vida/equipo/equipo-1") && options.method === "PUT") {
@@ -132,6 +133,7 @@ describe("EquiposPage", () => {
   it("avisa y bloquea el guardado cuando el inventario ya existe", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
 
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
@@ -142,7 +144,7 @@ describe("EquiposPage", () => {
       if (url.endsWith("/categorias/")) {
         return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
       }
-      if (url.endsWith("/equipos/")) {
+      if (url.includes("/equipos/")) {
         return jsonResponse([{
           id: "equipo-existente",
           empresa_id: "empresa-1",
@@ -186,6 +188,7 @@ describe("EquiposPage", () => {
   it("detecta desde el formulario un inventario creado por importación", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
 
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
@@ -196,7 +199,7 @@ describe("EquiposPage", () => {
       if (url.endsWith("/categorias/")) {
         return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
       }
-      if (url.endsWith("/equipos/")) {
+      if (url.includes("/equipos/")) {
         return jsonResponse([{
           id: "equipo-importado",
           empresa_id: "empresa-1",
@@ -270,6 +273,7 @@ describe("EquiposPage", () => {
 
     vi.stubGlobal("fetch", vi.fn(async (input) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
       }
@@ -277,7 +281,7 @@ describe("EquiposPage", () => {
       if (url.endsWith("/categorias/")) {
         return jsonResponse([{ id: "categoria-1", nombre: "Aires" }]);
       }
-      if (url.endsWith("/equipos/")) return jsonResponse(equipos);
+      if (url.includes("/equipos/")) return jsonResponse(equipos);
 
       throw new Error("Solicitud inesperada: " + url);
     }));
@@ -370,12 +374,13 @@ describe("EquiposPage", () => {
 
     vi.stubGlobal("fetch", vi.fn(async (input) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
       }
       if (url.endsWith("/sedes/")) return jsonResponse([sede]);
       if (url.endsWith("/categorias/")) return jsonResponse([categoria]);
-      if (url.endsWith("/equipos/")) return jsonResponse(equipos);
+      if (url.includes("/equipos/")) return jsonResponse(equipos);
 
       throw new Error("Solicitud inesperada: " + url);
     }));
@@ -433,6 +438,7 @@ describe("EquiposPage", () => {
 
     vi.stubGlobal("fetch", vi.fn(async (input, options = {}) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
       if (url.endsWith("/empresas/")) {
         return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
       }
@@ -448,7 +454,7 @@ describe("EquiposPage", () => {
           errores: [{ fila: 2, error: "Equipo ya existe" }],
         });
       }
-      if (url.endsWith("/equipos/")) {
+      if (url.includes("/equipos/")) {
         return jsonResponse(importado ? [...equiposIniciales, equipoNuevo] : equiposIniciales);
       }
 
@@ -492,6 +498,102 @@ describe("EquiposPage", () => {
     expect(screen.getByText("Equipo nuevo")).toBeInTheDocument();
   });
 
+  it("muestra responsable y vida útil, filtra por responsable y renderiza historial", async () => {
+    const equipo = {
+      id: "equipo-1",
+      empresa_id: "empresa-1",
+      sede_id: "sede-1",
+      categoria_id: "categoria-1",
+      responsable_id: "usuario-1",
+      nombre: "Compresor",
+      estado: "OPERATIVO",
+      criticidad: "ALTA",
+      vida_util_meses: 120,
+      activo: true,
+    };
+
+    vi.stubGlobal("fetch", vi.fn(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/empresas/")) return jsonResponse([{ id: "empresa-1", nombre: "Empresa" }]);
+      if (url.endsWith("/sedes/")) return jsonResponse([{ id: "sede-1", empresa_id: "empresa-1", nombre: "Sede" }]);
+      if (url.endsWith("/categorias/")) return jsonResponse([{ id: "categoria-1", nombre: "Industrial" }]);
+      if (url.endsWith("/usuarios/")) return jsonResponse([{ id: "usuario-1", nombre_completo: "Laura Gómez", rol: "EMPRESA" }]);
+      if (url.endsWith("/equipos/equipo-1/historial")) return jsonResponse({
+        historial_cambios: [{
+          timestamp: "2026-08-26T12:00:00Z",
+          tipo_movimiento: "ASIGNACION",
+          campo: "responsable_id",
+          anterior: null,
+          nuevo: "usuario-1",
+          observacion: "Entrega inicial",
+        }],
+      });
+      if (url.includes("/equipos/")) return jsonResponse([equipo]);
+      throw new Error("Solicitud inesperada: " + url);
+    }));
+
+    render(
+      <AuthContext.Provider value={{ user: { rol: "ADMIN" }, logout: vi.fn() }}>
+        <MemoryRouter><EquiposPage /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    expect(await screen.findByText("Compresor")).toBeInTheDocument();
+    expect(screen.getAllByText("Laura Gómez")).toHaveLength(2);
+    fireEvent.change(screen.getByPlaceholderText("Buscar equipos, cámaras, inventario o sede..."), {
+      target: { value: "Laura Gómez" },
+    });
+    expect(screen.getByText("Compresor")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Filtrar por responsable"), { target: { value: "usuario-1" } });
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("responsable_id=usuario-1"),
+      expect.any(Object),
+    ));
+    fireEvent.click(screen.getByTitle("Ver detalle"));
+    expect(screen.getByText("120 meses")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+    fireEvent.click(screen.getByTitle("Ver historial"));
+    expect(await screen.findByText("ASIGNACION")).toBeInTheDocument();
+    expect(screen.getByText("responsable_id")).toBeInTheDocument();
+    expect(screen.getByText("Entrega inicial")).toBeInTheDocument();
+  });
+
+  it("cierra el modal solo cuando el movimiento es exitoso y no envía actor", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let falla = true;
+    vi.stubGlobal("fetch", vi.fn(async (input, options = {}) => {
+      const url = String(input);
+      if (url.endsWith("/empresas/") || url.endsWith("/sedes/") || url.endsWith("/categorias/")) return jsonResponse([]);
+      if (url.endsWith("/usuarios/")) return jsonResponse([{ id: "usuario-1", nombre_completo: "Laura", rol: "EMPRESA" }]);
+      if (url.endsWith("/equipos/equipo-1/asignar") && options.method === "POST") {
+        if (falla) return { ok: false, json: async () => ({ detail: "Movimiento rechazado" }) };
+        return jsonResponse({});
+      }
+      if (url.includes("/equipos/")) return jsonResponse([{
+        id: "equipo-1", nombre: "Compresor", estado: "OPERATIVO", criticidad: "MEDIA", activo: true,
+      }]);
+      throw new Error("Solicitud inesperada: " + url);
+    }));
+
+    render(
+      <AuthContext.Provider value={{ user: { rol: "ADMIN" }, logout: vi.fn() }}>
+        <MemoryRouter><EquiposPage /></MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    fireEvent.click(await screen.findByTitle("Asignar"));
+    fireEvent.change(screen.getByLabelText("Responsable *"), { target: { name: "responsable_id", value: "usuario-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ejecutar movimiento" }));
+    expect(await screen.findByText("Movimiento rechazado")).toBeInTheDocument();
+    expect(screen.getByText("Asignar equipo")).toBeInTheDocument();
+
+    falla = false;
+    fireEvent.click(screen.getByRole("button", { name: "Ejecutar movimiento" }));
+    await waitFor(() => expect(screen.queryByText("Asignar equipo")).not.toBeInTheDocument());
+    const movimientos = fetch.mock.calls.filter(([url]) => String(url).endsWith("/asignar"));
+    expect(JSON.parse(movimientos.at(-1)[1].body)).toEqual({ responsable_id: "usuario-1", ubicacion: "", observacion: "" });
+  });
+
   it("exporta el inventario desde la cabecera", async () => {
     const createObjectURL = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:inventario");
     const revokeObjectURL = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -499,6 +601,7 @@ describe("EquiposPage", () => {
 
     vi.stubGlobal("fetch", vi.fn(async (input) => {
       const url = String(input);
+      if (url.endsWith("/usuarios/")) return jsonResponse([]);
       if (url.endsWith("/equipos/exportar")) {
         return {
           ok: true,

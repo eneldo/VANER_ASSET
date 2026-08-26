@@ -20,6 +20,11 @@ import {
   MapPin,
   ChevronDown,
   Check,
+  UserPlus,
+  RotateCcw,
+  ArrowRightLeft,
+  Archive,
+  History,
 } from "lucide-react";
 
 import AdminLayout from "./AdminLayout";
@@ -28,6 +33,20 @@ import { getAccessToken } from "../../utils/authStorage";
 import { coincideBusquedaEquipoConContexto } from "./equiposBusquedaUtils";
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
+
+const ESTADOS = [
+  { value: "OPERATIVO", label: "Operativo" },
+  { value: "EN_MANTENIMIENTO", label: "En mantenimiento" },
+  { value: "FUERA_DE_SERVICIO", label: "Fuera de servicio" },
+  { value: "BAJA", label: "Baja" },
+];
+
+const CRITICIDADES = [
+  { value: "BAJA", label: "Baja" },
+  { value: "MEDIA", label: "Media" },
+  { value: "ALTA", label: "Alta" },
+  { value: "CRITICA", label: "Crítica" },
+];
 
 const equipoInicial = {
   empresa_id: "",
@@ -43,6 +62,8 @@ const equipoInicial = {
   inventario: "",
   estado: "OPERATIVO",
   criticidad: "MEDIA",
+  responsable_id: "",
+  vida_util_meses: "",
   activo: true,
 };
 
@@ -150,12 +171,18 @@ export default function EquiposPage() {
   const [empresas, setEmpresas] = useState([]);
   const [sedes, setSedes] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [busqueda, setBusqueda] = useState("");
   const [sedeFiltro, setSedeFiltro] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [criticidadFiltro, setCriticidadFiltro] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState("");
+  const [responsableFiltro, setResponsableFiltro] = useState("");
+  const [soloActivosFiltro, setSoloActivosFiltro] = useState(true);
   const [menuSedesAbierto, setMenuSedesAbierto] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [equiposPorPagina, setEquiposPorPagina] = useState(20);
@@ -185,28 +212,44 @@ export default function EquiposPage() {
   const [error, setError] = useState("");
 
   const cargarCatalogos = async () => {
-    const [empresasRes, sedesRes, categoriasRes] = await Promise.all([
+    const [empresasRes, sedesRes, categoriasRes, usuariosRes] = await Promise.all([
       fetch(`${API_URL}/empresas/`, { headers: authHeaders() }),
       fetch(`${API_URL}/sedes/`, { headers: authHeaders() }),
       fetch(`${API_URL}/categorias/`, { headers: authHeaders() }),
+      fetch(`${API_URL}/usuarios/`, { headers: authHeaders() }),
     ]);
 
-    if (!empresasRes.ok || !sedesRes.ok || !categoriasRes.ok) {
-      throw new Error("No fue posible cargar empresas, sedes o categorías.");
+    if (!empresasRes.ok || !sedesRes.ok || !categoriasRes.ok || !usuariosRes.ok) {
+      throw new Error("No fue posible cargar catálogos.");
     }
 
     setEmpresas(await empresasRes.json());
     setSedes(await sedesRes.json());
     setCategorias(await categoriasRes.json());
+    setUsuarios(await usuariosRes.json());
   };
 
-  const cargarEquipos = async () => {
-    const response = await fetch(`${API_URL}/equipos/`, {
-      headers: authHeaders(),
-    });
+  const cargarEquipos = async ({
+    estado = estadoFiltro,
+    criticidad = criticidadFiltro,
+    categoriaId = categoriaFiltro,
+    responsableId = responsableFiltro,
+    sedeId = sedeFiltro,
+    soloActivos = soloActivosFiltro,
+  } = {}) => {
+    const params = new URLSearchParams();
+    if (estado) params.append("estado", estado);
+    if (criticidad) params.append("criticidad", criticidad);
+    if (categoriaId) params.append("categoria_id", categoriaId);
+    if (responsableId) params.append("responsable_id", responsableId);
+    if (sedeId) params.append("sede_id", sedeId);
+    if (soloActivos) params.append("solo_activos", "true");
+
+    const query = params.toString();
+    const url = `${API_URL}/equipos/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, { headers: authHeaders() });
 
     if (!response.ok) throw new Error("Error cargando equipos.");
-
     setEquipos(await response.json());
   };
 
@@ -278,6 +321,13 @@ export default function EquiposPage() {
     () => new Map(categorias.map((categoria) => [String(categoria.id), categoria.nombre || ""])),
     [categorias],
   );
+  const usuariosPorId = useMemo(
+    () => new Map(usuarios.map((usuario) => [
+      String(usuario.id),
+      usuario.nombre_completo || usuario.username || "N/A",
+    ])),
+    [usuarios],
+  );
 
   const seleccionarSedeFiltro = (sedeId) => {
     setSedeFiltro(sedeId);
@@ -298,14 +348,41 @@ export default function EquiposPage() {
         equipo.ubicacion,
         sedeNombre,
         empresasPorId.get(String(equipo.empresa_id)) || "",
+        usuariosPorId.get(String(equipo.responsable_id)) || "",
       ], [
         categoriasPorId.get(String(equipo.categoria_id)) || "",
       ], busqueda);
-      const coincideSede = !sedeFiltro || String(equipo.sede_id) === sedeFiltro;
 
-      return coincideBusqueda && coincideSede;
+      const coincideSede = !sedeFiltro || String(equipo.sede_id) === sedeFiltro;
+      const coincideEstado = !estadoFiltro || equipo.estado === estadoFiltro;
+      const coincideCriticidad = !criticidadFiltro || equipo.criticidad === criticidadFiltro;
+      const coincideCategoria = !categoriaFiltro || String(equipo.categoria_id) === categoriaFiltro;
+      const coincideResponsable = !responsableFiltro
+        || String(equipo.responsable_id) === responsableFiltro;
+      const coincideActivo = !soloActivosFiltro || equipo.activo !== false;
+
+      return coincideBusqueda
+        && coincideSede
+        && coincideEstado
+        && coincideCriticidad
+        && coincideCategoria
+        && coincideResponsable
+        && coincideActivo;
     });
-  }, [equipos, busqueda, sedeFiltro, sedesPorId, empresasPorId, categoriasPorId]);
+  }, [
+    equipos,
+    busqueda,
+    sedeFiltro,
+    estadoFiltro,
+    criticidadFiltro,
+    categoriaFiltro,
+    responsableFiltro,
+    soloActivosFiltro,
+    sedesPorId,
+    empresasPorId,
+    categoriasPorId,
+    usuariosPorId,
+  ]);
   const totalPaginas = Math.max(1, Math.ceil(equiposFiltrados.length / equiposPorPagina));
   const paginaVisible = Math.min(paginaActual, totalPaginas);
 
@@ -406,7 +483,12 @@ export default function EquiposPage() {
       setError("");
       setMensaje("");
 
-      const payload = limpiarPayload(equipoForm);
+      const payload = {
+        ...limpiarPayload(equipoForm),
+        vida_util_meses: equipoForm.vida_util_meses === ""
+          ? null
+          : Number(equipoForm.vida_util_meses),
+      };
       const url = editandoId ? `${API_URL}/equipos/${editandoId}` : `${API_URL}/equipos/`;
 
       const response = await fetch(url, {
@@ -513,6 +595,8 @@ export default function EquiposPage() {
       inventario: equipo.inventario || "",
       estado: equipo.estado || "OPERATIVO",
       criticidad: equipo.criticidad || "MEDIA",
+      responsable_id: equipo.responsable_id || "",
+      vida_util_meses: equipo.vida_util_meses ?? "",
       activo: equipo.activo ?? true,
     });
 
@@ -680,7 +764,7 @@ export default function EquiposPage() {
 
       const disposition = response.headers.get("content-disposition") || "";
       const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
-      const filename = filenameMatch?.[1] || "inventario_equipos_sga.xlsx";
+      const filename = filenameMatch?.[1] || "inventario_equipos_vaner_asset.xlsx";
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -701,6 +785,107 @@ export default function EquiposPage() {
     }
   };
 
+  const ejecutarMovimiento = async (equipoId, endpoint, payload) => {
+    try {
+      setSaving(true);
+      setError("");
+      setMensaje("");
+
+      const response = await fetch(`${API_URL}/equipos/${equipoId}/${endpoint}`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.detail || `Error en movimiento ${endpoint}`);
+      }
+
+      setMensaje(`Movimiento ${endpoint} realizado correctamente.`);
+      await cargarEquipos();
+      return true;
+    } catch (err) {
+      console.error(err);
+      setError(err.message || `Error en movimiento ${endpoint}`);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const verHistorial = async (equipo) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/equipos/${equipo.id}/historial`, {
+        headers: authHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error cargando historial");
+      }
+
+      const historial = await response.json();
+      setDetalle({ ...equipo, historial_cambios: historial.historial_cambios || [] });
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error cargando historial");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [movimientoModal, setMovimientoModal] = useState(null);
+  const [movimientoTipo, setMovimientoTipo] = useState("");
+  const [movimientoEquipo, setMovimientoEquipo] = useState(null);
+  const [movimientoForm, setMovimientoForm] = useState({});
+
+  const abrirMovimiento = (equipo, tipo) => {
+    setMovimientoEquipo(equipo);
+    setMovimientoTipo(tipo);
+    setMovimientoForm({
+      observacion: "",
+      ...(tipo === 'asignar' ? { responsable_id: "", ubicacion: "" } : {}),
+      ...(tipo === 'devolver' ? { ubicacion: "" } : {}),
+      ...(tipo === 'transferir' ? { nuevo_responsable_id: "", nueva_sede_id: "", nueva_ubicacion: "" } : {}),
+      ...(tipo === 'baja' ? { motivo: "", estado_final: "BAJA" } : {}),
+    });
+    setMovimientoModal(tipo);
+  };
+
+  const cerrarMovimientoModal = () => {
+    setMovimientoModal(null);
+    setMovimientoTipo("");
+    setMovimientoEquipo(null);
+    setMovimientoForm({});
+  };
+
+  const handleMovimientoChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setMovimientoForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const ejecutarMovimientoConfirmado = async () => {
+    if (!movimientoEquipo || !movimientoTipo) return;
+
+    const payload = { ...movimientoForm };
+
+    if (movimientoTipo === 'asignar' && !payload.responsable_id) {
+      setError("Debe seleccionar un responsable.");
+      return;
+    }
+    if (movimientoTipo === 'baja' && !payload.motivo) {
+      setError("Debe ingresar un motivo para la baja.");
+      return;
+    }
+
+    const exitoso = await ejecutarMovimiento(movimientoEquipo.id, movimientoTipo, payload);
+    if (exitoso) cerrarMovimientoModal();
+  };
+
   const nombreEmpresa = (id) =>
     empresas.find((e) => String(e.id) === String(id))?.nombre || "N/A";
 
@@ -709,6 +894,8 @@ export default function EquiposPage() {
 
   const nombreCategoria = (id) =>
     categorias.find((c) => String(c.id) === String(id))?.nombre || "Sin categoría";
+
+  const nombreResponsable = (id) => usuariosPorId.get(String(id)) || "Sin responsable";
 
   const equipoHV = hojaCompleta?.equipo_basico || {};
   const encabezadoHV = hojaCompleta?.encabezado || {};
@@ -785,23 +972,112 @@ export default function EquiposPage() {
             />
           </div>
 
-          <label className="sede-filter-enterprise">
-            <span>Filtrar por sede</span>
-            <div className="sede-filter-control">
-              <MapPin size={18} />
+          <div className="filters-enterprise">
+            <label className="filter-enterprise">
+              <span>Estado</span>
               <select
-                aria-label="Filtrar por sede"
-                value={sedeFiltro}
-                onChange={(e) => seleccionarSedeFiltro(e.target.value)}
+                value={estadoFiltro}
+                onChange={(e) => {
+                  const estado = e.target.value;
+                  setEstadoFiltro(estado);
+                  setPaginaActual(1);
+                  cargarEquipos({ estado });
+                }}
               >
-                <option value="">Todas las sedes</option>
-                {sedesOrdenadas.map((sede) => (
-                  <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                <option value="">Todos</option>
+                {ESTADOS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+              </select>
+            </label>
+
+            <label className="filter-enterprise">
+              <span>Criticidad</span>
+              <select
+                value={criticidadFiltro}
+                onChange={(e) => {
+                  const criticidad = e.target.value;
+                  setCriticidadFiltro(criticidad);
+                  setPaginaActual(1);
+                  cargarEquipos({ criticidad });
+                }}
+              >
+                <option value="">Todas</option>
+                {CRITICIDADES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </label>
+
+            <label className="filter-enterprise">
+              <span>Categoría</span>
+              <select
+                value={categoriaFiltro}
+                onChange={(e) => {
+                  const categoriaId = e.target.value;
+                  setCategoriaFiltro(categoriaId);
+                  setPaginaActual(1);
+                  cargarEquipos({ categoriaId });
+                }}
+              >
+                <option value="">Todas</option>
+                {categorias.map((cat) => <option key={cat.id} value={cat.id}>{cat.nombre}</option>)}
+              </select>
+            </label>
+
+            <label className="filter-enterprise">
+              <span>Responsable</span>
+              <select
+                aria-label="Filtrar por responsable"
+                value={responsableFiltro}
+                onChange={(e) => {
+                  const responsableId = e.target.value;
+                  setResponsableFiltro(responsableId);
+                  setPaginaActual(1);
+                  cargarEquipos({ responsableId });
+                }}
+              >
+                <option value="">Todos</option>
+                {usuarios.map((usuario) => (
+                  <option key={usuario.id} value={usuario.id}>
+                    {usuario.nombre_completo || usuario.username}
+                  </option>
                 ))}
               </select>
-              <ChevronDown size={16} aria-hidden="true" />
-            </div>
-          </label>
+            </label>
+
+            <label className="filter-enterprise">
+              <span>Sede</span>
+              <div className="sede-filter-control">
+                <MapPin size={18} />
+                <select
+                  aria-label="Filtrar por sede"
+                  value={sedeFiltro}
+                  onChange={(e) => {
+                    const sedeId = e.target.value;
+                    seleccionarSedeFiltro(sedeId);
+                    cargarEquipos({ sedeId });
+                  }}
+                >
+                  <option value="">Todas las sedes</option>
+                  {sedesOrdenadas.map((sede) => (
+                    <option key={sede.id} value={sede.id}>{sede.nombre}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </div>
+            </label>
+
+            <label className="filter-enterprise checkbox-filter">
+              <input
+                type="checkbox"
+                checked={soloActivosFiltro}
+                onChange={(e) => {
+                  const soloActivos = e.target.checked;
+                  setSoloActivosFiltro(soloActivos);
+                  setPaginaActual(1);
+                  cargarEquipos({ soloActivos });
+                }}
+              />
+              <span>Solo activos</span>
+            </label>
+          </div>
         </div>
 
         <div className="enterprise-results-summary" role="status" aria-live="polite">
@@ -863,6 +1139,7 @@ export default function EquiposPage() {
                 <th>Marca</th>
                 <th>Modelo</th>
                 <th>Serie</th>
+                <th>Responsable</th>
                 <th>Estado</th>
                 <th>Criticidad</th>
                 <th>Acciones</th>
@@ -871,10 +1148,10 @@ export default function EquiposPage() {
 
             <tbody>
               {loading ? (
-                <tr><td colSpan="10"><div className="loading-enterprise">Cargando equipos...</div></td></tr>
+                <tr><td colSpan="11"><div className="loading-enterprise">Cargando equipos...</div></td></tr>
               ) : equiposPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan="10">
+                  <td colSpan="11">
                     <div className="empty-enterprise">
                       {equipos.length > 0
                         ? "No hay equipos que coincidan con la búsqueda o la sede seleccionada."
@@ -902,6 +1179,7 @@ export default function EquiposPage() {
                     <td>{equipo.marca || "N/A"}</td>
                     <td>{equipo.modelo || "N/A"}</td>
                     <td>{equipo.serie || "N/A"}</td>
+                    <td>{nombreResponsable(equipo.responsable_id)}</td>
 
                     <td>
                       <span className={`estado-badge ${estadoClass(equipo.estado)}`}>
@@ -927,6 +1205,26 @@ export default function EquiposPage() {
 
                         <button className="btn-action orange" onClick={() => editarEquipo(equipo)} title="Editar">
                           <Pencil size={16} />
+                        </button>
+
+                        <button className="btn-action green" onClick={() => abrirMovimiento(equipo, 'asignar')} title="Asignar">
+                          <UserPlus size={16} />
+                        </button>
+
+                        <button className="btn-action teal" onClick={() => abrirMovimiento(equipo, 'devolver')} title="Devolver">
+                          <RotateCcw size={16} />
+                        </button>
+
+                        <button className="btn-action cyan" onClick={() => abrirMovimiento(equipo, 'transferir')} title="Transferir">
+                          <ArrowRightLeft size={16} />
+                        </button>
+
+                        <button className="btn-action amber" onClick={() => abrirMovimiento(equipo, 'baja')} title="Dar de baja">
+                          <Archive size={16} />
+                        </button>
+
+                        <button className="btn-action indigo" onClick={() => verHistorial(equipo)} title="Ver historial">
+                          <History size={16} />
                         </button>
 
                         <button className="btn-action red" onClick={() => eliminarEquipo(equipo)} title="Eliminar">
@@ -1064,6 +1362,28 @@ export default function EquiposPage() {
 
                   <label>INVIMA
                     <input name="invima" value={equipoForm.invima} onChange={handleEquipoChange} />
+                  </label>
+
+                  <label>Responsable actual
+                    <select name="responsable_id" value={equipoForm.responsable_id} onChange={handleEquipoChange}>
+                      <option value="">Sin responsable</option>
+                      {usuarios.map((usuario) => (
+                        <option key={usuario.id} value={usuario.id}>
+                          {usuario.nombre_completo || usuario.username}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>Vida útil (meses)
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      name="vida_util_meses"
+                      value={equipoForm.vida_util_meses}
+                      onChange={handleEquipoChange}
+                    />
                   </label>
 
                   <label>Estado
@@ -1281,7 +1601,7 @@ export default function EquiposPage() {
                   <p>{nombreCategoria(detalle.categoria_id)}</p>
                 </div>
 
-                <button className="modal-close" onClick={() => setDetalle(null)}>
+                <button className="modal-close" aria-label="Cerrar" onClick={() => setDetalle(null)}>
                   <X size={22} />
                 </button>
               </div>
@@ -1293,8 +1613,125 @@ export default function EquiposPage() {
                 <p><strong>Modelo:</strong> {detalle.modelo || "N/A"}</p>
                 <p><strong>Serie:</strong> {detalle.serie || "N/A"}</p>
                 <p><strong>Ubicación:</strong> {detalle.ubicacion || "N/A"}</p>
+                <p><strong>Responsable actual:</strong> {nombreResponsable(detalle.responsable_id)}</p>
+                <p><strong>Vida útil:</strong> {detalle.vida_util_meses ? `${detalle.vida_util_meses} meses` : "N/A"}</p>
                 <p><strong>Estado:</strong> {textoEstado(detalle.estado)}</p>
                 <p><strong>Criticidad:</strong> {detalle.criticidad}</p>
+              </div>
+
+              {detalle.historial_cambios && (
+                <div className="enterprise-table-wrapper">
+                  <table className="enterprise-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Campo</th>
+                        <th>Anterior</th>
+                        <th>Nuevo</th>
+                        <th>Observación</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detalle.historial_cambios.length ? detalle.historial_cambios.map((item, index) => (
+                        <tr key={`${item.timestamp}-${item.campo}-${index}`}>
+                          <td>{new Date(item.timestamp).toLocaleString("es-CO")}</td>
+                          <td>{item.tipo_movimiento || "N/A"}</td>
+                          <td>{item.campo || "N/A"}</td>
+                          <td>{item.anterior ?? "N/A"}</td>
+                          <td>{item.nuevo ?? "N/A"}</td>
+                          <td>{item.observacion || "N/A"}</td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="6">Sin movimientos registrados.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {movimientoModal && (
+          <div className="enterprise-modal-backdrop">
+            <div className="enterprise-modal small">
+              <div className="enterprise-modal-header">
+                <div>
+                  <span>Movimiento de activo</span>
+                  <h2>{movimientoTipo === 'asignar' ? 'Asignar equipo' : movimientoTipo === 'devolver' ? 'Devolver equipo' : movimientoTipo === 'transferir' ? 'Transferir equipo' : 'Dar de baja'}</h2>
+                  <p>Equipo: {movimientoEquipo?.nombre}</p>
+                </div>
+                <button className="modal-close" onClick={cerrarMovimientoModal}><X size={22} /></button>
+              </div>
+
+              <div className="enterprise-form-grid">
+                {movimientoTipo === 'asignar' && (
+                  <>
+                    <label>Responsable *
+                      <select name="responsable_id" value={movimientoForm.responsable_id} onChange={handleMovimientoChange} required>
+                        <option value="">Seleccionar responsable</option>
+                        {usuarios?.map((u) => <option key={u.id} value={u.id}>{u.nombre_completo || u.username} ({u.rol})</option>)}
+                      </select>
+                    </label>
+                    <label>Ubicación
+                      <input name="ubicacion" value={movimientoForm.ubicacion} onChange={handleMovimientoChange} placeholder="Nueva ubicación" />
+                    </label>
+                  </>
+                )}
+
+                {movimientoTipo === 'devolver' && (
+                  <>
+                    <label>Ubicación de devolución
+                      <input name="ubicacion" value={movimientoForm.ubicacion} onChange={handleMovimientoChange} placeholder="Ubicación donde se devuelve" />
+                    </label>
+                  </>
+                )}
+
+                {movimientoTipo === 'transferir' && (
+                  <>
+                    <label>Nuevo responsable
+                      <select name="nuevo_responsable_id" value={movimientoForm.nuevo_responsable_id} onChange={handleMovimientoChange}>
+                        <option value="">Mantener actual</option>
+                        {usuarios?.map((u) => <option key={u.id} value={u.id}>{u.nombre_completo || u.username} ({u.rol})</option>)}
+                      </select>
+                    </label>
+                    <label>Nueva sede
+                      <select name="nueva_sede_id" value={movimientoForm.nueva_sede_id} onChange={handleMovimientoChange}>
+                        <option value="">Mantener actual</option>
+                        {sedesOrdenadas.map((sede) => <option key={sede.id} value={sede.id}>{sede.nombre}</option>)}
+                      </select>
+                    </label>
+                    <label>Nueva ubicación
+                      <input name="nueva_ubicacion" value={movimientoForm.nueva_ubicacion} onChange={handleMovimientoChange} placeholder="Nueva ubicación" />
+                    </label>
+                  </>
+                )}
+
+                {movimientoTipo === 'baja' && (
+                  <>
+                    <label>Motivo *
+                      <textarea name="motivo" value={movimientoForm.motivo} onChange={handleMovimientoChange} placeholder="Motivo de la baja" required />
+                    </label>
+                    <label>Estado final
+                      <select name="estado_final" value={movimientoForm.estado_final} onChange={handleMovimientoChange}>
+                        <option value="BAJA">Baja</option>
+                        <option value="FUERA_DE_SERVICIO">Fuera de servicio</option>
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                <label className="full">Observación
+                  <textarea name="observacion" value={movimientoForm.observacion} onChange={handleMovimientoChange} placeholder="Observaciones adicionales" />
+                </label>
+              </div>
+
+              <div className="enterprise-modal-actions">
+                <button className="btn-secondary-enterprise" onClick={cerrarMovimientoModal}><X size={18} />Cancelar</button>
+                <button className="btn-primary-enterprise" onClick={ejecutarMovimientoConfirmado} disabled={saving}>
+                  <Save size={18} />{saving ? "Ejecutando..." : "Ejecutar movimiento"}
+                </button>
               </div>
             </div>
           </div>
@@ -1339,7 +1776,7 @@ export default function EquiposPage() {
                     {encabezadoHV.empresa_logo_url ? (
                       <img src={encabezadoHV.empresa_logo_url} alt="Logo empresa" />
                     ) : (
-                      <div className="hoja-logo-placeholder">SGA</div>
+                      <div className="hoja-logo-placeholder">VANER ASSET</div>
                     )}
                   </div>
 
@@ -1356,7 +1793,9 @@ export default function EquiposPage() {
                       <p><strong>Código ID:</strong> {equipoHV.codigo_id || "N/A"}</p>
                       <p><strong>Inventario:</strong> {equipoHV.inventario || "N/A"}</p>
                       <p><strong>Estado:</strong> {textoEstado(equipoHV.estado)}</p>
-                      <p><strong>Criticidad:</strong> {equipoHV.criticidad || "N/A"}</p>
+                       <p><strong>Criticidad:</strong> {equipoHV.criticidad || "N/A"}</p>
+                       <p><strong>Responsable actual:</strong> {nombreResponsable(equipoHV.responsable_id)}</p>
+                       <p><strong>Vida útil:</strong> {equipoHV.vida_util_meses ? `${equipoHV.vida_util_meses} meses` : "N/A"}</p>
                     </div>
                   </section>
 

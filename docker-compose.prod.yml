@@ -71,6 +71,9 @@ services:
     restart: always
     environment:
       APP_NAME: ${APP_NAME:-VANER ASSET}
+      CLIENT_CODE: ${CLIENT_CODE:?CLIENT_CODE es obligatorio}
+      CLIENT_NAME: ${CLIENT_NAME:?CLIENT_NAME es obligatorio}
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN es obligatorio}
       APP_ENV: production
       DEBUG: "false"
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
@@ -87,8 +90,8 @@ services:
       REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/auth}
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-true}
       REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-lax}
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?BACKEND_CORS_ORIGINS es obligatoria}
-      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL es obligatoria}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
+      FRONTEND_URL: ${FRONTEND_URL:-}
       BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN:-}
       RUN_MIGRATIONS: "false"
       RUN_SCHEDULER: ${RUN_SCHEDULER:-true}

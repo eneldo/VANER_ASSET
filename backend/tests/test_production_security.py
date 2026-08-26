@@ -12,15 +12,18 @@ from app.services.secret_store import decrypt_secret, encrypt_secret, mask_secre
 def production_settings(**overrides):
     values = {
         "APP_ENV": "production",
+        "CLIENT_CODE": "empresa_xyz",
+        "CLIENT_NAME": "Empresa XYZ S.A.S.",
+        "APP_DOMAIN": "asset.empresaxyz.com",
         "DEBUG": False,
         "DATABASE_URL": "postgresql://app:password@postgres:5432/sga",
         "BACKUP_DATABASE_URL": "postgresql://sga_backup:password@postgres:5432/sga",
         "SECRET_KEY": "s" * 64,
         "CONFIG_ENCRYPTION_KEY": Fernet.generate_key().decode("ascii"),
-        "FRONTEND_URL": "https://sgaholding.online",
+        "FRONTEND_URL": None,
         "REFRESH_COOKIE_SECURE": True,
         "ACCESS_TOKEN_EXPIRE_MINUTES": 30,
-        "BACKEND_CORS_ORIGINS": "https://sgaholding.online",
+        "BACKEND_CORS_ORIGINS": "",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)
@@ -33,7 +36,23 @@ class ProductionSecurityTests(unittest.TestCase):
 
     def test_rechaza_frontend_sin_https(self):
         with self.assertRaises(ValueError):
-            production_settings(FRONTEND_URL="http://sgaholding.online")
+            production_settings(FRONTEND_URL="http://asset.empresaxyz.com")
+
+    def test_deriva_urls_desde_app_domain(self):
+        configured = production_settings()
+        self.assertEqual(configured.FRONTEND_URL, "https://asset.empresaxyz.com")
+        self.assertEqual(
+            configured.BACKEND_CORS_ORIGINS,
+            "https://asset.empresaxyz.com",
+        )
+
+    def test_requiere_identidad_de_cliente_en_produccion(self):
+        with self.assertRaises(ValueError):
+            production_settings(CLIENT_CODE="local")
+        with self.assertRaises(ValueError):
+            production_settings(CLIENT_NAME="")
+        with self.assertRaises(ValueError):
+            production_settings(APP_DOMAIN="localhost")
 
     def test_requiere_rol_backup_dedicado(self):
         with self.assertRaises(ValueError):

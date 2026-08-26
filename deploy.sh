@@ -29,7 +29,8 @@ set -a
 . "$ENV_FILE"
 set +a
 CADDY_IMAGE="${CADDY_IMAGE:-caddy:2.10.0-alpine}"
-DOMAIN="${DOMAIN:?DOMAIN es obligatorio}"
+APP_DOMAIN="${APP_DOMAIN:-${DOMAIN:-}}"
+APP_DOMAIN="${APP_DOMAIN:?APP_DOMAIN es obligatorio}"
 BACKEND_IMAGE="${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}"
 FRONTEND_IMAGE="${FRONTEND_IMAGE:-vanstralhen/vaner-asset-frontend}"
 
@@ -42,7 +43,7 @@ trap on_error ERR
 
 echo "=============================================="
 echo " VANER ASSET - Despliegue Produccion con Caddy"
-echo " Dominio: $DOMAIN"
+echo " Dominio: $APP_DOMAIN"
 echo " Imagenes: $BACKEND_IMAGE + $FRONTEND_IMAGE"
 echo "=============================================="
 
@@ -74,7 +75,7 @@ docker pull "$CADDY_IMAGE"
 docker rm -f vaner_asset_caddy >/dev/null 2>&1 || true
 docker run -d \
   --name vaner_asset_caddy \
-  -e DOMAIN="$DOMAIN" \
+  -e APP_DOMAIN="$APP_DOMAIN" \
   --restart always \
   --security-opt no-new-privileges \
   --cap-drop ALL \
@@ -110,14 +111,14 @@ echo "Logs recientes backend:"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=20 backend
 
 curl --fail --silent --show-error --retry 8 --retry-delay 3 \
-  "https://$DOMAIN/health/ready" >/dev/null
+  "https://$APP_DOMAIN/health/ready" >/dev/null
 
 trap - ERR
 
 echo ""
 echo "=============================================="
 echo "✅ Despliegue completado!"
-echo "   https://$DOMAIN"
+echo "   https://$APP_DOMAIN"
 echo "=============================================="
 echo ""
 echo "Logs en vivo:  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE logs -f"

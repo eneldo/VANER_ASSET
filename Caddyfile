@@ -3,7 +3,7 @@
 # Reverse proxy + HTTPS automático con Let's Encrypt
 # ============================================================
 
-{$DOMAIN} {
+{$APP_DOMAIN} {
 
 	# Encoding
 	encode gzip zstd

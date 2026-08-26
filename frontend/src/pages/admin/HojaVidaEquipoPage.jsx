@@ -20,7 +20,8 @@ import "../../styles/sidebar.css";
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export default function HojaVidaEquipoPage() {
-  const { equipoId } = useParams();
+  const { id, equipoId: equipoIdParam } = useParams();
+  const equipoId = equipoIdParam || id;
   const navigate = useNavigate();
 
   const [cargando, setCargando] = useState(true);

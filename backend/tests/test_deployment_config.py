@@ -17,6 +17,9 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertIn("migrate:", compose)
         self.assertIn('entrypoint: ["alembic"]', compose)
         self.assertIn("BACKEND_CORS_ORIGINS", compose)
+        self.assertIn("CLIENT_CODE", compose)
+        self.assertIn("CLIENT_NAME", compose)
+        self.assertIn("APP_DOMAIN", compose)
         self.assertGreaterEqual(compose.count("healthcheck:"), 3)
 
         backend = compose.split("  backend:", 1)[1].split("  frontend:", 1)[0]
@@ -58,7 +61,15 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertIn("APP_ENV: production", backend)
         self.assertIn('DEBUG: "false"', backend)
         self.assertIn("APP_NAME: ${APP_NAME:-VANER ASSET}", backend)
+        self.assertIn("CLIENT_CODE: ${CLIENT_CODE:?CLIENT_CODE es obligatorio}", backend)
+        self.assertIn("CLIENT_NAME: ${CLIENT_NAME:?CLIENT_NAME es obligatorio}", backend)
+        self.assertIn("APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN es obligatorio}", backend)
         self.assertIn("ALGORITHM: ${ALGORITHM:-HS256}", backend)
+
+    def test_caddy_usa_app_domain(self):
+        caddyfile = (ROOT / "Caddyfile").read_text(encoding="utf-8")
+        self.assertIn("{$APP_DOMAIN}", caddyfile)
+        self.assertNotIn("{$DOMAIN}", caddyfile)
 
     def test_frontend_no_conserva_backend_local_hardcodeado(self):
         source_root = ROOT / "frontend" / "src"

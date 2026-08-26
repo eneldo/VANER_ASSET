@@ -7,6 +7,7 @@ import OfflineStatus from "./components/OfflineStatus";
 import ToastViewport from "./components/ToastViewport";
 import { syncOfflineQueue } from "./utils/offlineQueue";
 import { installAlertBridge } from "./utils/toast";
+import { loadRuntimeConfig } from "./config/runtime";
 
 // ============================================================
 // ESTILOS BASE DEL SISTEMA
@@ -46,7 +47,7 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
       const registration = await navigator.serviceWorker.register("/sw.js");
       window.addEventListener("online", () => syncOfflineQueue());
       navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data?.type === "SGA_SYNC_REQUESTED") syncOfflineQueue();
+        if (event.data?.type === "VANER_ASSET_SYNC_REQUESTED") syncOfflineQueue();
       });
       if (navigator.onLine && registration.active) syncOfflineQueue();
     } catch (error) {
@@ -55,12 +56,18 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <OfflineStatus />
-      <ToastViewport />
-      <App />
-    </AuthProvider>
-  </React.StrictMode>
-);
+async function bootstrap() {
+  await loadRuntimeConfig();
+
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode>
+      <AuthProvider>
+        <OfflineStatus />
+        <ToastViewport />
+        <App />
+      </AuthProvider>
+    </React.StrictMode>,
+  );
+}
+
+bootstrap();

@@ -1,5 +1,5 @@
 # =========================================================
-# MAIN BACKEND SGAHolding
+# MAIN BACKEND VANER ASSET
 # Archivo: backend/app/main.py
 # =========================================================
 
@@ -63,6 +63,7 @@ from app.routers import solicitudes_correctivas
 from app.routers import reportes_publicados
 from app.routers import facturacion
 from app.routers import plantillas_reporte
+from app.routers import public_config
 
 
 
@@ -75,7 +76,7 @@ from app.routers import plantillas_reporte
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="1.0.0",
+    version="2.0.0",
     docs_url=None if settings.APP_ENV.lower() == "production" else "/docs",
     redoc_url=None if settings.APP_ENV.lower() == "production" else "/redoc",
     openapi_url=None if settings.APP_ENV.lower() == "production" else "/openapi.json",
@@ -152,6 +153,7 @@ app.mount(
 # REGISTRO DE ROUTERS
 # =========================================================
 
+app.include_router(public_config.router)
 app.include_router(auth.router)
 app.include_router(usuarios.bootstrap_router)
 ADMIN_ONLY = [Depends(require_roles("ADMIN"))]

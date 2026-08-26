@@ -3,7 +3,7 @@
 # CRUD de equipos básicos - PASO 1 hoja de vida
 # =========================================================
 
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from uuid import UUID
 
@@ -25,7 +25,19 @@ from app.models.empresa import Empresa
 from app.models.mantenimiento import Mantenimiento
 from app.models.sede import Sede
 from app.models.categoria import Categoria
-from app.schemas.equipo import EquipoCreate, EquipoUpdate, EquipoOut
+from app.models.usuario import Usuario
+from app.schemas.equipo import (
+    EquipoCreate,
+    EquipoUpdate,
+    EquipoOut,
+    EquipoAsignar,
+    EquipoDevolver,
+    EquipoTransferir,
+    EquipoBaja,
+    EquipoHistorialOut,
+    TIPOS_MOVIMIENTO,
+    ESTADOS_EQUIPO,
+)
 from app.core.auth_dependencies import require_roles
 from app.services.inventory_import_security import (
     read_inventory_upload,
@@ -241,6 +253,31 @@ def validar_relaciones_equipo(data, db: Session):
             )
 
 
+def validar_responsable(db: Session, responsable_id: UUID | None, empresa_id: UUID):
+    if responsable_id is None:
+        return None
+    responsable = db.query(Usuario).filter(Usuario.id == responsable_id).first()
+    if not responsable or not responsable.activo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Responsable no encontrado o inactivo",
+        )
+    if responsable.empresa_id is not None and responsable.empresa_id != empresa_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El responsable no pertenece a la empresa del equipo",
+        )
+    return responsable
+
+
+def validar_equipo_movible(equipo: Equipo):
+    if not equipo.activo or equipo.estado == "BAJA":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se permiten movimientos sobre equipos inactivos o dados de baja",
+        )
+
+
 def validar_estado_y_criticidad(estado: str, criticidad: str):
     """
     Valida valores permitidos de estado y criticidad.
@@ -271,6 +308,7 @@ def crear_equipo(data: EquipoCreate, db: Session = Depends(get_db)):
 
     # Validar estado y criticidad
     validar_estado_y_criticidad(data.estado, data.criticidad)
+    validar_responsable(db, data.responsable_id, data.empresa_id)
 
     # Validar código único si se envía
     if data.codigo_id:
@@ -296,12 +334,70 @@ def crear_equipo(data: EquipoCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[EquipoOut])
-def listar_equipos(db: Session = Depends(get_db)):
+def listar_equipos(
+    db: Session = Depends(get_db),
+    estado: str | None = None,
+    criticidad: str | None = None,
+    categoria_id: UUID | None = None,
+    sede_id: UUID | None = None,
+    responsable_id: UUID | None = None,
+    q: str | None = None,
+    solo_activos: bool = True,
+):
     """
-    Lista todos los equipos registrados.
-    """
+    Lista todos los equipos registrados con filtros opcionales.
 
-    equipos = db.query(Equipo).order_by(Equipo.created_at.desc()).all()
+    Filtros disponibles:
+    - estado: OPERATIVO, EN_MANTENIMIENTO, FUERA_DE_SERVICIO, BAJA
+    - criticidad: BAJA, MEDIA, ALTA, CRITICA
+    - categoria_id: UUID de categoría
+    - sede_id: UUID de sede
+    - responsable_id: UUID de responsable
+    - q: búsqueda por nombre, serie, inventario, codigo_id
+    - solo_activos: true/false (default true)
+    """
+    query = db.query(Equipo)
+
+    if solo_activos:
+        query = query.filter(Equipo.activo == True)
+
+    if estado:
+        if estado not in ESTADOS_EQUIPO:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Estado no permitido. Use uno de: {ESTADOS_EQUIPO}"
+            )
+        query = query.filter(Equipo.estado == estado)
+
+    if criticidad:
+        if criticidad not in CRITICIDADES_EQUIPO:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Criticidad no permitida. Use una de: {CRITICIDADES_EQUIPO}"
+            )
+        query = query.filter(Equipo.criticidad == criticidad)
+
+    if categoria_id:
+        query = query.filter(Equipo.categoria_id == categoria_id)
+
+    if sede_id:
+        query = query.filter(Equipo.sede_id == sede_id)
+
+    if responsable_id:
+        query = query.filter(Equipo.responsable_id == responsable_id)
+
+    if q:
+        search = f"%{q}%"
+        query = query.filter(
+            or_(
+                Equipo.nombre.ilike(search),
+                Equipo.serie.ilike(search),
+                Equipo.inventario.ilike(search),
+                Equipo.codigo_id.ilike(search),
+            )
+        )
+
+    equipos = query.order_by(Equipo.created_at.desc()).all()
     return equipos
 
 
@@ -481,6 +577,12 @@ def actualizar_equipo(
             detail="La sede no pertenece a la empresa seleccionada"
         )
 
+    validar_responsable(
+        db,
+        datos.get("responsable_id", equipo.responsable_id),
+        empresa_id_final,
+    )
+
     # Validar categoría si se cambia
     if "categoria_id" in datos and datos["categoria_id"]:
         categoria = db.query(Categoria).filter(
@@ -546,6 +648,288 @@ def eliminar_equipo(equipo_id: UUID, db: Session = Depends(get_db)):
         ) from error
 
     return {"message": "Equipo eliminado correctamente"}
+
+# =========================================================
+# CONTROL DE MOVIMIENTOS EQUIPO - FASE 7
+# =========================================================
+
+TIPOS_MOVIMIENTO_VALIDOS = [
+    "ASIGNACION",
+    "DEVOLUCION",
+    "TRANSFERENCIA",
+    "BAJA"
+]
+
+def _agregar_historial(equipo, campo, anterior, nuevo, usuario_id=None, tipo_movimiento=None, observacion=None, timestamp=None):
+    entrada = {
+        "timestamp": (timestamp or datetime.now(timezone.utc)).isoformat(),
+        "campo": campo,
+        "anterior": str(anterior) if anterior is not None else None,
+        "nuevo": str(nuevo) if nuevo is not None else None,
+        "usuario_id": str(usuario_id) if usuario_id is not None else None,
+        "tipo_movimiento": tipo_movimiento,
+        "observacion": observacion,
+    }
+    equipo.historial_cambios = [*(equipo.historial_cambios or []), entrada]
+
+
+def _guardar_movimiento(db: Session, equipo: Equipo):
+    try:
+        db.commit()
+        db.refresh(equipo)
+    except Exception:
+        db.rollback()
+        raise
+    return equipo
+
+
+@router.post("/{equipo_id}/asignar", response_model=EquipoOut)
+def asignar_equipo(
+    equipo_id: UUID,
+    data: EquipoAsignar,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(require_roles("ADMIN")),
+):
+    """
+    Asigna un equipo a un responsable.
+    Actualiza responsable_id, ubicacion (opcional), estado a OPERATIVO,
+    y registra en historial_cambios.
+    """
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+    if not equipo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipo no encontrado"
+        )
+
+    validar_equipo_movible(equipo)
+    validar_responsable(db, data.responsable_id, equipo.empresa_id)
+
+    # Guardar valores anteriores para historial
+    responsable_anterior = equipo.responsable_id
+    ubicacion_anterior = equipo.ubicacion
+    estado_anterior = equipo.estado
+
+    # Aplicar cambios
+    equipo.responsable_id = data.responsable_id
+    if data.ubicacion:
+        equipo.ubicacion = data.ubicacion
+    equipo.estado = "OPERATIVO"
+
+    # Registrar en historial
+    _agregar_historial(equipo, "responsable_id", responsable_anterior, data.responsable_id, usuario_actual.id, "ASIGNACION", data.observacion)
+    if data.ubicacion:
+        _agregar_historial(equipo, "ubicacion", ubicacion_anterior, data.ubicacion, usuario_actual.id, "ASIGNACION", data.observacion)
+    if estado_anterior != "OPERATIVO":
+        _agregar_historial(equipo, "estado", estado_anterior, "OPERATIVO", usuario_actual.id, "ASIGNACION", data.observacion)
+
+    return _guardar_movimiento(db, equipo)
+
+
+@router.post("/{equipo_id}/devolver", response_model=EquipoOut)
+def devolver_equipo(
+    equipo_id: UUID,
+    data: EquipoDevolver,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(require_roles("ADMIN")),
+):
+    """
+    Devuelve un equipo (libera responsable).
+    Pone responsable_id = None, estado = OPERATIVO (o FUERA_DE_SERVICIO si estaba en mantenimiento),
+    y registra en historial_cambios.
+    """
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+    if not equipo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipo no encontrado"
+        )
+
+    validar_equipo_movible(equipo)
+    if not equipo.responsable_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El equipo no tiene responsable asignado"
+        )
+
+    # Guardar valores anteriores
+    responsable_anterior = equipo.responsable_id
+    ubicacion_anterior = equipo.ubicacion
+    estado_anterior = equipo.estado
+
+    # Aplicar cambios
+    equipo.responsable_id = None
+    if data.ubicacion:
+        equipo.ubicacion = data.ubicacion
+
+    # Determinar nuevo estado
+    if estado_anterior == "EN_MANTENIMIENTO":
+        equipo.estado = "FUERA_DE_SERVICIO"
+    else:
+        equipo.estado = "OPERATIVO"
+
+    # Registrar en historial
+    _agregar_historial(equipo, "responsable_id", responsable_anterior, None, usuario_actual.id, "DEVOLUCION", data.observacion)
+    if data.ubicacion:
+        _agregar_historial(equipo, "ubicacion", ubicacion_anterior, data.ubicacion, usuario_actual.id, "DEVOLUCION", data.observacion)
+    if estado_anterior != equipo.estado:
+        _agregar_historial(equipo, "estado", estado_anterior, equipo.estado, usuario_actual.id, "DEVOLUCION", data.observacion)
+
+    return _guardar_movimiento(db, equipo)
+
+
+@router.post("/{equipo_id}/transferir", response_model=EquipoOut)
+def transferir_equipo(
+    equipo_id: UUID,
+    data: EquipoTransferir,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(require_roles("ADMIN")),
+):
+    """
+    Transfiere un equipo entre sedes/áreas/responsables.
+    Actualiza campos según lo enviado y registra en historial_cambios.
+    """
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+    if not equipo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipo no encontrado"
+        )
+
+    validar_equipo_movible(equipo)
+    cambios = []
+
+    # Validar y aplicar nuevo responsable
+    if data.nuevo_responsable_id is not None:
+        if data.nuevo_responsable_id:
+            validar_responsable(db, data.nuevo_responsable_id, equipo.empresa_id)
+        cambios.append(("responsable_id", equipo.responsable_id, data.nuevo_responsable_id))
+        equipo.responsable_id = data.nuevo_responsable_id
+
+    # Validar y aplicar nueva sede
+    if data.nueva_sede_id is not None:
+        from app.models.sede import Sede
+        sede = db.query(Sede).filter(Sede.id == data.nueva_sede_id).first()
+        if not sede:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nueva sede no encontrada"
+            )
+        # Validar que la sede pertenezca a la misma empresa
+        if sede.empresa_id != equipo.empresa_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La sede no pertenece a la misma empresa del equipo"
+            )
+        cambios.append(("sede_id", equipo.sede_id, data.nueva_sede_id))
+        equipo.sede_id = data.nueva_sede_id
+
+    # Aplicar nueva ubicación
+    if data.nueva_ubicacion is not None:
+        cambios.append(("ubicacion", equipo.ubicacion, data.nueva_ubicacion))
+        equipo.ubicacion = data.nueva_ubicacion
+
+    if not cambios:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debe enviar al menos un campo para transferir"
+        )
+
+    # Registrar en historial
+    for campo, anterior, nuevo in cambios:
+        _agregar_historial(equipo, campo, anterior, nuevo, usuario_actual.id, "TRANSFERENCIA", data.observacion)
+
+    return _guardar_movimiento(db, equipo)
+
+
+@router.post("/{equipo_id}/baja", response_model=EquipoOut)
+def dar_baja_equipo(
+    equipo_id: UUID,
+    data: EquipoBaja,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(require_roles("ADMIN")),
+):
+    """
+    Da de baja un equipo.
+    Cambia estado a BAJA o FUERA_DE_SERVICIO, libera responsable,
+    y registra en historial_cambios.
+    """
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+    if not equipo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipo no encontrado"
+        )
+
+    validar_equipo_movible(equipo)
+
+    # Validar estado final
+    if data.estado_final not in ["BAJA", "FUERA_DE_SERVICIO"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Estado final debe ser BAJA o FUERA_DE_SERVICIO"
+        )
+
+    # Guardar valores anteriores
+    estado_anterior = equipo.estado
+    responsable_anterior = equipo.responsable_id
+
+    # Aplicar cambios
+    equipo.estado = data.estado_final
+    equipo.activo = data.estado_final != "BAJA"
+    equipo.responsable_id = None
+
+    # Registrar en historial
+    _agregar_historial(equipo, "estado", estado_anterior, data.estado_final, usuario_actual.id, "BAJA", data.motivo)
+    if responsable_anterior:
+        _agregar_historial(equipo, "responsable_id", responsable_anterior, None, usuario_actual.id, "BAJA", data.motivo)
+
+    return _guardar_movimiento(db, equipo)
+
+
+@router.get("/{equipo_id}/historial", response_model=EquipoHistorialOut)
+def obtener_historial_equipo(
+    equipo_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene el historial completo de movimientos de un equipo.
+    """
+    equipo = db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+    if not equipo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipo no encontrado"
+        )
+
+    # Convertir historial_cambios JSON a lista de EquipoHistorialItem
+    historial_items = []
+    if equipo.historial_cambios:
+        for item in equipo.historial_cambios:
+            historial_items.append(EquipoHistorialItem(
+                timestamp=datetime.fromisoformat(item["timestamp"]) if isinstance(item["timestamp"], str) else item["timestamp"],
+                campo=item.get("campo", ""),
+                anterior=item.get("anterior"),
+                nuevo=item.get("nuevo"),
+                usuario_id=str(item["usuario_id"]) if item.get("usuario_id") is not None else None,
+                tipo_movimiento=item.get("tipo_movimiento"),
+                observacion=item.get("observacion"),
+            ))
+
+    return EquipoHistorialOut(
+        id=equipo.id,
+        nombre=equipo.nombre,
+        estado=equipo.estado,
+        responsable_id=equipo.responsable_id,
+        ubicacion=equipo.ubicacion,
+        vida_util_meses=equipo.vida_util_meses,
+        historial_cambios=historial_items
+    )
 
 # =========================================================
 # IMPORTAR INVENTARIO DESDE EXCEL / CSV

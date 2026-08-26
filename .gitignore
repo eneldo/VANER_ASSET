@@ -140,3 +140,23 @@ backend/alembic/versions/__pycache__/
 *.crt
 *.pfx
 *.p12
+
+# Agent workspace / secrets
+.tmp/
+credentials.json
+token.json
+ensure_admin.py
+query
+apply_*.bat
+apply_*.ps1
+apply_migrations.py
+aplicar_migraciones.bat
+run_alembic.bat
+run_backend.bat
+check_audit*.py
+create_db*.py
+create_databases.py
+verify_*.py
+backend/alembic_upgrade.py
+backend/aplicar_migraciones_audit.bat
+backend/migraciones*.sql

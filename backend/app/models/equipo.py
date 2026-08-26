@@ -5,7 +5,9 @@
 # =========================================================
 
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import JSON
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.database import Base
@@ -21,6 +23,9 @@ class Equipo(Base):
     empresa_id = Column(UUID(as_uuid=True), ForeignKey("empresas.id"), nullable=False, index=True)
     sede_id = Column(UUID(as_uuid=True), ForeignKey("sedes.id"), nullable=False, index=True)
     categoria_id = Column(UUID(as_uuid=True), ForeignKey("categorias.id"), nullable=False, index=True)
+
+    # Responsable actual del equipo
+    responsable_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True, index=True)
 
     # Datos básicos del equipo
     nombre = Column(String(150), nullable=False)
@@ -43,9 +48,18 @@ class Equipo(Base):
     # BAJA, MEDIA, ALTA, CRITICA
     criticidad = Column(String(50), default="MEDIA")
 
+    # Indicador de vida útil
+    vida_util_meses = Column(Integer, nullable=True)
+    # Control de cuántos meses de vida útil quedan
+
     # Estado lógico
     activo = Column(Boolean, default=True)
 
     # Auditoría
     created_at = Column(DateTime, server_default=func.now(), index=True)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Historial de cambios (JSON - tracking simplificado)
+    # Registra cambios de: responsable, ubicacion, estado, criticidad
+    # Formato: [{"timestamp": datetime, "campo": str, "anterior": any, "nuevo": any, "usuario_id": uuid}]
+    historial_cambios = Column(MutableList.as_mutable(JSON), nullable=True)

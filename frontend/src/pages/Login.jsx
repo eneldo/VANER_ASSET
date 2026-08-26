@@ -91,7 +91,7 @@ export default function Login() {
             <img src={PRODUCT.logoUrl} alt={PRODUCT.productName} />
             <div>
               <strong>{PRODUCT.productName}</strong>
-              <span>{PRODUCT.companyName}</span>
+              <span>{PRODUCT.organizationName}</span>
             </div>
           </div>
 

@@ -1,18 +1,31 @@
-export const PRODUCT = Object.freeze({
-  companyName: "VANER SOFTWARE",
-  productName: "VANER ASSET",
-  shortName: "VA",
-  description: "Plataforma para la gestión de inventarios, activos y mantenimiento.",
-  logoUrl: "/vaner-asset-logo.svg",
-  modules: Object.freeze([
-    "Inventarios",
-    "Activos",
-    "Mantenimiento",
-    "Órdenes de trabajo",
-    "Repuestos",
-    "Técnicos",
-    "Reportes",
-    "Dashboard",
-    "Administración",
-  ]),
-});
+import { getRuntimeConfig } from "./runtime";
+
+
+export function createProductConfig(runtime = getRuntimeConfig()) {
+  return {
+    companyName: runtime.coreCompanyName,
+    productName: runtime.appName,
+    coreProductName: runtime.coreProductName,
+    clientCode: runtime.clientCode,
+    clientName: runtime.clientName,
+    organizationName: runtime.clientName || runtime.coreCompanyName,
+    appDomain: runtime.appDomain,
+    shortName: "VA",
+    description: runtime.description,
+    logoUrl: "/vaner-asset-logo.svg",
+    modules: Object.freeze([
+      "Inventarios",
+      "Activos",
+      "Mantenimiento",
+      "Órdenes de trabajo",
+      "Repuestos",
+      "Técnicos",
+      "Reportes",
+      "Dashboard",
+      "Administración",
+    ]),
+  };
+}
+
+
+export const PRODUCT = Object.freeze(createProductConfig());

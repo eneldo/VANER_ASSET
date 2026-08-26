@@ -1,12 +1,13 @@
 # =========================================================
-# CONFIGURACIÓN GENERAL SGAHolding
+# CONFIGURACIÓN GENERAL VANER ASSET
 # Archivo: app/config.py
 # Compatible con Pydantic v2 + Alembic + Producción
 # =========================================================
 
 from base64 import urlsafe_b64decode
+import re
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 from app.product import PRODUCT_NAME
@@ -19,6 +20,9 @@ class Settings(BaseSettings):
     # =====================================================
 
     APP_NAME: str = PRODUCT_NAME
+    CLIENT_CODE: str = "local"
+    CLIENT_NAME: str = "Entorno local"
+    APP_DOMAIN: str = "localhost"
     APP_ENV: str = "development"
 
     # development / production
@@ -60,7 +64,7 @@ class Settings(BaseSettings):
     REFRESH_COOKIE_PATH: str = '/auth'
     REFRESH_COOKIE_SECURE: bool = False
     REFRESH_COOKIE_SAMESITE: str = 'lax'
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str | None = None
     RUN_MIGRATIONS: bool = False
     RUN_SCHEDULER: bool = True
     ALLOW_DATABASE_RESTORE: bool = False
@@ -96,13 +100,49 @@ class Settings(BaseSettings):
     # CORS
     # =====================================================
 
-    BACKEND_CORS_ORIGINS: str = "*"
+    BACKEND_CORS_ORIGINS: str = ""
+
+    @field_validator("CLIENT_CODE")
+    @classmethod
+    def validate_client_code(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,62}", normalized):
+            raise ValueError(
+                "CLIENT_CODE must contain 2-63 lowercase letters, numbers, underscores or hyphens"
+            )
+        return normalized
+
+    @field_validator("APP_DOMAIN")
+    @classmethod
+    def validate_app_domain(cls, value: str) -> str:
+        normalized = value.strip().lower().rstrip(".")
+        if not normalized or "://" in normalized or "/" in normalized or " " in normalized:
+            raise ValueError("APP_DOMAIN must be a hostname without scheme or path")
+        return normalized
 
     @model_validator(mode="after")
     def validate_production_security(self):
-        if self.APP_ENV.lower() != "production":
+        production = self.APP_ENV.lower() == "production"
+        default_scheme = "https" if production else "http"
+        if not self.FRONTEND_URL:
+            self.FRONTEND_URL = (
+                "http://localhost:5173"
+                if not production and self.APP_DOMAIN == "localhost"
+                else f"{default_scheme}://{self.APP_DOMAIN}"
+            )
+        self.FRONTEND_URL = self.FRONTEND_URL.rstrip("/")
+        if not self.BACKEND_CORS_ORIGINS.strip():
+            self.BACKEND_CORS_ORIGINS = self.FRONTEND_URL
+
+        if not production:
             return self
 
+        if self.CLIENT_CODE in {"local", "default"}:
+            raise ValueError("CLIENT_CODE must identify the production deployment")
+        if not self.CLIENT_NAME.strip():
+            raise ValueError("CLIENT_NAME is required in production")
+        if self.APP_DOMAIN in {"localhost", "127.0.0.1"}:
+            raise ValueError("APP_DOMAIN must identify the production hostname")
         if self.DEBUG:
             raise ValueError("DEBUG must be disabled in production")
         if len(self.SECRET_KEY) < 32 or any(

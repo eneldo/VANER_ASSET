@@ -53,13 +53,13 @@ No use valores `CAMBIAR_*` fuera de un entorno local aislado.
 
 ## Produccion
 
-1. Configure `DOMAIN`, `PROJECT_DIR`, secretos y URLs en `.env`.
+1. Configure `APP_NAME`, `CLIENT_CODE`, `CLIENT_NAME`, `APP_DOMAIN`, `PROJECT_DIR` y secretos en `.env`.
 2. Publique imagenes inmutables usando el SHA completo del commit.
 3. Configure `IMAGE_TAG` con ese SHA.
 4. Ejecute `./deploy.sh` en el servidor autorizado.
 5. Verifique `/health/ready` y `/api/health/ready`.
 
-El dominio no esta fijado en el codigo; Caddy utiliza `DOMAIN` desde el entorno.
+El CORE no contiene el nombre del cliente. Backend, frontend y Caddy reciben la identidad del despliegue desde `.env`; `FRONTEND_URL` y CORS se derivan de `APP_DOMAIN` si no se especifican.
 
 ## Clientes
 

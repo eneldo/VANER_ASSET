@@ -49,7 +49,7 @@ export async function queueOfflineRequest({ method, url, data }) {
 
   if ("serviceWorker" in navigator) {
     const registration = await navigator.serviceWorker.ready;
-    if (registration.sync) await registration.sync.register("sga-sync");
+    if (registration.sync) await registration.sync.register("vaner-asset-sync");
   }
 
   window.dispatchEvent(new CustomEvent("sga:offline-queued", { detail: item }));

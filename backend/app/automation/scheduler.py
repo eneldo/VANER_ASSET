@@ -20,6 +20,7 @@ from app.automation.jobs.smtp_job import ejecutar_smtp_job
 from app.automation.jobs.whatsapp_job import ejecutar_whatsapp_job
 from app.automation.jobs.cleanup_job import ejecutar_cleanup_job
 from app.automation.jobs.mantenimiento_job import ejecutar_mantenimiento_job
+from app.automation.jobs.vida_util_job import ejecutar_vida_util_job
 
 _scheduler = BackgroundScheduler(
     executors={"default": ThreadPoolExecutor(5)},
@@ -34,6 +35,7 @@ JOB_FUNCTIONS = {
     "whatsapp": ejecutar_whatsapp_job,
     "limpieza_logs": ejecutar_cleanup_job,
     "mantenimientos": ejecutar_mantenimiento_job,
+    "vida_util": ejecutar_vida_util_job,
 }
 
 

@@ -118,7 +118,7 @@ export default function Sidebar({
 
         <div>
           <h2>{PRODUCT.productName}</h2>
-          <p>{PRODUCT.companyName}</p>
+          <p>{PRODUCT.organizationName}</p>
         </div>
 
       </div>

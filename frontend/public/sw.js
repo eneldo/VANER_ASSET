@@ -1,5 +1,5 @@
-const CACHE_NAME = "sga-shell-v1";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/favicon.svg", "/logo.png"];
+const CACHE_NAME = "vaner-asset-shell-v2";
+const APP_SHELL = ["/", "/vaner-asset-logo.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -38,9 +38,9 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("sync", (event) => {
-  if (event.tag === "sga-sync") {
+  if (event.tag === "vaner-asset-sync") {
     event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      clients.forEach((client) => client.postMessage({ type: "SGA_SYNC_REQUESTED" }));
+      clients.forEach((client) => client.postMessage({ type: "VANER_ASSET_SYNC_REQUESTED" }));
     }));
   }
 });
