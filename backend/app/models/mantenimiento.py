@@ -105,6 +105,7 @@ class Mantenimiento(Base):
     solucion = Column(Text, nullable=True)
     cerrado = Column(Boolean, default=False)
     fecha_cierre = Column(DateTime, nullable=True)
+    activo = Column(Boolean, default=True, nullable=False, index=True)
 
     # Responsable
     responsable_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True, index=True)

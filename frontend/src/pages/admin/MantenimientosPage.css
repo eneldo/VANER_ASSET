@@ -273,6 +273,34 @@
 }
 
 /* ============================================================
+   FILTROS
+============================================================ */
+
+.mant-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.mant-filter-select {
+  padding: 9px 14px;
+  border: 1px solid #dbe5ef;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.mant-filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* ============================================================
    BUSCADOR
 ============================================================ */
 

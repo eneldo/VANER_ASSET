@@ -193,3 +193,57 @@ Fase 11 completada y validada.
 
 ## Próximo paso recomendado
 Continuar con Fase 12 — Despliegue.
+
+### L. Optimización del Módulo de Mantenimientos (2026-08-26)
+
+## Objetivo
+Rediseñar integralmente el módulo de mantenimientos siguiendo el prompt `OPTIMIZACION_MANTENIMIENTOS_VANER_ASSET.md`: correcciones críticas, simplificación visual, automatización, planificación avanzada y verificación.
+
+## Cambios realizados
+
+### Fase 1 — Correcciones críticas
+- **Router `mantenimientos.py` reescrito**:
+  - Auth obligatoria + `require_roles("ADMIN","COORDINADOR","TECNICO")` en todos los endpoints
+  - Aislamiento multi-tenant via `_filtrar_por_empresa()` (filtrado por `empresa_ids`)
+  - Búsqueda UUID directa (`modelo.id == uuid`) en vez de `cast(col, String)`
+  - Soft-delete: campo `activo` en modelo + migración `p91e4f720001`
+  - Creación transaccional con rollback y técnico opcional
+  - Paginación server-side: `page`, `per_page`, filtros (estado, tipo, prioridad, equipo, tecnico)
+  - Validación de fechas y mensajes de error seguros
+- **Modelo `Mantenimiento`**: campo `activo` añadido
+
+### Fase 2 — Simplificación visual
+- **`MaintenanceWizard.jsx`**: asistente 3 pasos (Activo → Trabajo → Confirmar)
+- **`EquipmentSearch.jsx`**: búsqueda inteligente con dropdown, navegación teclado, resultados en tiempo real
+- **`MantenimientosPage.jsx`**: reescrito con wizard, filtros, paginación, `showToast()` en vez de `window.alert()`
+
+### Fase 3 — Automatización
+- **Endpoint `GET /conflictos/{equipo_id}`**: detecta OTs abiertas, equipo no disponible, técnico ocupado, conflictos de fecha, preventivo vencido
+- **Endpoint `GET /sugerir-tecnico/{equipo_id}`**: sugiere top 5 técnicos por empresa, especialidad y carga de trabajo
+- **Endpoint `GET /sugerir-prioridad`**: calcula prioridad por criticidad, equipo parado, tipo, impacto operativo
+- **Frontend**: conflictos con badges y alertas, técnico sugerido con 1-click, prioridad sugerida con razón, borrador en localStorage
+
+### Fase 4 — Planificación avanzada
+- **Endpoint `POST /{id}/recurrencia`**: crea órdenes recurrentes (SEMANAL, MENSUAL, BIMESTRAL, TRIMESTRAL, SEMESTRAL, ANUAL), max 24 repeticiones
+- **Endpoint `GET /acceso-rapido/{equipo_id}`**: contexto del equipo, último mantenimiento, OTs abiertas, sugerencia de tipo
+- **Frontend**: campos de recurrencia en wizard, submit con recurrencia automática
+
+### Fase 5 — Verificación
+- 316 tests backend aprobados
+- Build frontend exitoso
+- ESLint sin errores
+- Migración aplicada (`alembic upgrade head`)
+
+## Aprendizajes
+
+1. **Soft-delete con `activo` es preferible a `is_deleted`**: más limpio, compatible con filtros existentes
+2. **Paginación server-side es esencial**: 1082 líneas de monolito → componente reutilizable
+3. **Conflictos de programación**: detectar OTs abiertas, técnicos ocupados y fechas superpuestas ahorra tiempo de coordinación
+4. **Borrador automático en localStorage**: mejora experiencia en formularios largos sin interferir con backend
+5. **Recurrencia simple**: 6 frecuencias cubren el 95% de casos de mantenimiento preventivo
+
+## Estado actual
+Optimización completada y validada. Pendiente push a GitHub.
+
+## Próximo paso recomendado
+Push a GitHub y verificación en navegador.

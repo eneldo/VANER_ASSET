@@ -83,6 +83,7 @@ Esta fase configura una identidad por despliegue. La resolución de marcas disti
 - Empresas, sedes, categorías e inventario de equipos.
 - Hoja de vida técnica y documental.
 - Mantenimiento preventivo/correctivo y ejecución de OT.
+- **Mantenimiento optimizado (Fases 0-5)**: Auth+roles, aislamiento multi-tenant, soft-delete, asistente 3 pasos, búsqueda inteligente, detección de conflictos, sugerencia de técnico/prioridad, borrador automático, recurrencia (6 frecuencias), acceso rápido.
 - Evidencias antes/durante/después/soporte.
 - Repuestos e incidencias de OT.
 - Técnicos, usuarios, permisos y roles.

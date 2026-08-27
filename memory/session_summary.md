@@ -74,8 +74,30 @@ Completar implementación de política de contraseñas (OWASP/NIST) + Rediseño 
 
 ## Estado actual
 
-Fase de política de contraseñas completada y validada. Próximo: Fase 12 — Despliegue.
+**OPTIMIZACIÓN DEL MÓDULO DE MANTENIMIENTOS COMPLETADA (Fases 0-5)**
+
+### Archivos modificados/creados:
+- `backend/app/routers/mantenimientos.py` — Reescrito: auth, aislamiento multi-tenant, soft-delete, paginación, conflictos, sugerencias, recurrencia, acceso-rápidos
+- `backend/app/models/mantenimiento.py` — Campo `activo` para soft-delete
+- `backend/alembic/versions/p91e4f720001_add_activo_mantenimientos.py` — Migración soft-delete
+- `frontend/src/pages/admin/MaintenanceWizard.jsx` — Asistente 3 pasos con conflictos, sugerencias, borrador, recurrencia
+- `frontend/src/pages/admin/MantenimientosPage.jsx` — Reescrito: filtros, paginación, toasts, integración wizard
+- `frontend/src/pages/admin/MantenimientosPage.css` — Estilos de filtros
+- `frontend/src/components/EquipmentSearch.jsx` — Búsqueda inteligente con dropdown
+- `frontend/src/styles/maintenance-wizard.css` — Estilos del asistente
+- `backend/tests/test_mantenimiento_fase8.py` — Mock actualizado para nueva firma
+
+### Funcionalidades implementadas:
+- **Fase 1**: Auth+roles, aislamiento tenant, UUID directo, soft-delete, paginación server-side
+- **Fase 2**: Wizard 3 pasos, búsqueda inteligente, limpieza de alertas
+- **Fase 3**: Detección de conflictos, sugerencia de técnico/prioridad, borrador automático
+- **Fase 4**: Recurrencia (6 frecuencias), acceso rápido a equipo
+- **Fase 5**: 316 tests OK, build OK, ESLint OK, migración aplicada
+
+### Estado:
+- **Pendiente**: Push a GitHub (esperando autorización del usuario)
+- **Pendiente**: Verificación en navegador (requiere backend+frontend corriendo)
 
 ## Próximo paso recomendado
 
-Continuar con Fase 12 — Despliegue (Docker, CI/CD, dominio).
+Solicitar autorización para hacer push de los cambios de optimización de mantenimientos a GitHub.

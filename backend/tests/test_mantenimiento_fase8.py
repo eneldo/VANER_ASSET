@@ -157,6 +157,13 @@ class MantenimientoFase8DictTests(unittest.TestCase):
             tipo_movimiento=None,
             activo_afectado_id=None,
             activo_afectado_tipo=None,
+            activo=True,
+            empresa_id=None,
+            sede_id=None,
+            equipo=None,
+            tecnico=None,
+            empresa=None,
+            sede=None,
             creado_en=datetime.now(),
             actualizado_en=datetime.now(),
         )
@@ -167,9 +174,11 @@ class MantenimientoFase8DictTests(unittest.TestCase):
                     first=lambda: None,
                     all=lambda: [],
                     delete=lambda *a, **kw: None,
+                    get=lambda *a: None,
                 ),
                 order_by=lambda *a: SimpleNamespace(all=lambda: []),
-            )
+            ),
+            refresh=lambda *a, **kw: None,
         )
 
         result = mantenimiento_dict(mantenimiento, db)
