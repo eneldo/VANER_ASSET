@@ -625,3 +625,45 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   FILTER CHIPS (Órdenes de Mantenimiento)
+============================================================ */
+
+.mant-filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mant-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mant-chip:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.mant-chip.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.text-muted {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.row-active {
+  background: rgba(37, 99, 235, 0.04);
+}

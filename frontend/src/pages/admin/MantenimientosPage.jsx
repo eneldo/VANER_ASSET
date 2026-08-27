@@ -319,18 +319,23 @@ export default function MantenimientosPage({
 
   const contenido = (
     <div className="mant-page">
-      <div className="mant-header">
-        <div className="mant-header-icon"><Wrench size={26} /></div>
-        <div>
-          <h1 className="mant-title">Mantenimientos</h1>
-          <p className="mant-subtitle">Registra programación, asignación, ejecución y trazabilidad técnica.</p>
+      <div className="sga-module-hero">
+        <div className="sga-module-hero__icon">
+          <Wrench size={24} />
         </div>
-        <button
-          className="mant-dashboard-btn"
-          onClick={() => (window.location.href = esCoordinador ? "/coordinador/dashboard" : "/admin/dashboard")}
-        >
-          <ArrowLeft size={16} /> Dashboard
-        </button>
+        <div className="sga-module-hero__text">
+          <span>Administración SaaS</span>
+          <h1>Gestión de Mantenimientos</h1>
+          <p>Planifica y supervisa el mantenimiento general: planes preventivos, frecuencias, calendario, próximos, vencidos, historial e indicadores.</p>
+        </div>
+        <div className="sga-module-hero__actions">
+          <button
+            className="sga-btn sga-btn--secondary"
+            onClick={() => (window.location.href = esCoordinador ? "/coordinador/dashboard" : "/admin/dashboard")}
+          >
+            <ArrowLeft size={16} /> Dashboard
+          </button>
+        </div>
       </div>
 
       <div className="mant-pro-layout">

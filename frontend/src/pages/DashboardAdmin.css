@@ -65,10 +65,10 @@
   align-items: stretch;
   justify-content: space-between;
   gap: 20px;
-  padding: 28px;
+  padding: 16px 24px;
   margin-bottom: 18px;
   border: 1px solid rgba(37, 99, 235, 0.14);
-  border-radius: 30px;
+  border-radius: 20px;
   background:
     linear-gradient(135deg, rgba(15, 35, 99, 0.96), rgba(30, 64, 175, 0.92)),
     linear-gradient(135deg, #0f2363, #06b6d4);
@@ -118,7 +118,7 @@
 
 .dadmin-hero h1 {
   margin: 0;
-  font-size: clamp(18px, 3vw, 28px);
+  font-size: clamp(14px, 2.5vw, 22px);
   line-height: 1;
   font-weight: 950;
   letter-spacing: -0.04em;
@@ -126,11 +126,11 @@
 
 .dadmin-hero p {
   max-width: 720px;
-  margin: 12px 0 0;
+  margin: 6px 0 0;
   color: #dbeafe;
-  font-size: 15px;
-  line-height: 1.6;
-  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .dadmin-hero-actions {
@@ -145,14 +145,15 @@
 .dadmin-btn,
 .dadmin-mini-btn {
   border: 0;
-  border-radius: 16px;
-  min-height: 44px;
-  padding: 0 16px;
+  border-radius: 12px;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  font-weight: 900;
+  gap: 6px;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
   white-space: nowrap;
@@ -978,7 +979,7 @@
 
   .dadmin-hero {
     flex-direction: column;
-    padding: 24px;
+    padding: 14px;
   }
 
   .dadmin-executive-grid {
@@ -996,8 +997,8 @@
   }
 
   .dadmin-hero {
-    border-radius: 24px;
-    padding: 22px;
+    border-radius: 16px;
+    padding: 12px;
   }
 
   .dadmin-hero-actions,

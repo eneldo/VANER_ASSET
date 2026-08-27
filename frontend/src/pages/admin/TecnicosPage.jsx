@@ -402,25 +402,31 @@ export default function TecnicosPage() {
   return (
     <AdminLayout>
       <section className="ct-page">
-        <header className="ct-hero technician">
-          <div>
-            <span className="ct-eyebrow">Talento técnico</span>
-            <h1>Técnicos de mantenimiento</h1>
+        <div className="sga-module-hero">
+          <div className="sga-module-hero__icon">
+            <UserCog size={24} />
+          </div>
+
+          <div className="sga-module-hero__text">
+            <span>Administración SaaS</span>
+            <h1>Técnicos</h1>
             <p>
               Administra perfiles técnicos vinculados a usuarios con rol TECNICO.
             </p>
           </div>
 
-          <button
-            className="ct-refresh"
-            type="button"
-            onClick={cargarTodo}
-            disabled={loading || saving}
-          >
-            <RefreshCcw size={18} />
-            Recargar
-          </button>
-        </header>
+          <div className="sga-module-hero__actions">
+            <button
+              className="sga-btn sga-btn--secondary"
+              type="button"
+              onClick={cargarTodo}
+              disabled={loading || saving}
+            >
+              <RefreshCcw size={16} />
+              Recargar
+            </button>
+          </div>
+        </div>
 
         <div className="ct-kpi-grid">
           <article className="ct-kpi-card">

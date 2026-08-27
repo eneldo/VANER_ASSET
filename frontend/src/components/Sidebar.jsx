@@ -27,7 +27,6 @@ import {
   Settings,
   Receipt,
   FileCog,
-  ClipboardList,
   PackageSearch,
 } from "lucide-react";
 
@@ -279,22 +278,20 @@ export default function Sidebar({
               to="/admin/mantenimientos"
               onClick={closeMobile}
               className={itemClass}
-              aria-label="Mantenimiento"
-              title={collapsed ? "Mantenimiento" : undefined}
+              aria-label="Gestión de Mantenimientos"
+              title={collapsed ? "Gestión de Mantenimientos" : undefined}
             >
-              <Wrench size={17} />
-              <span>Mantenimiento</span>
+              <span>Gestión de Mantenimientos</span>
             </NavLink>
 
             <NavLink
               to="/admin/ordenes-trabajo"
               onClick={closeMobile}
               className={itemClass}
-              aria-label="Órdenes de trabajo"
-              title={collapsed ? "Órdenes de trabajo" : undefined}
+              aria-label="Órdenes de Mantenimiento"
+              title={collapsed ? "Órdenes de Mantenimiento" : undefined}
             >
-              <ClipboardList size={17} />
-              <span>Órdenes de trabajo</span>
+              <span>Órdenes de Mantenimiento</span>
             </NavLink>
 
             <NavLink
