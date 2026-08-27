@@ -14,6 +14,7 @@ Corregir el bloqueo de GitHub Actions en `Lint & Format` y estabilizar la valida
 - El format-check se limita a las migraciones ya saneadas para no reescribir deuda histórica en bloque.
 - Corregido uso de `EquipoHistorialItem` sin importar en `backend/app/routers/equipos.py`.
 - Validación: Ruff OK, formato OK, 325 pruebas backend OK, ESLint sin errores (2 warnings), build frontend OK.
+- Backend Tests corregido: CI instala `requirements-dev.txt`, que ahora fija `pytest==8.3.5` y `pytest-cov==6.0.0`; el comando exacto con cobertura genera `coverage.xml`, obtiene 54% global y aprueba 325 pruebas.
 
 ## Objetivo anterior
 

@@ -1,3 +1,8 @@
+- **2026-08-27 — Dependencias de pruebas explícitas en CI:**
+  **Contexto:** Backend Tests ejecutaba `pytest --cov`, pero CI solo instalaba dependencias de producción y no disponía de `pytest-cov`.
+  **Aprendizaje:** Todo comando CI debe declarar explícitamente sus herramientas; el éxito local no garantiza disponibilidad en un runner limpio.
+  **Aplicación futura:** Instalar `requirements-dev.txt` en jobs de pruebas y fijar allí `pytest` y plugins como `pytest-cov`.
+
 - **2026-08-27 — Estabilización de Ruff en CI:**
   **Contexto:** GitHub Actions instalaba la última versión de Ruff sin configuración y el lint completo activó reglas nuevas sobre deuda histórica, bloqueando todas las etapas dependientes.
   **Aprendizaje:** Las herramientas de CI deben fijar versión y comenzar con una línea base explícita; ampliar reglas o formato requiere una migración separada y validada, no una actualización implícita.
