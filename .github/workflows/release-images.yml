@@ -26,7 +26,7 @@ jobs:
           DEBUG: "false"
           DATABASE_URL: sqlite:///./release-ci.db
           SECRET_KEY: release-ci-secret-key-with-more-than-thirty-two-characters
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24.15.0"
           cache: npm
