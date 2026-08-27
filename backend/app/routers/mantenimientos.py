@@ -102,6 +102,8 @@ def _obtener_usuario_empresa_ids(usuario: Usuario) -> list[UUID]:
 
 def _filtrar_por_empresa(query, usuario: Usuario):
     empresa_ids = _obtener_usuario_empresa_ids(usuario)
+    if usuario.rol == "ADMIN" and not empresa_ids:
+        return query
     if not empresa_ids:
         raise HTTPException(status_code=403, detail="Sin acceso a empresas.")
     if usuario.rol in ("ADMIN", "COORDINADOR"):
