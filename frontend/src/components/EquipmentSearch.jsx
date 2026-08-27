@@ -1,24 +1,38 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Search, X, MapPin } from "lucide-react";
 
-export default function EquipmentSearch({ equipos, onSelect, selectedId }) {
+export default function EquipmentSearch({ equipos, sedes, onSelect, selectedId }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  const selected = equipos.find((e) => String(e.id) === String(selectedId));
+  const sedeMap = useMemo(() => {
+    const map = {};
+    (sedes || []).forEach((s) => { map[s.id] = s.nombre; });
+    return map;
+  }, [sedes]);
+
+  const enriched = useMemo(() => {
+    return (equipos || []).map((eq) => ({
+      ...eq,
+      sede_nombre: sedeMap[eq.sede_id] || "",
+    }));
+  }, [equipos, sedeMap]);
+
+  const selected = enriched.find((e) => String(e.id) === String(selectedId));
 
   const normalize = (v) => (v || "").toString().toLowerCase();
 
   const results = query.trim().length < 2
     ? []
-    : equipos.filter((eq) => {
+    : enriched.filter((eq) => {
         const q = normalize(query);
         const fields = [
           eq.nombre, eq.codigo_id, eq.codigo, eq.inventario,
-          eq.serie, eq.marca, eq.modelo, eq.ubicacion,
+          eq.serie, eq.marca, eq.modelo,
+          eq.ubicacion, eq.sede_nombre,
         ];
         return fields.some((f) => normalize(f).includes(q));
       }).slice(0, 12);
@@ -63,6 +77,7 @@ export default function EquipmentSearch({ equipos, onSelect, selectedId }) {
               {selected.serie && <span>Ser: {selected.serie}</span>}
             </span>
             <span className="eq-search-selected-location">
+              {selected.sede_nombre && <span>{selected.sede_nombre}</span>}
               {selected.ubicacion || "Sin ubicación"}
             </span>
           </div>
@@ -82,7 +97,7 @@ export default function EquipmentSearch({ equipos, onSelect, selectedId }) {
             ref={inputRef}
             type="text"
             className="eq-search-input"
-            placeholder="Buscar por nombre, código, inventario, serie, marca..."
+            placeholder="Buscar por nombre, código, ubicación, sede, marca..."
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onFocus={() => setOpen(true)}
@@ -121,7 +136,9 @@ export default function EquipmentSearch({ equipos, onSelect, selectedId }) {
                 {eq.marca && <span>{eq.marca} {eq.modelo || ""}</span>}
               </div>
               <div className="eq-search-item-location">
-                <MapPin size={12} /> {eq.ubicacion || "Sin ubicación"}
+                <MapPin size={12} />
+                {eq.sede_nombre && <span>{eq.sede_nombre}</span>}
+                {eq.ubicacion || "Sin ubicación"}
               </div>
             </li>
           ))}

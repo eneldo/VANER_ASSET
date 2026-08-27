@@ -339,6 +339,7 @@ export default function MantenimientosPage({
             {showWizard ? (
               <MaintenanceWizard
                 equipos={equipos}
+                sedes={sedes}
                 tecnicos={tecnicos}
                 onSuccess={handleWizardSuccess}
                 onCancel={() => setShowWizard(false)}

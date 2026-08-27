@@ -57,7 +57,7 @@ function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
 }
 
-export default function MaintenanceWizard({ equipos, tecnicos, onSuccess, onCancel }) {
+export default function MaintenanceWizard({ equipos, sedes, tecnicos, onSuccess, onCancel }) {
   const initialDraft = useMemo(() => loadDraft(), []);
   const [step, setStep] = useState(initialDraft?.equipo_id ? 2 : 1);
   const [saving, setSaving] = useState(false);
@@ -248,10 +248,11 @@ export default function MaintenanceWizard({ equipos, tecnicos, onSuccess, onCanc
         {step === 1 && (
           <div className="wz-panel">
             <h3>Seleccionar activo</h3>
-            <p className="wz-hint">Busca por nombre, código, inventario, serie o marca</p>
+            <p className="wz-hint">Busca por nombre, código, ubicación, sede o marca</p>
 
             <EquipmentSearch
               equipos={equipos}
+              sedes={sedes}
               selectedId={form.equipo_id}
               onSelect={(eq) => set("equipo_id", eq ? eq.id : "")}
             />
