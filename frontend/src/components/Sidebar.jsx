@@ -298,11 +298,11 @@ export default function Sidebar({
               to="/admin/repuestos"
               onClick={closeMobile}
               className={itemClass}
-              aria-label="Repuestos"
-              title={collapsed ? "Repuestos" : undefined}
+              aria-label="Repuestos y Consumibles"
+              title={collapsed ? "Repuestos y Consumibles" : undefined}
             >
               <PackageSearch size={17} />
-              <span>Repuestos</span>
+              <span>Repuestos y Consumibles</span>
             </NavLink>
 
             <NavLink

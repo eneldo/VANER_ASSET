@@ -13,6 +13,11 @@ from app.models.ot_incidencia import OtIncidencia
 from app.models.plantilla_reporte import PlantillaReporte
 from app.models.permiso import RolSistema as Rol, PermisoSistema as Permiso, UsuarioPermiso
 from app.models.password_history import PasswordHistory
+from app.models.repuestos import (
+    CategoriaRepuesto, UnidadMedida, Repuesto, Bodega,
+    Existencia, MovimientoRepuesto, SolicitudRepuesto,
+    ProveedorRepuesto, RepuestoProveedor, RepuestoCompatibilidad,
+)
 
 
 

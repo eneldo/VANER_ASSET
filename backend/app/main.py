@@ -65,6 +65,7 @@ from app.routers import facturacion
 from app.routers import plantillas_reporte
 from app.routers import exportaciones
 from app.routers import public_config
+from app.routers import repuestos
 
 
 
@@ -193,6 +194,7 @@ app.include_router(reportes_publicados.router)
 app.include_router(facturacion.router)
 app.include_router(plantillas_reporte.router)
 app.include_router(exportaciones.router, dependencies=ADMIN_ONLY)
+app.include_router(repuestos.router)
 
 
 # =========================================================

@@ -35,6 +35,7 @@ const EquiposPage = lazy(() => import("./pages/admin/EquiposPage"));
 const HojaVidaEquipoPage = lazy(() => import("./pages/admin/HojaVidaEquipoPage"));
 const MantenimientosPage = lazy(() => import("./pages/admin/MantenimientosPage"));
 const OrdenesMantenimientoPage = lazy(() => import("./pages/admin/OrdenesMantenimientoPage"));
+const RepuestosPage = lazy(() => import("./pages/admin/RepuestosPage"));
 const EvidenciasPage = lazy(() => import("./pages/admin/EvidenciasPage"));
 const ReportesPage = lazy(() => import("./pages/admin/ReportesPage"));
 const AuditoriaPage = lazy(() => import("./pages/admin/AuditoriaPage"));
@@ -101,7 +102,7 @@ function App() {
         <Route path="/admin/hoja-vida/:id" element={<ProtectedRoute><HojaVidaEquipoPage /></ProtectedRoute>} />
         <Route path="/admin/mantenimientos" element={<ProtectedRoute><MantenimientosPage /></ProtectedRoute>} />
         <Route path="/admin/ordenes-trabajo" element={<ProtectedRoute><OrdenesMantenimientoPage /></ProtectedRoute>} />
-        <Route path="/admin/repuestos" element={<ProtectedRoute><MantenimientosPage /></ProtectedRoute>} />
+        <Route path="/admin/repuestos" element={<ProtectedRoute><RepuestosPage /></ProtectedRoute>} />
         <Route path="/admin/evidencias" element={<ProtectedRoute><EvidenciasPage /></ProtectedRoute>} />
         <Route path="/admin/reportes" element={<ProtectedRoute><ReportesPage /></ProtectedRoute>} />
         <Route path="/admin/auditoria" element={<ProtectedRoute><AuditoriaPage /></ProtectedRoute>} />
