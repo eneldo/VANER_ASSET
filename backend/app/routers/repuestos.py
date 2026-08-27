@@ -808,3 +808,329 @@ def crear_compatibilidad(data: CompatibilidadCreate, usuario: Usuario = Depends(
     db.commit()
     db.refresh(c)
     return c
+
+
+# ============================================================
+# INTEGRACIÓN CON ÓRDENES DE TRABAJO
+# ============================================================
+
+@router.get("/ot/{mantenimiento_id}")
+def repuestos_por_ot(mantenimiento_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    solicitudes = db.query(SolicitudRepuesto).filter(
+        SolicitudRepuesto.mantenimiento_id == mantenimiento_id
+    ).all()
+
+    items = []
+    costo_total = Decimal("0")
+    for s in solicitudes:
+        rep = db.query(Repuesto).filter(Repuesto.id == s.repuesto_id).first()
+        costo_linea = Decimal("0")
+        if s.estado in ["CONSUMIDO", "DEVUELTO_PARCIAL", "DEVUELTO"]:
+            cantidad_consumida = s.cantidad_entregada or s.cantidad_aprobada or s.cantidad_solicitada
+            if s.cantidad_devuelta:
+                cantidad_consumida = cantidad_consumida - s.cantidad_devuelta
+            costo_unitario = rep.ultimo_costo or Decimal("0")
+            costo_linea = cantidad_consumida * costo_unitario
+            costo_total += costo_linea
+
+        items.append({
+            "solicitud_id": str(s.id),
+            "repuesto_id": str(s.repuesto_id),
+            "repuesto_nombre": rep.nombre if rep else "—",
+            "repuesto_codigo": rep.codigo if rep else "—",
+            "cantidad_solicitada": float(s.cantidad_solicitada),
+            "cantidad_aprobada": float(s.cantidad_aprobada) if s.cantidad_aprobada else None,
+            "cantidad_entregada": float(s.cantidad_entregada) if s.cantidad_entregada else None,
+            "cantidad_devuelta": float(s.cantidad_devuelta) if s.cantidad_devuelta else None,
+            "estado": s.estado,
+            "costo_unitario": float(rep.ultimo_costo) if rep and rep.ultimo_costo else None,
+            "costo_linea": float(costo_linea),
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        })
+
+    return {
+        "mantenimiento_id": mantenimiento_id,
+        "repuestos": items,
+        "total_repuestos": len(items),
+        "costo_total_repuestos": float(costo_total),
+    }
+
+
+@router.post("/ot/{mantenimiento_id}/solicitar")
+def solicitar_repuesto_ot(
+    mantenimiento_id: str,
+    data: SolicitudCreate,
+    usuario: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    empresa_id = _validar_empresa(usuario)
+    if data.cantidad_solicitada <= 0:
+        raise HTTPException(status_code=400, detail="La cantidad debe ser mayor a 0")
+
+    rep = _obtener_repuesto(data.repuesto_id, db, usuario)
+
+    sol = SolicitudRepuesto(
+        empresa_id=empresa_id,
+        mantenimiento_id=mantenimiento_id,
+        repuesto_id=data.repuesto_id,
+        bodega_id=data.bodega_id,
+        cantidad_solicitada=data.cantidad_solicitada,
+        observaciones=data.observaciones,
+        solicitado_por=usuario.id,
+        estado="SOLICITADO",
+    )
+    db.add(sol)
+    db.commit()
+    db.refresh(sol)
+    return {"ok": True, "solicitud_id": str(sol.id), "estado": "SOLICITADO"}
+
+
+@router.post("/ot/solicitudes/{solicitud_id}/aprobar")
+def aprobar_solicitud_ot(solicitud_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    sol = db.query(SolicitudRepuesto).filter(SolicitudRepuesto.id == solicitud_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if sol.estado != "SOLICITADO":
+        raise HTTPException(status_code=400, detail=f"Solicitud en estado {sol.estado}, se esperaba SOLICITADO")
+
+    sol.estado = "APROBADO"
+    sol.autorizado_por = usuario.id
+    sol.cantidad_aprobada = sol.cantidad_solicitada
+    db.commit()
+    return {"ok": True, "estado": "APROBADO"}
+
+
+@router.post("/ot/solicitudes/{solicitud_id}/reservar")
+def reservar_solicitud_ot(solicitud_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    sol = db.query(SolicitudRepuesto).filter(SolicitudRepuesto.id == solicitud_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if sol.estado != "APROBADO":
+        raise HTTPException(status_code=400, detail=f"Solicitud en estado {sol.estado}, se esperaba APROBADO")
+
+    empresa_id = _validar_empresa(usuario)
+    bodega_id = sol.bodega_id
+    if not bodega_id:
+        raise HTTPException(status_code=400, detail="Solicitud sin bodega asignada")
+
+    ex = _get_or_create_existencia(db, empresa_id, sol.repuesto_id, bodega_id)
+    cantidad = sol.cantidad_aprobada or sol.cantidad_solicitada
+    disponible = ex.existencia_fisica - ex.cantidad_reservada
+
+    if disponible < cantidad:
+        raise HTTPException(status_code=400, detail=f"Stock insuficiente. Disponible: {disponible}, solicitado: {cantidad}")
+
+    ex.cantidad_reservada += cantidad
+
+    mov = MovimientoRepuesto(
+        empresa_id=empresa_id,
+        repuesto_id=sol.repuesto_id,
+        bodega_origen_id=bodega_id,
+        tipo_movimiento="RESERVA",
+        cantidad=cantidad,
+        solicitud_id=sol.id,
+        existencia_anterior=ex.existencia_fisica,
+        existencia_posterior=ex.existencia_fisica,
+        motivo=f"Reserva para OT",
+        usuario_id=usuario.id,
+    )
+    db.add(mov)
+    sol.estado = "RESERVADO"
+    db.commit()
+    return {"ok": True, "estado": "RESERVADO"}
+
+
+@router.post("/ot/solicitudes/{solicitud_id}/entregar")
+def entregar_solicitud_ot(solicitud_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    sol = db.query(SolicitudRepuesto).filter(SolicitudRepuesto.id == solicitud_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if sol.estado != "RESERVADO":
+        raise HTTPException(status_code=400, detail=f"Solicitud en estado {sol.estado}, se esperaba RESERVADO")
+
+    empresa_id = _validar_empresa(usuario)
+    bodega_id = sol.bodega_id
+    cantidad = sol.cantidad_aprobada or sol.cantidad_solicitada
+
+    ex = _get_or_create_existencia(db, empresa_id, sol.repuesto_id, bodega_id)
+    anterior = ex.existencia_fisica
+
+    if ex.existencia_fisica < cantidad:
+        raise HTTPException(status_code=400, detail="Stock insuficiente para entrega")
+
+    ex.existencia_fisica -= cantidad
+    ex.cantidad_reservada = max(Decimal("0"), ex.cantidad_reservada - cantidad)
+
+    rep = db.query(Repuesto).filter(Repuesto.id == sol.repuesto_id).first()
+    costo = rep.ultimo_costo if rep else None
+
+    mov = MovimientoRepuesto(
+        empresa_id=empresa_id,
+        repuesto_id=sol.repuesto_id,
+        bodega_origen_id=bodega_id,
+        tipo_movimiento="ENTREGA_TECNICO",
+        cantidad=cantidad,
+        costo_unitario=costo,
+        costo_total=cantidad * costo if costo else None,
+        existencia_anterior=anterior,
+        existencia_posterior=ex.existencia_fisica,
+        solicitud_id=sol.id,
+        usuario_id=usuario.id,
+    )
+    db.add(mov)
+    sol.estado = "ENTREGADO"
+    sol.cantidad_entregada = cantidad
+    sol.entregado_por = usuario.id
+    db.commit()
+    return {"ok": True, "estado": "ENTREGADO"}
+
+
+@router.post("/ot/solicitudes/{solicitud_id}/consumir")
+def consumir_solicitud_ot(
+    solicitud_id: str,
+    cantidad: Decimal = Query(..., gt=0),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    sol = db.query(SolicitudRepuesto).filter(SolicitudRepuesto.id == solicitud_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if sol.estado not in ["ENTREGADO", "DEVUELTO_PARCIAL"]:
+        raise HTTPException(status_code=400, detail=f"Solicitud en estado {sol.estado}")
+
+    empresa_id = _validar_empresa(usuario)
+    cantidad_entregada = sol.cantidad_entregada or sol.cantidad_aprobada or sol.cantidad_solicitada
+    if cantidad > cantidad_entregada:
+        raise HTTPException(status_code=400, detail="La cantidad consumida excede la entregada")
+
+    rep = db.query(Repuesto).filter(Repuesto.id == sol.repuesto_id).first()
+    costo = rep.ultimo_costo if rep else None
+
+    mov = MovimientoRepuesto(
+        empresa_id=empresa_id,
+        repuesto_id=sol.repuesto_id,
+        tipo_movimiento="CONSUMO",
+        cantidad=cantidad,
+        costo_unitario=costo,
+        costo_total=cantidad * costo if costo else None,
+        solicitud_id=sol.id,
+        usuario_id=usuario.id,
+    )
+    db.add(mov)
+
+    sol.estado = "CONSUMIDO"
+    if cantidad < cantidad_entregada:
+        sol.estado = "DEVUELTO_PARCIAL"
+    db.commit()
+    return {"ok": True, "estado": sol.estado}
+
+
+@router.post("/ot/solicitudes/{solicitud_id}/devolver")
+def devolver_solicitud_ot(
+    solicitud_id: str,
+    cantidad: Decimal = Query(..., gt=0),
+    bodega_id: str = Query(...),
+    usuario: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    sol = db.query(SolicitudRepuesto).filter(SolicitudRepuesto.id == solicitud_id).first()
+    if not sol:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if sol.estado not in ["ENTREGADO", "DEVUELTO_PARCIAL", "CONSUMIDO"]:
+        raise HTTPException(status_code=400, detail=f"Solicitud en estado {sol.estado}")
+
+    empresa_id = _validar_empresa(usuario)
+    _obtener_bodega(bodega_id, db, usuario)
+
+    ex = _get_or_create_existencia(db, empresa_id, sol.repuesto_id, bodega_id)
+    anterior = ex.existencia_fisica
+    ex.existencia_fisica += cantidad
+
+    ex_reserva = db.query(Existencia).filter(
+        Existencia.empresa_id == empresa_id,
+        Existencia.repuesto_id == sol.repuesto_id,
+        Existencia.bodega_id == sol.bodega_id,
+    ).first()
+    if ex_reserva:
+        ex_reserva.cantidad_reservada = max(Decimal("0"), ex_reserva.cantidad_reservada - cantidad)
+
+    mov = MovimientoRepuesto(
+        empresa_id=empresa_id,
+        repuesto_id=sol.repuesto_id,
+        bodega_destino_id=bodega_id,
+        tipo_movimiento="DEVOLUCION",
+        cantidad=cantidad,
+        existencia_anterior=anterior,
+        existencia_posterior=ex.existencia_fisica,
+        solicitud_id=sol.id,
+        usuario_id=usuario.id,
+    )
+    db.add(mov)
+
+    devuelta_anterior = sol.cantidad_devuelta or Decimal("0")
+    sol.cantidad_devuelta = devuelta_anterior + cantidad
+    sol.estado = "DEVUELTO"
+    if cantidad < (sol.cantidad_entregada or sol.cantidad_solicitada):
+        sol.estado = "DEVUELTO_PARCIAL"
+    db.commit()
+    return {"ok": True, "estado": sol.estado}
+
+
+@router.get("/ot/{mantenimiento_id}/trazabilidad")
+def trazabilidad_ot(mantenimiento_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    solicitudes = db.query(SolicitudRepuesto).filter(
+        SolicitudRepuesto.mantenimiento_id == mantenimiento_id
+    ).all()
+
+    movimientos = []
+    for s in solicitudes:
+        movs = db.query(MovimientoRepuesto).filter(MovimientoRepuesto.solicitud_id == s.id).order_by(MovimientoRepuesto.created_at).all()
+        rep = db.query(Repuesto).filter(Repuesto.id == s.repuesto_id).first()
+        for m in movs:
+            movimientos.append({
+                "fecha": m.created_at.isoformat() if m.created_at else None,
+                "tipo": m.tipo_movimiento,
+                "repuesto": rep.nombre if rep else "—",
+                "cantidad": float(m.cantidad),
+                "costo_unitario": float(m.costo_unitario) if m.costo_unitario else None,
+                "costo_total": float(m.costo_total) if m.costo_total else None,
+                "usuario_id": str(m.usuario_id) if m.usuario_id else None,
+                "documento": m.documento,
+                "motivo": m.motivo,
+            })
+
+    movimientos.sort(key=lambda x: x["fecha"] or "", reverse=True)
+    return {"mantenimiento_id": mantenimiento_id, "movimientos": movimientos}
+
+
+@router.get("/ot/{mantenimiento_id}/costos")
+def costos_ot(mantenimiento_id: str, usuario: Usuario = Depends(obtener_usuario_actual), db: Session = Depends(get_db)):
+    solicitudes = db.query(SolicitudRepuesto).filter(
+        SolicitudRepuesto.mantenimiento_id == mantenimiento_id,
+        SolicitudRepuesto.estado.in_(["CONSUMIDO", "DEVUELTO_PARCIAL", "DEVUELTO"]),
+    ).all()
+
+    detalle = []
+    costo_total = Decimal("0")
+    for s in solicitudes:
+        rep = db.query(Repuesto).filter(Repuesto.id == s.repuesto_id).first()
+        cantidad_consumida = s.cantidad_entregada or s.cantidad_aprobada or s.cantidad_solicitada
+        if s.cantidad_devuelta:
+            cantidad_consumida = cantidad_consumida - s.cantidad_devuelta
+        costo_unitario = rep.ultimo_costo or Decimal("0")
+        costo_linea = cantidad_consumida * costo_unitario
+        costo_total += costo_linea
+
+        detalle.append({
+            "repuesto": rep.nombre if rep else "—",
+            "codigo": rep.codigo if rep else "—",
+            "cantidad_consumida": float(cantidad_consumida),
+            "costo_unitario": float(costo_unitario),
+            "costo_linea": float(costo_linea),
+        })
+
+    return {
+        "mantenimiento_id": mantenimiento_id,
+        "detalle": detalle,
+        "costo_total_repuestos": float(costo_total),
+    }
