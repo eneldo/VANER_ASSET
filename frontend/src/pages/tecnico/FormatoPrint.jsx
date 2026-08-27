@@ -62,9 +62,9 @@ export default function FormatoPrint() {
       <div className="formato-hoja print-hoja">
         <div className="formato-header">
           <div className="formato-logo">
-            <strong>SGA</strong>
-            <span>CONSTRUCTION</span>
-            <small>Maintenance & Services</small>
+            <strong>VA</strong>
+            <span>VANER ASSET</span>
+            <small>GMAO/CMMS</small>
           </div>
 
           <div className="formato-title">
@@ -74,9 +74,9 @@ export default function FormatoPrint() {
           </div>
 
           <div className="formato-code">
-            <p>Código: SGA - MAN -019</p>
-            <p>Versión: 00</p>
-            <p>Emisión: 23/01/24</p>
+            <p>Código: VA - MAN -001</p>
+            <p>Versión: 01</p>
+            <p>Emisión: 27/08/26</p>
           </div>
         </div>
 

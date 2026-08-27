@@ -241,7 +241,7 @@ export default function SedesPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "sedes_sga.csv";
+    link.download = "sedes_vaner_asset.csv";
     link.click();
     URL.revokeObjectURL(url);
   };

@@ -212,5 +212,5 @@ def exportar_auditoria_csv(
     return Response(
         content=buffer.getvalue(),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=auditoria_sga_pro.csv"},
+        headers={"Content-Disposition": "attachment; filename=auditoria_vaner_asset.csv"},
     )

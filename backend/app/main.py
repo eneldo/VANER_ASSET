@@ -66,6 +66,8 @@ from app.routers import plantillas_reporte
 from app.routers import exportaciones
 from app.routers import public_config
 from app.routers import repuestos
+from app.routers import mfa
+from app.monitoring import init_sentry, router as monitoring_router
 
 
 
@@ -195,6 +197,8 @@ app.include_router(facturacion.router)
 app.include_router(plantillas_reporte.router)
 app.include_router(exportaciones.router, dependencies=ADMIN_ONLY)
 app.include_router(repuestos.router)
+app.include_router(mfa.router)
+app.include_router(monitoring_router)
 
 
 # =========================================================
@@ -203,7 +207,8 @@ app.include_router(repuestos.router)
 
 @app.on_event("startup")
 def startup_automatizacion_saas():
-    """Inicia el scheduler SaaS sin afectar módulos existentes."""
+    """Inicia el scheduler SaaS y monitoring."""
+    init_sentry()
     if settings.RUN_SCHEDULER:
         iniciar_scheduler_sga()
 

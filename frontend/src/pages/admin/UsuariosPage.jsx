@@ -506,7 +506,7 @@ export default function UsuariosPage() {
                 type="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="correo@sga.com"
+                placeholder="correo@vanerasset.com"
                 disabled={guardando}
               />
             </div>

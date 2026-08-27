@@ -52,7 +52,7 @@ def descargar(backup_id: UUID, db: Session = Depends(get_db)):
     path, temporary = service.preparar_descarga(item)
     return FileResponse(
         path=path,
-        filename=item.nombre_archivo or "backup_sga.zip",
+        filename=item.nombre_archivo or "backup_vaner_asset.zip",
         media_type="application/zip",
         background=BackgroundTask(path.unlink, missing_ok=True) if temporary else None,
     )

@@ -383,7 +383,7 @@ export default function ConfiguracionPage() {
           ))}
         </div>
         <div className="cfg-theme-preview" style={{ "--cfg-primary": config.color_primario, "--cfg-secondary": config.color_secundario, "--cfg-accent": config.color_acento }}>
-          <div className="cfg-theme-sidebar">SGA</div><div className="cfg-theme-content"><span>Dashboard</span><button>Acción principal</button></div>
+          <div className="cfg-theme-sidebar">VA</div><div className="cfg-theme-content"><span>Dashboard</span><button>Acción principal</button></div>
         </div>
       </section>
     );

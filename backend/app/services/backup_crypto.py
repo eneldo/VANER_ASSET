@@ -48,7 +48,7 @@ def decrypt_backup_file(source: Path, destination: Path) -> Path:
     try:
         with source.open("rb") as input_file, temporary.open("wb") as output_file:
             if input_file.read(len(MAGIC)) != MAGIC:
-                raise RuntimeError("El archivo no es un backup cifrado SGA válido")
+                raise RuntimeError("El archivo no es un backup cifrado válido")
 
             while True:
                 nonce = input_file.read(NONCE_SIZE)

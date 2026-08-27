@@ -5,7 +5,7 @@
 # =========================================================
 
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -76,3 +76,8 @@ class Usuario(Base):
     # Auditoría
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
+
+    # MFA (Multi-Factor Authentication)
+    mfa_enabled = Column(Boolean, default=False)
+    mfa_secret = Column(String(255), nullable=True)
+    mfa_backup_codes = Column(Text, nullable=True)

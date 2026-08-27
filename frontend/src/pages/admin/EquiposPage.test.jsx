@@ -79,7 +79,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -164,7 +164,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -220,7 +220,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -289,7 +289,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -388,7 +388,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -464,7 +464,7 @@ describe("EquiposPage", () => {
     const { container } = render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >
@@ -606,7 +606,7 @@ describe("EquiposPage", () => {
         return {
           ok: true,
           headers: new Headers({
-            "content-disposition": 'attachment; filename="inventario_equipos_sga.xlsx"',
+            "content-disposition": 'attachment; filename="inventario_equipos_vaner_asset.xlsx"',
           }),
           blob: async () => new Blob(["excel"]),
         };
@@ -617,7 +617,7 @@ describe("EquiposPage", () => {
     render(
       <AuthContext.Provider
         value={{
-          user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+          user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
           logout: vi.fn(),
         }}
       >

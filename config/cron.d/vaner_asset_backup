@@ -1,0 +1,24 @@
+# VANER ASSET — Cron Jobs para Backups
+# Instalar con: crontab /etc/cron.d/vaner_asset
+# O ejecutar directamente en el contenedor backend
+
+# Backup diario a las 2:00 AM UTC
+0 2 * * * root cd /app && python -c "
+from app.database import SessionLocal
+from app.services.smart_backup_service import SmartBackupService
+db = SessionLocal()
+try:
+    SmartBackupService(db).ejecutar_backup(
+        tipo='AUTOMATICO',
+        incluir_db=True,
+        incluir_uploads=True,
+        incluir_codigo=False,
+        creado_por='cron'
+    )
+    print('Backup automático completado')
+finally:
+    db.close()
+" >> /var/log/vaner_asset_backup.log 2>&1
+
+# Limpiar backups antiguos (más de 30 días) semanalmente
+0 3 * * 0 root cd /app && python scripts/backup_auto.py --retention 30 >> /var/log/vaner_asset_backup.log 2>&1

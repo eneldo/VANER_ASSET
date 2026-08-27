@@ -68,7 +68,7 @@ class SmartBackupService:
             metadata = {}
 
             if incluir_db:
-                sql_file = work_dir / f"postgres_sga_{timestamp}.sql"
+                sql_file = work_dir / f"postgres_vaner_asset_{timestamp}.sql"
                 self._dump_postgres(sql_file)
                 metadata["db_sql"] = sql_file.name
 

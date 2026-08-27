@@ -8,7 +8,7 @@ function renderLayout(path = "/admin/dashboard") {
   return render(
     <AuthContext.Provider
       value={{
-        user: { rol: "ADMIN", nombre_completo: "Admin SGA" },
+        user: { rol: "ADMIN", nombre_completo: "Admin VANER" },
         logout: vi.fn(),
       }}
     >

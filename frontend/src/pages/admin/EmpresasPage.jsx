@@ -219,7 +219,7 @@ export default function EmpresasPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "empresas_sga.csv";
+    link.download = "empresas_vaner_asset.csv";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -237,7 +237,7 @@ export default function EmpresasPage() {
             <h1>Empresas / Clientes</h1>
             <p>
               Gestiona las empresas cliente, datos de contacto y estado operativo
-              dentro del ecosistema SGA.
+              dentro del ecosistema VANER ASSET.
             </p>
           </div>
 

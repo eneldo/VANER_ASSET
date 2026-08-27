@@ -24,7 +24,7 @@ import {
 const TEMPLATES = {
   AIRE_ACONDICIONADO: {
     titulo: "DE AIRES ACONDICIONADOS",
-    codigo: "SGA - MAN -019",
+    codigo: "VA - MAN -001",
     tipos: [
       "Aire Ventana",
       "Aire MiniSplit",
@@ -65,7 +65,7 @@ const TEMPLATES = {
 
   CCTV: {
     titulo: "DE CÁMARAS DE SEGURIDAD / CCTV",
-    codigo: "SGA - MAN -CCTV",
+    codigo: "VA - MAN -002",
     tipos: [
       "Cámara IP",
       "Cámara Analógica",
@@ -120,7 +120,7 @@ const TEMPLATES = {
 
   REFRIGERACION: {
     titulo: "DE NEVERAS Y CONGELADORES",
-    codigo: "SGA - MAN -REF",
+    codigo: "VA - MAN -003",
     tipos: ["Nevera", "Congelador", "Refrigerador", "Vitrina refrigerada"],
     trabajos: [
       ["limpieza_condensador", "Limpieza de condensador"],
@@ -144,7 +144,7 @@ const TEMPLATES = {
 
   BOMBA_AGUA: {
     titulo: "DE BOMBAS DE AGUA",
-    codigo: "SGA - MAN -BOM",
+    codigo: "VA - MAN -004",
     tipos: ["Bomba centrífuga", "Bomba sumergible", "Bomba presión", "Motobomba"],
     trabajos: [
       ["revision_fugas", "Revisión de fugas"],
@@ -168,7 +168,7 @@ const TEMPLATES = {
 
   TABLERO_ELECTRICO: {
     titulo: "DE TABLEROS ELÉCTRICOS",
-    codigo: "SGA - MAN -ELEC",
+    codigo: "VA - MAN -005",
     tipos: ["Tablero eléctrico", "Breaker", "Transferencia", "Control"],
     trabajos: [
       ["limpieza_interna", "Limpieza interna"],
@@ -192,7 +192,7 @@ const TEMPLATES = {
 
   LLAMADO_ENFERMERIA: {
     titulo: "DE LLAMADO DE ENFERMERÍA",
-    codigo: "SGA - MAN -LENF",
+    codigo: "VA - MAN -006",
     tipos: ["Panel central", "Pulsador", "Luz indicadora", "Módulo habitación"],
     trabajos: [
       ["revision_panel", "Revisión de panel central"],
@@ -216,7 +216,7 @@ const TEMPLATES = {
 
   ASCENSOR: {
     titulo: "DE ASCENSORES",
-    codigo: "SGA - MAN -ASC",
+    codigo: "VA - MAN -007",
     tipos: [
       "Ascensor eléctrico",
       "Ascensor hidráulico",
@@ -252,7 +252,7 @@ const TEMPLATES = {
 
   INDUSTRIAL_GENERAL: {
     titulo: "DE EQUIPOS INDUSTRIALES",
-    codigo: "SGA - MAN -IND",
+    codigo: "VA - MAN -008",
     tipos: [
       "Planta eléctrica",
       "Red contra incendios",
@@ -648,9 +648,9 @@ export default function FormatoMantenimiento() {
       <div className="formato-hoja">
         <div className="formato-header">
           <div className="formato-logo">
-            <strong>SGA</strong>
-            <span>CONSTRUCTION</span>
-            <small>Maintenance & Services</small>
+            <strong>VA</strong>
+            <span>VANER ASSET</span>
+            <small>GMAO/CMMS</small>
           </div>
 
           <div className="formato-title">

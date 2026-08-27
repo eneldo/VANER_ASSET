@@ -8,9 +8,9 @@ function AppLoader() {
   return (
     <div className="app-loader-pro" role="status" aria-live="polite">
       <div className="app-loader-card">
-        <div className="app-loader-logo">SGA</div>
+        <div className="app-loader-logo">VA</div>
         <div className="app-loader-spinner" />
-        <h1>Cargando SGA</h1>
+        <h1>Cargando VANER ASSET</h1>
         <p>Preparando módulo solicitado...</p>
       </div>
     </div>

@@ -143,7 +143,7 @@ export default function ClienteHojaVida() {
           {empresa?.logo_url ? (
             <img src={normalizarUrl(empresa.logo_url)} alt="Logo empresa" />
           ) : (
-            <div className="hv-logo-placeholder">SGA</div>
+            <div className="hv-logo-placeholder">VA</div>
           )}
         </div>
 

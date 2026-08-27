@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS configuracion_sistema (
     id INTEGER PRIMARY KEY,
 
-    nombre_plataforma VARCHAR(150) NOT NULL DEFAULT 'SGAHolding SaaS',
+    nombre_plataforma VARCHAR(150) NOT NULL DEFAULT 'VANER ASSET',
     empresa_propietaria VARCHAR(180),
     nit VARCHAR(50),
     correo_soporte VARCHAR(160),

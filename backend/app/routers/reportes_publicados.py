@@ -340,7 +340,7 @@ def _decorador_paginas(empresa, mantenimiento, plantilla, logo_path, generado_en
             canvas.roundRect(logo_x, page_height - 65, 48, 38, 7, stroke=0, fill=1)
             canvas.setFillColor(colors.white)
             canvas.setFont("Helvetica-Bold", 12)
-            canvas.drawCentredString(logo_x + 24, page_height - 51, "SGA")
+            canvas.drawCentredString(logo_x + 24, page_height - 51, "VA")
 
         canvas.setFillColor(colors.HexColor("#172033"))
         canvas.setFont("Helvetica-Bold", 11)
@@ -458,7 +458,7 @@ def _celda_firma(imagen, nombre, rol, styles):
 def _tabla_firmas(firma_cliente, firma_gerente, nombres, styles):
     table = Table([[
         _celda_firma(firma_cliente, nombres[0], "Cliente / Usuario", styles),
-        _celda_firma(firma_gerente, nombres[1], "Gerente / Coordinador SGA", styles),
+        _celda_firma(firma_gerente, nombres[1], "Gerente / Coordinador VANER ASSET", styles),
     ]], colWidths=[261, 261])
     table.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.45, colors.HexColor("#CBD5E1")),

@@ -54,7 +54,7 @@ def crear_excel(nombre_base: str, titulo: str, columnas: List[str], filas: Itera
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Reporte SGA"
+    ws.title = "Reporte VANER ASSET"
 
     # ========================================================
     # TÍTULO PRINCIPAL

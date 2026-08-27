@@ -68,4 +68,4 @@ def exportar_csv(
         rows.append(
             f'"{clean(log.creado_en)}","{clean(log.modulo)}","{clean(log.nivel)}","{clean(log.evento)}","{clean(log.mensaje)}","{clean(log.ruta)}","{clean(log.usuario)}"'
         )
-    return Response("\n".join(rows), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=logs_sga.csv"})
+    return Response("\n".join(rows), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=logs_vaner_asset.csv"})

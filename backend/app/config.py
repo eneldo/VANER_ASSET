@@ -210,6 +210,14 @@ class Settings(BaseSettings):
         return self
 
     # =====================================================
+    # SENTRY / OBSERVABILIDAD
+    # =====================================================
+
+    SENTRY_DSN: str | None = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% de traces
+    SENTRY_ENVIRONMENT: str | None = None  # fallback a APP_ENV
+
+    # =====================================================
     # CONFIGURACIÓN PYDANTIC
     # =====================================================
 

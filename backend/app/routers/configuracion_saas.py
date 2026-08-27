@@ -232,7 +232,7 @@ async def subir_logo(file: UploadFile = File(...), db: Session = Depends(get_db)
     except (UnidentifiedImageError, OSError) as exc:
         raise HTTPException(status_code=400, detail="El archivo no es una imagen válida.") from exc
 
-    safe_name = f"logo_sga_{uuid4().hex}{extension}"
+    safe_name = f"logo_vaner_asset_{uuid4().hex}{extension}"
     destination = LOGOS_DIR / safe_name
     destination.write_bytes(content)
 

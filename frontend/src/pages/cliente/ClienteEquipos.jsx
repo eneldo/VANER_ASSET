@@ -348,7 +348,7 @@ function HojaVidaFullPro({ detalle, tab, setTab, onVolver, onPrint, onExport }) 
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo empresa" />
               ) : (
-                <div className="hv-logo-placeholder">SGA</div>
+                <div className="hv-logo-placeholder">VA</div>
               )}
             </div>
 

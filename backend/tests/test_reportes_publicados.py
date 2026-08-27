@@ -38,7 +38,7 @@ class ReportesPublicadosTests(unittest.TestCase):
         tabla = _tabla_firmas(
             None,
             None,
-            ["Cliente ACME", "Coordinadora SGA"],
+            ["Cliente ACME", "Coordinadora VANER"],
             _estilos_reporte("#1E3A8A"),
         )
 
@@ -50,7 +50,7 @@ class ReportesPublicadosTests(unittest.TestCase):
             if hasattr(elemento, "getPlainText")
         ]
         self.assertIn("Cliente / Usuario", textos)
-        self.assertIn("Gerente / Coordinador SGA", textos)
+        self.assertIn("Gerente / Coordinador VANER ASSET", textos)
         self.assertNotIn("Tecnico responsable", textos)
 
     def test_director_solo_descarga_de_su_empresa(self):

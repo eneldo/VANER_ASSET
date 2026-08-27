@@ -466,7 +466,7 @@ def exportar_inventario_equipos(db: Session = Depends(get_db)):
         for equipo, empresa_nombre, sede_nombre, categoria_nombre in registros
     ]
 
-    filename = f"inventario_equipos_sga_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"inventario_equipos_vaner_asset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return StreamingResponse(
         crear_excel_inventario(filas),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
