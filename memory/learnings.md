@@ -1,5 +1,30 @@
 ### G. FASE 7 - Inventario/Activos (2026-08-25)
 
+## Módulo Repuestos y Consumibles (2026-08-26)
+
+### Contexto
+El prompt maestro solicita un módulo completo de inventario de repuestos. Se realizó auditoría completa del estado actual.
+
+### Hallazgos
+- Solo existía `ot_repuestos` (tabla vinculada a OTs) — vacía
+- `mantenimientos.repuestos` (JSON) — redundante con `ot_repuestos`
+- No existía catálogo, stock, bodegas, movimientos, proveedores
+- Ruta `/admin/repuestos` apuntaba a `MantenimientosPage` (placeholder)
+
+### Implementación Fase 1
+- 10 modelos nuevos en `backend/app/models/repuestos.py`
+- Migración `r01a1b2c30001` con 10 tablas + RLS + grants
+- Router 31 endpoints en `backend/app/routers/repuestos.py`
+- Frontend `RepuestosPage.jsx` con 5 pestañas
+- Políticas: promedio ponderado, descuento al entregar, reservas atómicas
+- 316 tests OK, build OK
+
+### Lecciones
+- Verificar siempre el allowlist de privilegios al agregar tablas nuevas
+- El test `test_allowlist_cubre_tablas_modeladas_y_asociaciones` falla si hay tablas nuevas sin agregar al allowlist
+- Usar `eslint-disable-line react-hooks/set-state-in-effect` para effects con data fetching
+- Preferir `useCallback` con dependencias explícitas sobre `useEffect` con dependencias vacías
+
 ## Objetivo
 Auditoría y mejoras a los módulos de inventario y activos, asegurando hojas de vida completas y trazabilidad de cambios.
 

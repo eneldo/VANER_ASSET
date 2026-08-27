@@ -11,7 +11,7 @@
 
 ## Objetivo
 
-VANER ASSET es la línea de producto SaaS multi-tenant de VANER SOFTWARE para inventarios, activos, hojas de vida, mantenimiento, órdenes de trabajo, repuestos, técnicos, reportes, analítica y administración.
+VANER ASSET es la línea de producto SaaS multi-tenant de VANER SOFTWARE para inventarios, activos, hojas de vida, mantenimiento, órdenes de trabajo, repuestos y consumibles, técnicos, reportes, analítica y administración.
 
 La intención declarada es mantener una sola base de código y representar cada cliente como tenant, con aislamiento mediante `empresa_id`, controles de autorización y PostgreSQL RLS. Las diferencias de marca, dominio, módulos, documentos e integraciones deben resolverse por configuración, no mediante copias del código.
 

@@ -4,7 +4,63 @@ Fecha: 2026-08-26
 
 ## Objetivo trabajado
 
-Completar implementación de política de contraseñas (OWASP/NIST) + Rediseño de login.
+Módulo completo de Repuestos y Consumibles — Fase 1 (Catálogo y existencias).
+
+## Cambios realizados
+
+### Backend — Modelos (10 tablas nuevas)
+- **`backend/app/models/repuestos.py`** — Modelos SQLAlchemy:
+  - `CategoriaRepuesto` — Categorías de repuestos por empresa
+  - `UnidadMedida` — Unidades de medida (UN, M, L, KG, JG, etc.)
+  - `Repuesto` — Catálogo maestro (código, nombre, tipo, marca, referencia, stock min/max, costo promedio)
+  - `Bodega` — Bodegas por sede
+  - `Existencia` — Stock por repuesto por bodega (física, reservada, disponible)
+  - `MovimientoRepuesto` — Movimientos inmutables (entrada, salida, reserva, transferencia, ajuste)
+  - `SolicitudRepuesto` — Solicitudes con workflow SOLICITADO→APROBADO→RESERVADO→ENTREGADO→CONSUMIDO
+  - `ProveedorRepuesto` — Proveedores
+  - `RepuestoProveedor` — Relación N:N repuesto-proveedor
+  - `RepuestoCompatibilidad` — Compatibilidad repuesto-equipo
+
+### Backend — Schemas
+- **`backend/app/schemas/repuestos.py`** — Schemas Pydantic para todos los modelos
+
+### Backend — Migración
+- **`r01a1b2c30001_repuestos_consumibles_modulo_completo.py`** — Crea 10 tablas + unidades de medida iniciales + FKs a ot_repuestos
+
+### Backend — Router (31 endpoints)
+- **`backend/app/routers/repuestos.py`** — Endpoints:
+  - Dashboard con indicadores
+  - CRUD categorías, unidades de medida
+  - CRUD catálogo de repuestos
+  - CRUD bodegas
+  - Listar existencias por repuesto/bodega
+  - Movimientos: entrada, ajuste, transferencia
+  - Solicitudes: crear, aprobar, reservar, entregar, consumir, devolver
+  - CRUD proveedores
+  - Compatibilidad repuesto-equipo
+
+### Frontend
+- **`RepuestosPage.jsx`** — Página con 5 pestañas: Catálogo, Existencias, Movimientos, Solicitudes, Proveedores
+- Dashboard con KPIs: activos, disponibles, stock bajo, agotados, valor inventario, solicitudes pendientes
+- CRUD completo de repuestos con modal de edición
+- Tabla de existencias con filtros por repuesto/bodega
+- Historial de movimientos con filtros por tipo
+- Workflow de solicitudes con acciones contextualizadas
+- CRUD de proveedores
+
+### Actualizaciones
+- **`App.jsx`** — Ruta `/admin/repuestos` ahora carga `RepuestosPage`
+- **`Sidebar.jsx`** — Renombrado a "Repuestos y Consumibles"
+- **`models/__init__.py`** — Agregados 10 modelos nuevos
+- **`main.py`** — Registrado router de repuestos
+- **`l62a0d530001_privilegios_app_allowlist.py`** — Agregadas 10 tablas al allowlist
+
+## Estado actual
+- 316 tests OK
+- Build OK
+- Lint OK (2 warnings menores)
+- Migración aplicada
+- Commit `1be98ab` pushed
 
 ## Cambios realizados
 
