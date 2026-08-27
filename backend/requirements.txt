@@ -31,7 +31,7 @@ pydantic==2.13.3
 pydantic-settings==2.15.0
 pydantic_core==2.46.3
 python-dateutil==2.9.0.post0
-python-dotenv==1.2.2
+python-dotenv==1.2.3
 python-jose==3.5.0
 python-multipart==0.0.32
 PyYAML==6.0.3
