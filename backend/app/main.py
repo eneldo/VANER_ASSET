@@ -67,6 +67,7 @@ from app.routers import exportaciones
 from app.routers import public_config
 from app.routers import repuestos
 from app.routers import mfa
+from app.routers import gdpr
 from app.monitoring import init_sentry, router as monitoring_router
 
 
@@ -198,6 +199,7 @@ app.include_router(plantillas_reporte.router)
 app.include_router(exportaciones.router, dependencies=ADMIN_ONLY)
 app.include_router(repuestos.router)
 app.include_router(mfa.router)
+app.include_router(gdpr.router)
 app.include_router(monitoring_router)
 
 
