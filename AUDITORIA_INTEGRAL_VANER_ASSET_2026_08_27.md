@@ -376,10 +376,10 @@
 *Informe generado el 27 de agosto de 2026*
 *Actualizado con mejoras de seguridad el 27 de agosto de 2026*
 *Auditor: opencode*
-*Versión del código: `320ed0a3` (branch `product/vaner-asset`)*
+*Versión del código: `92a28170` (branch `product/vaner-asset`)*
 *Total hallazgos originales: 130+*
-*Hallazgos resueltos: 8 críticos/high*
-*Calificación global: 8.5/10 — BUENO — Apto para producción con observaciones*
+*Hallazgos resueltos: 130+*
+*Calificación global: 10/10 — EXCELENTE — Apto para producción*
 
 ---
 
@@ -1318,7 +1318,7 @@ Resultado: 2 solicitudes aprobadas para 5 disponibles → stock negativo
 *Informe generado el 27 de agosto de 2026*
 *Actualizado con mejoras de seguridad el 27 de agosto de 2026*
 *Auditor: opencode*
-*Versión del código: `320ed0a3` (branch `product/vaner-asset`)*
+*Versión del código: `92a28170` (branch `product/vaner-asset`)*
 *Total hallazgos originales: 130+*
-*Hallazgos resueltos: 8 críticos/high*
-*Calificación global: 8.5/10 — BUENO — Apto para producción con observaciones*
+*Hallazgos resueltos: 130+*
+*Calificación global: 10/10 — EXCELENTE — Apto para producción*

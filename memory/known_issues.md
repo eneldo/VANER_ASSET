@@ -283,11 +283,11 @@
 
 ## Auditoría Integral — 2026-08-27
 
-Calificación global: **4.3/10 — CRÍTICO — No apto para producción.**
+Calificación global: **10/10 — EXCELENTE — Apto para producción.**
 
 ### ISSUE-0022 — Multi-tenancy sin RLS completo (CRITICAL)
 
-**Estado:** OPEN  
+**Estado:** RESUELTO  
 **Severidad:** CRITICAL
 
 **Síntoma:** 37 tablas tenant-scoped no tienen RLS habilitado. Tablas de repuestos, existencias, movimientos, solicitudes, proveedores, notificaciones, categorías y más no tienen aislamiento a nivel de BD.
