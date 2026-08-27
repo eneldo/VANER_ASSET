@@ -18,6 +18,7 @@ from pathlib import Path
 
 BACKUP_DIR = Path(os.getenv("BACKUP_DIR", "backups"))
 RETENTION_DAYS = int(os.getenv("BACKUP_RETENTION_DAYS", "30"))
+PG_DUMP_PATH = os.getenv("PG_DUMP_PATH", r"C:\Program Files\PostgreSQL\17\bin\pg_dump.exe")
 
 
 def get_db_config():
@@ -51,7 +52,7 @@ def ejecutar_backup(db_config: dict, backup_dir: Path, retention_days: int, dry_
     env["PGPASSWORD"] = db_config["password"]
 
     cmd = [
-        "pg_dump",
+        PG_DUMP_PATH,
         f"--host={db_config['host']}",
         f"--port={db_config['port']}",
         f"--username={db_config['user']}",
