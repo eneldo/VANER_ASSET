@@ -104,19 +104,20 @@ export default function DashboardAdmin() {
       setRefreshing(true);
       setError("");
 
-      // Promise.allSettled evita que todo el dashboard se caiga si un módulo falla.
       const nombresModulos = ["empresas", "sedes", "equipos", "mantenimientos", "tecnicos"];
       const endpoints = ["/empresas/", "/sedes/", "/equipos/", "/mantenimientos/", "/tecnicos/"];
       const results = await Promise.allSettled(
         endpoints.map((ep) => API.get(ep))
       );
 
+      const erroresModulo = [];
       results.forEach((result, idx) => {
         if (result.status === "rejected") {
           const err = result.reason;
           const status = err?.response?.status || "N/A";
           const detail = err?.response?.data?.detail || err?.message || "sin detalle";
           console.error(`[Dashboard] Módulo ${nombresModulos[idx]} (${endpoints[idx]}) falló — status ${status}:`, detail);
+          erroresModulo.push(`${nombresModulos[idx]} (${status})`);
         }
       });
 
@@ -130,9 +131,8 @@ export default function DashboardAdmin() {
         return [];
       });
 
-      const fallos = results.filter((result) => result.status === "rejected").length;
-      if (fallos > 0) {
-        setError(`Se cargó el dashboard, pero ${fallos} módulo(s) no respondieron correctamente.`);
+      if (erroresModulo.length > 0) {
+        setError(`Módulos con error: ${erroresModulo.join(", ")}. Revisa consola del navegador (F12) para detalles.`);
       }
 
       setData({ empresas, sedes, equipos, mantenimientos, tecnicos });
