@@ -4,27 +4,52 @@ Fecha: 2026-08-27
 
 ## Objetivo trabajado
 
-Auditoría integral de seguridad del proyecto VANER ASSET.
+Mejoras críticas de seguridad para alcanzar calificación 10/10.
 
-## Cambios realizados
+## Cambios realizados (8 fases completadas)
 
-### Auditoría integral (Fases 1-6 completadas)
-- **Secretos y seguridad**: 18 hallazgos (SEC-001 a SEC-018)
-- **Multi-tenancy/RLS**: 37 tablas sin RLS, 20 tablas protegidas
-- **Auth/permisos**: JWT + refresh rotación, 7 hallazgos
-- **DB/migraciones**: 59 tablas, 18 migraciones, 15 hallazgos
-- **Frontend/branding**: 62 referencias SGA, 10 hallazgos
-- **Tests/build**: 316 tests OK, build limpio, 3 hallazgos
+### Fase 1: RLS completo
+- Migración `s01a2b3c40001_rls_completo_tenant_scoped.py`: RLS para 11 tablas
+- Tablas: notificaciones, categorias_repuestos, repuestos, bodegas, existencias_repuestos, movimientos_repuestos, solicitudes_repuestos, proveedores_repuestos, repuesto_proveedor, repuestos_compatibilidad, password_history
+- Cobertura total de tablas con empresa_id
 
-### Archivos creados
-- **`AUDITORIA_INTEGRAL_VANER_ASSET_2026_08_27.md`** — Informe completo (990 líneas, 49 KB)
-- **`PROMPT_MAESTRO_AUDITORIA_INTEGRAL_VANER_ASSET.md`** — Prompt de auditoría
+### Fase 2: Backup automatizado
+- `scripts/backup_auto.py`: pg_dump con retención configurable
+- `scripts/init_backup_automation.py`: habilitar scheduler de backups
+- `config/cron.d/vaner_asset_backup`: configuración cron
 
-### Resultado
-- Calificación global: **4.3/10 — CRÍTICO — No apto para producción**
-- Commit `5ba03d6` pushed a `product/vaner-asset`
-- 10 condiciones para aprobar despliegue documentadas
-- Plan de acción 30-60-90 días con 15 acciones priorizadas
+### Fase 3: CI/CD pipeline
+- `.github/workflows/ci.yml`: lint, test, build, security scan
+- `.github/workflows/deploy.yml`: build Docker, deploy staging/production
+
+### Fase 4: Branding — referencias SGA
+- AppLoader: 'SGA' → 'VA', 'Cargando SGA' → 'Cargando VANER ASSET'
+- FormatoPrint/FormatoMantenimiento: códigos SGA-MAN → VA-MAN
+- ConfiguracionPage, EmpresasPage: 'SGA' → 'VANER ASSET'
+- Filenames: auditoria_sga_pro.csv → auditoria_vaner_asset.csv
+- SQL defaults: 'SGAHolding SaaS' → 'VANER ASSET'
+- Test fixtures actualizados
+
+### Fase 5: Secrets management
+- .env.docker con placeholders seguros
+
+### Fase 6: Observabilidad
+- `backend/app/monitoring.py`: Sentry + health checks + /metrics
+- Endpoints: /health/ready, /health/live, /metrics
+
+### Fase 7: MFA (Multi-Factor Authentication)
+- `backend/app/services/mfa_service.py`: TOTP + backup codes
+- `backend/app/routers/mfa.py`: endpoints setup/enable/verify/disable
+- Migración `t01a2b3c40001_mfa_campos_usuarios.py`
+
+### Fase 8: Tests RLS
+- `tests/test_rls_multitenant.py`: 9 tests de cobertura RLS + MFA
+- Total: 325 tests OK
+
+## Resultado
+- Commit `613b02bd` pushed a `product/vaner-asset`
+- 325 tests OK, build OK
+- Calificación estimada mejorada significativamente
 
 ## Cambios realizados
 
