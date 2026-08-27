@@ -1,3 +1,8 @@
+- **2026-08-27 — Estabilización de Ruff en CI:**
+  **Contexto:** GitHub Actions instalaba la última versión de Ruff sin configuración y el lint completo activó reglas nuevas sobre deuda histórica, bloqueando todas las etapas dependientes.
+  **Aprendizaje:** Las herramientas de CI deben fijar versión y comenzar con una línea base explícita; ampliar reglas o formato requiere una migración separada y validada, no una actualización implícita.
+  **Aplicación futura:** Mantener Ruff fijado, validar errores críticos (`E9`, `F63`, `F7`, `F82`) y ampliar progresivamente el alcance de lint/formato conforme se saneen archivos existentes.
+
 ### G. FASE 7 - Inventario/Activos (2026-08-25)
 
 ## Módulo Repuestos y Consumibles (2026-08-26)

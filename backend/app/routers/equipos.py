@@ -34,6 +34,7 @@ from app.schemas.equipo import (
     EquipoDevolver,
     EquipoTransferir,
     EquipoBaja,
+    EquipoHistorialItem,
     EquipoHistorialOut,
     TIPOS_MOVIMIENTO,
     ESTADOS_EQUIPO,

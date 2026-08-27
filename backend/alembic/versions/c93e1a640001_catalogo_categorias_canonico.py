@@ -3,12 +3,15 @@
 Revision ID: c93e1a640001
 Revises: b82d0f530001
 """
-from typing import Sequence, Union
-from alembic import op
+
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
+
 revision: str = "c93e1a640001"
-down_revision: Union[str, Sequence[str], None] = "b82d0f530001"
+down_revision: str | Sequence[str] | None = "b82d0f530001"
 branch_labels = None
 depends_on = None
 

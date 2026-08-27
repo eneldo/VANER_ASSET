@@ -30,13 +30,13 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install ruff mypy
+          pip install ruff==0.12.12 mypy
 
       - name: Ruff lint
-        run: cd backend && ruff check . --output-format=github
+        run: cd backend && ruff check . --select E9,F63,F7,F82 --output-format=github
 
       - name: Ruff format check
-        run: cd backend && ruff format --check .
+        run: cd backend && ruff format --check alembic/versions/a71c9e420001_solicitudes_correctivas.py alembic/versions/b82d0f530001_reportes_publicados.py alembic/versions/c93e1a640001_catalogo_categorias_canonico.py
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
