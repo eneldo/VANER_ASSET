@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowLeft, Wrench, Search, Edit, Trash2, Eye,
+  Wrench, Search, Edit, Trash2, Eye,
   RefreshCw, ChevronLeft, ChevronRight, X, Plus,
 } from "lucide-react";
 
@@ -327,14 +327,6 @@ export default function MantenimientosPage({
           <span>Administración SaaS</span>
           <h1>Gestión de Mantenimientos</h1>
           <p>Planifica y supervisa el mantenimiento general: planes preventivos, frecuencias, calendario, próximos, vencidos, historial e indicadores.</p>
-        </div>
-        <div className="sga-module-hero__actions">
-          <button
-            className="sga-btn sga-btn--secondary"
-            onClick={() => (window.location.href = esCoordinador ? "/coordinador/dashboard" : "/admin/dashboard")}
-          >
-            <ArrowLeft size={16} /> Dashboard
-          </button>
         </div>
       </div>
 

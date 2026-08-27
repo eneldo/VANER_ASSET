@@ -180,12 +180,7 @@ export default function OrdenesMantenimientoPage() {
             <h1>Órdenes de Mantenimiento</h1>
             <p>Gestiona cada intervención: solicitud, asignación, ejecución, repuestos, evidencias, costos y cierre.</p>
           </div>
-          <div className="sga-module-hero__actions">
-            <button className="sga-btn sga-btn--secondary" onClick={() => window.location.href = "/admin/dashboard"}>
-              <ChevronLeft size={16} /> Dashboard
-            </button>
-          </div>
-        </div>
+      </div>
 
         <div className="mant-pro-layout">
           <section className="mant-card mant-list-card">
