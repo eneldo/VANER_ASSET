@@ -121,7 +121,12 @@ export default function DashboardAdmin() {
       });
 
       const [empresas, sedes, equipos, mantenimientos, tecnicos] = results.map((result) => {
-        if (result.status === "fulfilled") return Array.isArray(result.value.data) ? result.value.data : [];
+        if (result.status === "fulfilled") {
+          const d = result.value.data;
+          if (Array.isArray(d)) return d;
+          if (d && Array.isArray(d.items)) return d.items;
+          return [];
+        }
         return [];
       });
 
