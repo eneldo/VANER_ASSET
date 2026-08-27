@@ -355,14 +355,52 @@ Estos elementos deben versionarse o migrarse de forma explícita, no personaliza
 8. Migrar documentos fijos a plantillas versionadas por cliente/vertical.
 9. Mantener un mapa explícito de compatibilidad para nombres `sga_*` que no puedan cambiarse inmediatamente.
 
+## Auditoría Integral (2026-08-27)
+
+Calificación global: **4.3/10 — CRÍTICO — No apto para producción.**
+
+### Top 5 riesgos
+1. **R1**: Multi-tenancy sin proteger — 37 tablas tenant-scoped sin RLS (CRITICAL)
+2. **R2**: Secrets hardcodeados en .env.docker con passwords débiles (MEDIUM)
+3. **R3**: Sin backup automatizado de PostgreSQL (HIGH)
+4. **R4**: Sin CI/CD pipeline (MEDIUM)
+5. **R5**: 62 referencias a "SGA Cursor" y "SGA" sin brandear (LOW)
+
+### Fortalezas
+- Autenticación JWT robusta (9/10): refresh HttpOnly, rotación, revocación
+- Test coverage backend: 316 tests (8/10)
+- Code quality: arquitectura limpia, naming consistente (8/10)
+- Frontend security: token en memoria, localStorage limpio (7/10)
+
+### Debilidades críticas
+- Multi-tenancy: 37 tablas sin RLS (2/10)
+- CI/CD: sin pipeline (1/10)
+- Observabilidad: sin Sentry, sin métricas (3/10)
+- Backups: sin automatización (4/10)
+- Branding: 62 referencias SGA (pendiente)
+
+### Condiciones para aprobar despliegue
+1. Migración RLS completa para modelos tenant-scoped
+2. Backups automáticos con retención y restore drill
+3. CI/CD pipeline con lint, test, build
+4. Branding completo (0 referencias SGA)
+5. PostgreSQL producción con autenticación segura
+6. Redis configurado para rate limiting
+7. Migración de usuarios dev → producción
+8. Monitoreo de errores (Sentry)
+9. Aplicar migraciones pendientes
+10. Rotar SECRET_KEY y CONFIG_ENCRYPTION_KEY
+
+Informe completo: `AUDITORIA_INTEGRAL_VANER_ASSET_2026_08_27.md` (990 líneas, 49 KB)
+
 ## Seguridad
 
 Fortalezas observadas:
 
 - JWT con refresh tokens y cookies configurables.
 - CORS estricto en producción.
-- Roles de base separados y RLS.
-- Rate limiting con Redis.
+- Roles de base separados y RLS (parcialmente implementado).
+- Rate limiting con Redis (deshabilitado en dev).
 - Validaciones de secretos y HTTPS en producción.
 - Evidencias privadas con autorización y URLs firmadas.
 - Cifrado de secretos de configuración y backups.

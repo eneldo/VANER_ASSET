@@ -278,3 +278,121 @@
 **Solución o mitigación:** Clasificar documentos como `current`, `legacy/sgaholding` o `archive`, y generar manuales nuevos desde branding/configuración VANER.
 
 **Prevención:** Índice documental con estado, producto, versión y cliente objetivo.
+
+---
+
+## Auditoría Integral — 2026-08-27
+
+Calificación global: **4.3/10 — CRÍTICO — No apto para producción.**
+
+### ISSUE-0022 — Multi-tenancy sin RLS completo (CRITICAL)
+
+**Estado:** OPEN  
+**Severidad:** CRITICAL
+
+**Síntoma:** 37 tablas tenant-scoped no tienen RLS habilitado. Tablas de repuestos, existencias, movimientos, solicitudes, proveedores, notificaciones, categorías y más no tienen aislamiento a nivel de BD.
+
+**Causa:** La migración `g37c5e080001` implementó RLS para ~20 tablas principales, pero las tablas nuevas (repuestos, inventario, OT-repuestos) se crearon sin RLS.
+
+**Evidencia:** 37+ tablas sin RLS verificadas en `AUDITORIA_INTEGRAL_VANER_ASSET_2026_08_27.md`.
+
+**Solución o mitigación:** Crear migración RLS para todas las tablas tenant-scoped. Implementar `set_config('app.current_empresa_id', ...)` en cada endpoint.
+
+**Prevención:** Test de aislamiento multi-tenant que verifique que un tenant no puede leer datos de otro.
+
+### ISSUE-0023 — Secrets hardcodeados en .env.docker (MEDIUM)
+
+**Estado:** OPEN  
+**Severidad:** MEDIUM
+
+**Síntoma:** `.env.docker` contiene passwords débiles en texto plano: `postgres`, `redis_password_2026`, `SGAAdmin2026!`.
+
+**Causa:** Archivo creado para desarrollo local sin seguir política de secrets.
+
+**Evidencia:** `.env.docker` — passwords débiles hardcodeados.
+
+**Solución o mitigación:** Usar variables de entorno reales o generar passwords fuertes. Mantener `.env.docker` solo como ejemplo sin valores reales.
+
+**Prevención:** Escaneo de archivos .env en CI con detección de passwords débiles.
+
+### ISSUE-0024 — Sin backup automatizado PostgreSQL (HIGH)
+
+**Estado:** OPEN  
+**Severidad:** HIGH
+
+**Síntoma:** No hay cron job, script automatizado ni pipeline que ejecute `pg_dump` periódicamente. El backup manual se hizo una vez (229KB).
+
+**Causa:** No se configuró automatización de backups.
+
+**Solución o mitigación:** Configurar cron job con `pg_dump` diario, retención 30 días, notificación en fallo. Implementar restore drill mensual.
+
+**Prevención:** Test automático de restore en staging.
+
+### ISSUE-0025 — Sin CI/CD pipeline (MEDIUM)
+
+**Estado:** OPEN  
+**Severidad:** MEDIUM
+
+**Síntoma:** No hay GitHub Actions, ni pipeline de construcción. No se ejecutan tests automáticamente en PRs ni en pushes.
+
+**Causa:** No se configuró CI/CD.
+
+**Solución o mitigación:** Crear pipeline mínimo: lint → test → build en cada PR. Agregar dependabot para dependencias.
+
+**Prevención:** Branch protection requiere CI verde para merge.
+
+### ISSUE-0026 — 62 referencias SGA sin brandear (LOW)
+
+**Estado:** OPEN  
+**Severidad:** LOW
+
+**Síntoma:** 62+ referencias a "SGA", "SGA SaaS", "SGAHolding", "sgaholding.online" en código, docs, configs y package-lock.json.
+
+**Causa:** Transición incompleta de SGAHolding a VANER ASSET.
+
+**Evidencia:** Búsqueda grep en AUDITORIA_INTEGRAL.
+
+**Solución o mitigación:** Reemplazar referencias visibles. Mantener alias internos solo donde sean técnicamente necesarios.
+
+**Prevención:** Escaneo de strings prohibidos en CI.
+
+### ISSUE-0027 — Sin observabilidad en producción (MEDIUM)
+
+**Estado:** OPEN  
+**Severidad:** MEDIUM
+
+**Síntoma:** Sin Sentry, sin métricas de sistema, sin alertas de error, sin health checks configurados.
+
+**Causa:** No se implementó monitoreo.
+
+**Solución o mitigación:** Integrar Sentry para errores, configurar health checks, agregar métricas básicas (request count, latency, error rate).
+
+**Prevención:** Dashboard de monitoreo con alertas configuradas antes de desplegar.
+
+### ISSUE-0028 — Redis deshabilitado en desarrollo (LOW)
+
+**Estado:** OPEN  
+**Severidad:** LOW
+
+**Síntoma:** `RATE_LIMIT_REDIS_REQUIRED=False`, rate limiting usa fallback in-memory.
+
+**Causa:** Redis no instalado en entorno de desarrollo.
+
+**Solución o mitigación:** Instalar Redis en desarrollo y producción. Configurar `RATE_LIMIT_REDIS_REQUIRED=True`.
+
+**Prevención:** Test de rate limiting con Redis real.
+
+### ISSUE-0029 — Tablas sin RLS — lista completa (CRITICAL)
+
+**Estado:** OPEN  
+**Severidad:** CRITICAL
+
+**Síntoma:** Las siguientes tablas NO tienen RLS: repuestos, unidades_medida, bodegas, existencias, movimientos_repuesto, solicitudes_repuesto, proveedores, repuestos_proveedor, repuestos_compatibilidad, notificaciones, categorias, historial_acciones, metricas_sistema, alertas_sistema, tareas_programadas, configuracion_notificaciones, backup_logs, azure_sentinel_logs, system_metrics.
+
+**Causa:** Migraciones recientes sin incluir RLS.
+
+**Evidencia:** SQL `SELECT relname, relrowsecurity FROM pg_class WHERE relrowsecurity = false` en AUDITORIA_INTEGRAL.
+
+**Solución o mitigación:** Crear migración completa de RLS para todas las tablas. Implementar función helper `set_empresa_context()`.
+
+**Prevención:** Test de aislamiento multi-tenant en suite de tests.
