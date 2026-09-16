@@ -8,9 +8,7 @@
 # - Coolify gestiona el proxy, la red pública y HTTPS.
 # ============================================================
 
-x-backend-build: &backend-build
-  context: ./backend
-  dockerfile: Dockerfile
+
 
 services:
   postgres:
@@ -68,7 +66,7 @@ services:
         condition: service_healthy
 
   backend:
-    build: *backend-build
+    build: ./backend
     image: vaner-asset-backend:production
     restart: always
     environment:
