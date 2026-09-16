@@ -187,8 +187,8 @@ class Settings(BaseSettings):
             raise ValueError("BACKUP_DATABASE_URL must include a username")
         if backup_database.username == app_database.username:
             raise ValueError("BACKUP_DATABASE_URL must use a dedicated backup role")
-        if backup_database.username != "vaner_backup":
-            raise ValueError("BACKUP_DATABASE_URL must use the vaner_backup role")
+        if backup_database.username != "sga_backup":
+            raise ValueError("BACKUP_DATABASE_URL must use the sga_backup_backup role")
 
         try:
             decoded_key = urlsafe_b64decode(self.CONFIG_ENCRYPTION_KEY.encode("ascii"))

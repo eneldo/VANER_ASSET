@@ -1,12 +1,20 @@
 ﻿# ============================================================
 # VANER ASSET - docker-compose.prod.yml
-# Usa imágenes pre-built de Docker Hub (no compila en el VPS)
+# Producción en Coolify
+#
+# - PostgreSQL y Redis usan imágenes oficiales.
+# - Backend y Frontend se construyen desde el repositorio Git.
+# - No requiere Docker Hub ni IMAGE_TAG.
+# - Coolify gestiona el proxy, la red pública y HTTPS.
 # ============================================================
+
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: Dockerfile
 
 services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:16-bookworm}
-    container_name: vaner_asset_postgres
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB es obligatoria}
@@ -17,8 +25,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/docker/init-app-role.sh:/docker-entrypoint-initdb.d/10-init-app-role.sh:ro
-    networks:
-      - vaner_asset_internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 20s
@@ -27,11 +33,13 @@ services:
 
   redis:
     image: ${REDIS_IMAGE:-redis:7.4.2-alpine}
-    container_name: vaner_asset_redis
     restart: always
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD es obligatoria}
-    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -41,14 +49,11 @@ services:
       retries: 5
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    networks:
-      - vaner_asset_internal
+    
 
   migrate:
-    image: ${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
-    pull_policy: always
+    image: vaner-asset-backend:production
+    pull_policy: never
     restart: "no"
     entrypoint: ["alembic"]
     command: ["upgrade", "head"]
@@ -61,45 +66,56 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - vaner_asset_internal
 
   backend:
-    image: ${BACKEND_IMAGE:-vanstralhen/vaner-asset-backend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
-    container_name: vaner_asset_backend
-    pull_policy: always
+    build: *backend-build
+    image: vaner-asset-backend:production
     restart: always
     environment:
       APP_NAME: ${APP_NAME:-VANER ASSET}
       CLIENT_CODE: ${CLIENT_CODE:?CLIENT_CODE es obligatorio}
       CLIENT_NAME: ${CLIENT_NAME:?CLIENT_NAME es obligatorio}
       APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN es obligatorio}
+
       APP_ENV: production
       DEBUG: "false"
+
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL es obligatoria}
       BACKUP_DATABASE_URL: ${BACKUP_DATABASE_URL:?BACKUP_DATABASE_URL es obligatoria}
+
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria}
       CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:?CONFIG_ENCRYPTION_KEY es obligatoria}
+
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD es obligatoria}@redis:6379/0
       RATE_LIMIT_REDIS_REQUIRED: "true"
+
       BACKUP_ENCRYPTION_REQUIRED: "true"
+
       ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+
       REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-vaner_asset_refresh_token}
       REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/api/auth}
       REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-true}
       REFRESH_COOKIE_SAMESITE: ${REFRESH_COOKIE_SAMESITE:-lax}
+
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
       FRONTEND_URL: ${FRONTEND_URL:-}
+
       BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN:-}
+
       RUN_MIGRATIONS: "false"
       RUN_SCHEDULER: ${RUN_SCHEDULER:-true}
       ALLOW_DATABASE_RESTORE: ${ALLOW_DATABASE_RESTORE:-false}
+
       UPLOAD_DIR: /app/uploads
       BACKUP_DIR: /app/backups
+
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-20}
       MAX_INVENTORY_IMPORT_MB: ${MAX_INVENTORY_IMPORT_MB:-10}
       MAX_INVENTORY_IMPORT_ROWS: ${MAX_INVENTORY_IMPORT_ROWS:-10000}
+
       S3_BACKUP_ENABLED: ${S3_BACKUP_ENABLED:-false}
       S3_BACKUP_ENDPOINT_URL: ${S3_BACKUP_ENDPOINT_URL:-}
       S3_BACKUP_REGION: ${S3_BACKUP_REGION:-auto}
@@ -107,57 +123,77 @@ services:
       S3_BACKUP_ACCESS_KEY_ID: ${S3_BACKUP_ACCESS_KEY_ID:-}
       S3_BACKUP_SECRET_ACCESS_KEY: ${S3_BACKUP_SECRET_ACCESS_KEY:-}
       S3_BACKUP_PREFIX: ${S3_BACKUP_PREFIX:-vaner-asset-production}
+
     depends_on:
       migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+
     volumes:
       - uploads_data:/app/uploads
       - backups_data:/app/backups
+
     read_only: true
+
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=128m
       - /app/exports:rw,noexec,nosuid,size=128m
+
     security_opt:
       - no-new-privileges:true
+
     cap_drop:
       - ALL
+
     pids_limit: 256
+
     expose:
       - "8000"
+
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 30s
-    networks:
-      - vaner_asset_internal
-      - caddy_net
 
   frontend:
-    image: ${FRONTEND_IMAGE:-vanstralhen/vaner-asset-frontend}:${IMAGE_TAG:?IMAGE_TAG es obligatoria}
-    container_name: vaner_asset_frontend
-    pull_policy: always
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+
+    image: vaner-asset-frontend:production
     restart: always
+
     depends_on:
       backend:
         condition: service_healthy
+
     expose:
       - "8080"
+
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
-    networks:
-      - vaner_asset_internal
-      - caddy_net
+      start_period: 10s
+
     security_opt:
       - no-new-privileges:true
+
     cap_drop:
       - ALL
+
     pids_limit: 128
 
 volumes:
@@ -165,11 +201,3 @@ volumes:
   redis_data:
   uploads_data:
   backups_data:
-
-networks:
-  vaner_asset_internal:
-    driver: bridge
-
-  caddy_net:
-    name: caddy_net
-    external: true
