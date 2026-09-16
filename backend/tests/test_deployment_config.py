@@ -91,15 +91,26 @@ class DeploymentConfigTests(unittest.TestCase):
         self.assertLess(dockerfile.index("ARG NODE_IMAGE="), first_from)
         self.assertLess(dockerfile.index("ARG NGINX_IMAGE="), first_from)
 
-    def test_imagenes_actualizan_paquetes_del_sistema(self):
+    def test_imagenes_base_y_dependencias_sistema_controladas(self):
         backend = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
         frontend = (ROOT / "frontend" / "Dockerfile").read_text(encoding="utf-8")
 
-        self.assertIn("apt-get upgrade -y", backend)
+        # Backend: imagen base actualizada y dependencias mínimas/controladas.
+        self.assertIn("python:3.12.14-slim-bookworm", backend)
+        self.assertIn("apt-get update", backend)
         self.assertIn("--no-install-recommends", backend)
-        self.assertNotIn("    gcc \\n", backend)
-        self.assertNotIn("    libpq-dev \\n", backend)
-        self.assertIn("apk upgrade --no-cache", frontend)
+
+        # No hacer upgrade global durante el build.
+        self.assertNotIn("apt-get upgrade -y", backend)
+
+        # No conservar herramientas de compilación innecesarias.
+        self.assertNotIn("    gcc \\", backend)
+        self.assertNotIn("    libpq-dev \\", backend)
+
+        # Frontend: imágenes modernas y sin upgrade global de Alpine.
+        self.assertIn("node:24-alpine3.24", frontend)
+        self.assertIn("nginx:stable-alpine3.24", frontend)
+        self.assertNotIn("apk upgrade --no-cache", frontend)
 
     def test_requisitos_incluyen_versiones_corregidas(self):
         requirements = (ROOT / "backend" / "requirements.txt").read_text(encoding="utf-8")
